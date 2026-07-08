@@ -51,4 +51,6 @@ export const visit = {
   hours: "Daily, 06:00 to 24:00",
   phone: "+1 000 000 0000",
   designCredit: "Interior & exterior design concept: JKWG",
+  /** Compact hours + location line for the Home outro (docs §5.1 S8, §11.4). */
+  openSummary: "Open daily · 06:00 to 24:00 · Garden Way, Richmond",
 } as const;

@@ -262,3 +262,430 @@
       linear-gradient(160deg, #101113, #0a0a0b);
   }
 }
+
+/* ==========================================================================
+   Home page recipes (docs §5). Complex gradients, keyframe loops, and the
+   repeated journey layout live here; everything expressible in utilities stays
+   in the components. Mockup: greentee-home.html (v22).
+   ========================================================================== */
+@layer components {
+  /* ---- S1 Hero (docs §5.1) --------------------------------------------- */
+  /* Top-heavy shade so the facade reads and the copy sits on noir (§11.6). */
+  .hero-shade {
+    background: linear-gradient(
+      180deg,
+      var(--color-noir) 0%,
+      rgba(10, 10, 11, 0.97) 18%,
+      rgba(10, 10, 11, 0.82) 38%,
+      rgba(10, 10, 11, 0.35) 58%,
+      rgba(10, 10, 11, 0.18) 76%,
+      rgba(10, 10, 11, 0.9) 100%
+    );
+  }
+  /* Radial scrim behind the hero copy so type never fights the render. */
+  .hero-scrim::before {
+    content: "";
+    position: absolute;
+    inset: -16% -22%;
+    z-index: -1;
+    background: radial-gradient(
+      58% 54% at 50% 46%,
+      rgba(10, 10, 11, 0.6),
+      transparent 72%
+    );
+  }
+  /* Scroll cue: a champagne tick pulsing down a hairline (§5.1). */
+  .scroll-cue-line {
+    position: relative;
+    width: 1px;
+    height: 54px;
+    background: rgba(242, 237, 226, 0.14);
+  }
+  .scroll-cue-line::after {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 0;
+    width: 3px;
+    height: 10px;
+    background: var(--color-champagne);
+    animation: cue 2.3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  }
+  @keyframes cue {
+    0% {
+      top: 0;
+      opacity: 0;
+    }
+    18% {
+      opacity: 1;
+    }
+    72% {
+      opacity: 1;
+    }
+    100% {
+      top: 44px;
+      opacity: 0;
+    }
+  }
+  html.rm .scroll-cue-line::after {
+    animation: none;
+  }
+
+  /* ---- S2c Concept marquee (docs §5.1) --------------------------------- */
+  .marquee {
+    overflow: hidden;
+    padding: 20px 0;
+    white-space: nowrap;
+    border-top: 1px solid var(--hair);
+    border-bottom: 1px solid var(--hair);
+  }
+  .marquee-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 42px;
+    animation: marquee 42s linear infinite;
+    will-change: transform;
+  }
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  html.rm .marquee-track {
+    animation: none;
+  }
+  .marquee-track span {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 16px;
+    letter-spacing: 0.1em;
+    color: rgba(242, 237, 226, 0.5);
+  }
+  .marquee-track i {
+    font-style: normal;
+    color: var(--color-champagne);
+    font-size: 10px;
+  }
+
+  /* ---- S5 Dining preview (docs §5.1) ----------------------------------- */
+  /* Jade is scoped to this section: an ambient jade-wash band (§2.1). */
+  .dining-band {
+    background: linear-gradient(
+      180deg,
+      var(--color-noir) 0%,
+      #0c1611 55%,
+      var(--color-noir) 100%
+    );
+  }
+
+  /* ---- S8 Outro (docs §5.1) -------------------------------------------- */
+  .outro-glow {
+    background: radial-gradient(
+      62% 50% at 50% 36%,
+      rgba(201, 166, 107, 0.08),
+      transparent 72%
+    );
+  }
+
+  /* ---- S7 Spaces Journey (docs §5.2, §9.3) ----------------------------- */
+  .hscroll {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-noir);
+  }
+  .hs-viewport {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+  }
+  .hs-viewport::-webkit-scrollbar {
+    display: none;
+  }
+  /* js-pin mode drives the track by transform, so native snap steps out. */
+  .hscroll.js-pin .hs-viewport {
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+  .hs-track {
+    display: flex;
+    width: max-content;
+    will-change: transform;
+  }
+  .hs-panel {
+    position: relative;
+    display: block;
+    flex: 0 0 auto;
+    width: 100vw;
+    height: 100svh;
+    min-height: 560px;
+    overflow: hidden;
+    scroll-snap-align: start;
+  }
+  .hp-num {
+    position: absolute;
+    z-index: 1;
+    top: 4%;
+    left: 56%;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: min(34vh, 340px);
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 1px var(--acc, var(--color-champagne));
+    opacity: 0.2;
+    pointer-events: none;
+    will-change: transform;
+  }
+  .flip .hp-num {
+    left: auto;
+    right: 58%;
+  }
+  .hp-solo .hp-num {
+    left: auto;
+    right: 5%;
+    top: 6%;
+  }
+  .hp-a,
+  .hp-b {
+    position: absolute;
+    overflow: hidden;
+    border: 1px solid var(--hair);
+    background: #101012;
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.55);
+    will-change: transform, opacity;
+  }
+  .hp-a {
+    z-index: 2;
+    left: 6vw;
+    top: 9%;
+    width: 56vw;
+    height: 58%;
+  }
+  .hp-b {
+    z-index: 3;
+    right: 6vw;
+    bottom: 16%;
+    width: 33vw;
+    height: 42%;
+  }
+  .flip .hp-a {
+    left: auto;
+    right: 6vw;
+  }
+  .flip .hp-b {
+    right: auto;
+    left: 6vw;
+  }
+  .hp-solo .hp-a {
+    left: 6vw;
+    right: 6vw;
+    width: auto;
+    top: 9%;
+    height: 56%;
+  }
+  .hp-fill {
+    position: absolute;
+    inset: -7%;
+    z-index: 1;
+  }
+  .hp-info {
+    position: absolute;
+    z-index: 4;
+    left: 6vw;
+    bottom: 112px;
+    max-width: 520px;
+  }
+  .flip .hp-info {
+    left: auto;
+    right: 6vw;
+    text-align: right;
+  }
+  .flip .hp-meta {
+    justify-content: flex-end;
+  }
+  .flip .hp-line {
+    margin-left: auto;
+  }
+  .hp-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    font: 500 9.5px/1 var(--font-sans);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+  }
+  .hp-meta b {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 15px;
+    color: var(--acc, var(--color-champagne));
+  }
+  .hp-meta i {
+    width: 34px;
+    height: 1px;
+    background: var(--acc, var(--color-champagne));
+  }
+  .hp-title {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(1.7rem, 3.2vw, 2.7rem);
+    line-height: 1.1;
+    transition: color 0.35s;
+  }
+  .hp-line {
+    margin-top: 10px;
+    max-width: 400px;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: rgba(242, 237, 226, 0.78);
+  }
+  .hp-go {
+    position: absolute;
+    z-index: 4;
+    right: 6vw;
+    bottom: 118px;
+    font: 500 9.5px/1 var(--font-sans);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+    border-bottom: 1px solid var(--hair);
+    padding-bottom: 6px;
+    transition:
+      color 0.35s,
+      border-color 0.35s;
+  }
+  .flip .hp-go {
+    right: auto;
+    left: 6vw;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .hs-panel:hover .hp-title {
+      color: var(--acc, var(--color-champagne));
+    }
+    .hs-panel:hover .hp-go {
+      color: var(--acc, var(--color-champagne));
+      border-color: var(--acc, var(--color-champagne));
+    }
+  }
+  .hs-ui {
+    position: absolute;
+    z-index: 6;
+    left: 6vw;
+    right: calc(6vw + 64px);
+    bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .hs-count {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    color: var(--color-champagne);
+  }
+  .hs-count b {
+    font-weight: 500;
+  }
+  .hs-count span {
+    margin-left: 7px;
+    font: 500 10px/1 var(--font-sans);
+    font-style: normal;
+    letter-spacing: 0.2em;
+    color: var(--color-mist);
+  }
+  .hs-bar {
+    position: relative;
+    flex: 1;
+    height: 1px;
+    background: rgba(201, 166, 107, 0.18);
+  }
+  .hs-bar i {
+    position: absolute;
+    inset: 0;
+    background: var(--color-champagne);
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  .js-pin .hs-bar i {
+    transition: transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .hs-hint {
+    font: 500 8.5px/1 var(--font-sans);
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+  }
+
+  @media (max-width: 900px) {
+    .hs-panel {
+      min-height: 520px;
+    }
+    .hp-num {
+      font-size: 24vw;
+      top: 3%;
+      left: auto;
+      right: 4%;
+    }
+    .flip .hp-num {
+      right: auto;
+      left: 4%;
+    }
+    .hp-a {
+      left: 5vw;
+      top: 7%;
+      width: 74vw;
+      height: 40%;
+    }
+    .hp-b {
+      right: 5vw;
+      bottom: auto;
+      top: 42%;
+      width: 60vw;
+      height: 30%;
+    }
+    .flip .hp-a {
+      left: auto;
+      right: 5vw;
+    }
+    .flip .hp-b {
+      right: auto;
+      left: 5vw;
+    }
+    .hp-solo .hp-a {
+      left: 5vw;
+      right: 5vw;
+      width: auto;
+      top: 8%;
+      height: 44%;
+    }
+    .hp-info {
+      left: 5vw;
+      right: 5vw;
+      bottom: 100px;
+      max-width: none;
+    }
+    .flip .hp-info {
+      text-align: left;
+    }
+    .flip .hp-meta {
+      justify-content: flex-start;
+    }
+    .hp-line,
+    .hp-go {
+      display: none;
+    }
+    .hs-ui {
+      left: 5vw;
+      right: calc(5vw + 56px);
+      bottom: 24px;
+    }
+  }
+}

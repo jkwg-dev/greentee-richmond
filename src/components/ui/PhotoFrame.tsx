@@ -1,17 +1,8 @@
+import { PHOTO_TINT_CLASS } from "@/lib/tints";
 import { cn } from "@/lib/utils";
+import type { PhotoTint } from "@/types/media";
 
-export type PhotoTint =
-  "champagne" | "jade" | "rosegold" | "sage" | "emerald" | "iris" | "map";
-
-const TINT_CLASS: Record<PhotoTint, string> = {
-  champagne: "tint-champagne",
-  jade: "tint-jade",
-  rosegold: "tint-rosegold",
-  sage: "tint-sage",
-  emerald: "tint-emerald",
-  iris: "tint-iris",
-  map: "tint-map",
-};
+export type { PhotoTint };
 
 export type PhotoFrameProps = {
   /** Placeholder gradient, sampled from the deck renders (docs §11.6). */
@@ -51,7 +42,9 @@ export function PhotoFrame({
       )}
     >
       {children ?? (
-        <div className={cn("absolute inset-[-10%] z-[1]", TINT_CLASS[tint])} />
+        <div
+          className={cn("absolute inset-[-10%] z-[1]", PHOTO_TINT_CLASS[tint])}
+        />
       )}
 
       {label && (

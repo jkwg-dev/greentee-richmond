@@ -37,7 +37,7 @@ Cross-links between the mockup files stand in for the real routes (`greentee-spa
 5. **A single motion language: Bloom.** Reveals are fade plus rise; the hero blooms letter by letter; the journey turns like pages.
 6. **Photography leads.** UI is a frame; renders and photography own the screen, full-bleed by default.
 
-**Signature element**: the Spaces Journey (Home S6). A full-bleed, gesture-gated horizontal slider: one wheel or swipe gesture turns exactly one panel, five panels walk the two floors, and a champagne progress bar with a page counter marks the position. The web translation of walking the building. The `/spaces` page is the long-form version of the same walk: nine zones, one scroll, a rail that keeps the floor plan in hand.
+**Signature element**: the Spaces Journey (Home S7). A full-bleed, gesture-gated horizontal slider: one wheel or swipe gesture turns exactly one panel, five panels walk the two floors, and a champagne progress bar with a page counter marks the position. The web translation of walking the building. The `/spaces` page is the long-form version of the same walk: nine zones, one scroll, a rail that keeps the floor plan in hand.
 
 **Copy rules (global, enforced in every deliverable)**
 - Never use an em dash or an en dash anywhere in copy. Rewrite around them.
@@ -66,10 +66,6 @@ Cross-links between the mockup files stand in for the real routes (`greentee-spa
   --color-jade: #1f6b4f;        /* Crystal Jade Palace surfaces and rail hairline */
   --color-jade-text: #57ad85;   /* Crystal Jade Palace text accent, active rail states */
   --hair: rgba(201,166,107,.16); /* champagne hairline */
-  --color-ink: #141008;              /* button text on champagne/ivory (§2.3) */
-  --color-ink-jade: <hex from code>; /* text on jade surfaces */
-  --color-jade-mist: <hex>;          /* muted text on jade surfaces */
-  --color-champagne-bright: <hex>;   /* hover state of champagne elements */
 }
 ```
 
@@ -93,7 +89,7 @@ Scale: H1 `clamp(2.6rem, 9vw, 7.6rem)` in two stacked lines (hero) · zone H1 `c
 
 | Variant | Spec | Use |
 |---|---|---|
-| `solid` | champagne bg, near-black text (--color-ink) | primary CTA (Book a Bay, Book a Table) |
+| `solid` | champagne bg, near-black text (#141008) | primary CTA (Book a Bay, Book a Table) |
 | `light` | ivory bg, near-black text, borderless look, hover to pure white | secondary CTA over bright imagery (Explore the Spaces) |
 | `ghost` | transparent, champagne border and text | tertiary, dark surfaces only |
 
@@ -167,7 +163,7 @@ The site carries a steady stream of updates: events, promotions, news, and Cryst
 Every News & Offers entry renders with a meta line of the form "Category · Timing" where Timing is a short editorial label (This Fall, Through August, From September, Saturdays).
 
 ### 4.2 Surfaces
-- **Home · News & Offers teaser (§5, S5)**: the latest entry as a large featured preview plus a three-card row of the next entries, drawn from active promotions, upcoming events, and news, newest first. A "View More" link routes to `/news`. The section renders nothing when empty.
+- **Home · News & Offers teaser (§5, S4)**: the latest entry as a large featured preview plus a three-card row of the next entries, drawn from active promotions, upcoming events, and news, newest first. A "View More" link routes to `/news`. The section renders nothing when empty.
 - **`/news` index (§7)**: featured latest entry + nine-card grid with client-side category chips (All · Offers · Events · News).
 - **Announcement bar**: optional slim bar beneath the header, driven by a single `promotion` with `placement: banner`, dismissible per session. At most one at a time. Not in the mockups; build from this spec.
 - **`/dining/menu`**: the dish grid reads `dish` documents; seasonal menu updates are pure content edits.
@@ -190,11 +186,11 @@ Editors publish in Studio; a webhook revalidates the matching cache tags (`event
 | S2 | Manifesto | Eyebrow "Seed to Blossom" + two serif lines ("Every visit begins as a seed." / "Under ten thousand lights, your game blooms."), each closing on an italic emphasis word and a champagne period + caption "GreenTee Richmond Center brings together tour-grade simulation, private play, and coaching across two floors of botanical luxury." | Line-by-line reveal |
 | S2b | Panorama band | Full-bleed panoramic render (`.mani-media`). Caption: "The canopy & column · VIP Corridor, 2F" | Inner-image parallax (yPercent -5 to 5, scrub); fade overlay into noir; height 320px below 900px |
 | S2c | Marquee | Concept names loop: Blooming Buds · Seed to Blossom · Carried by the Wind · Sunlight Through a Forest · Warm Sunshine on the Western River · Iconic 15 | CSS loop, hairline top and bottom, paused under reduced motion |
-| S3 | Spaces Journey (`#spacesScroll`) | Five full-bleed panels (§5.2). Each panel is one anchor link to its `/spaces` zone and carries: an oversized index numeral, one or two photo plates, meta (index · name · floor), the concept title in large serif, one line, and an "Explore" cue. Progress UI: zero-padded counter ("01 / 05") + champagne fill bar | Gesture-gated page-turn journey; full contract in §9.3. Mobile and fallback: native horizontal scroll with `scroll-snap-type: x mandatory`; scroll position drives the same progress UI |
-| S4 | Rates & Hours (`#rates`) | Eyebrow "Rates & Hours" · H2 "Book by the hour, play all year." · sub. Two-column grid: **Bays & Rooms** rate rows and **Hours & Availability** rows (§5.3), each column headed by a small H3. CTAs: solid Book a Bay, ghost "Plan a Private Room". Beneath, the stats strip: **4 Simulator Bays · 19 Private VIP Rooms · 200+ Championship Courses · 365 Days of Golf a Year** (19 = 15 VIP + 4 VVIP) | Rows reveal with stagger; counters ease out over 1.4s (cubic ease-out) on first view at 50 percent visibility; reduced motion sets final values. Grid stacks below 900px; stats 4 to 2 columns (560px: 1) |
-| S5 | News & Offers (`#news`) | Featured latest entry (image, meta "News · This Fall · Featured", serif title, one line, "Read the story") + three-card row (photo, meta "Category · Timing", title) + "View More" to `/news`. Renders nothing when empty (§4.2) | Reveals with stagger; single column below 900px |
+| S3 | Rates & Hours (`#rates`) | Eyebrow "Rates & Hours" · H2 "Book by the hour, play all year." · sub. Two-column grid: **Bays & Rooms** rate rows and **Hours & Availability** rows (§5.3), each column headed by a small H3. CTAs: solid Book a Bay, ghost "Plan a Private Room". Beneath, the stats strip: **4 Simulator Bays · 19 Private VIP Rooms · 200+ Championship Courses · 365 Days of Golf a Year** (19 = 15 VIP + 4 VVIP) | Rows reveal with stagger; counters ease out over 1.4s (cubic ease-out) on first view at 50 percent visibility; reduced motion sets final values. Grid stacks below 900px; stats 4 to 2 columns (560px: 1) |
+| S4 | News & Offers (`#news`) | Featured latest entry (image, meta "News · This Fall · Featured", serif title, one line, "Read the story") + three-card row (photo, meta "Category · Timing", title) + "View More" to `/news`. Renders nothing when empty (§4.2) | Reveals with stagger; single column below 900px |
+| S5 | Dining preview (`#dining`) | Two-column grid: photo slot left ("Crystal Jade Palace · Dining Room"), content right. Eyebrow "Dining at the Center" · H2 "Crystal Jade Palace". Lede: "Cantonese fine dining on the promenade. The first Crystal Jade Palace in North America, led by a Michelin-starred kitchen." Credential rows: Michelin (Vancouver Michelin Star, four consecutive years, 2022 to 2025) · Accolades (North America's Best Chinese Cuisine Restaurant, 2025; Supreme Gold, World Championship of Chinese Cuisine 2024) · Private Dining (private rooms and bespoke banquet menus; corporate dining by arrangement). CTAs: solid "Discover Crystal Jade" to `/dining`; ghost "Book a Table" to `/dining/reserve`. Content is sourced from the `restaurant` singleton (§8.4), not `homePage` | Jade is scoped to this section; standard reveals; grid stacks below 900px, image first |
 | S6 | Spaces head (`#spaces`) | Eyebrow "The Spaces" · H2 "Two floors of golf, room by room." · sub "From open simulator bays to private VIP rooms, every space in the club is built around the game." · link "View all spaces" to `/spaces` | Standard reveals |
-| S7 | Dining preview (`#dining`) | Two-column grid: photo slot left ("Crystal Jade Palace · Dining Room"), content right. Eyebrow "Dining at the Center" · H2 "Crystal Jade Palace". Lede: "Cantonese fine dining on the promenade. The first Crystal Jade Palace in North America, led by a Michelin-starred kitchen." Credential rows: Michelin (Vancouver Michelin Star, four consecutive years, 2022 to 2025) · Accolades (North America's Best Chinese Cuisine Restaurant, 2025; Supreme Gold, World Championship of Chinese Cuisine 2024) · Private Dining (private rooms and bespoke banquet menus; corporate dining by arrangement). CTAs: solid "Discover Crystal Jade" to `/dining`; ghost "Book a Table" to `/dining/reserve` | Jade is scoped to this section; standard reveals; grid stacks below 900px, image first |
+| S7 | Spaces Journey (`#spacesScroll`) | Five full-bleed panels (§5.2). Each panel is one anchor link to its `/spaces` zone and carries: an oversized index numeral, one or two photo plates, meta (index · name · floor), the concept title in large serif, one line, and an "Explore" cue. Progress UI: zero-padded counter ("01 / 05") + champagne fill bar | Gesture-gated page-turn journey; full contract in §9.3. Mobile and fallback: native horizontal scroll with `scroll-snap-type: x mandatory`; scroll position drives the same progress UI |
 | S8 | Outro (`#outro`) | Eyebrow "Under Ten Thousand Lights" · H2 "The course is always open." (italic emphasis on "always") · line "Book a bay, gather in a private room, or stay for dinner at Crystal Jade Palace." · visit line "Open daily · 06:00 to 24:00 · Garden Way, Richmond" · CTAs: solid Book a Bay (`#contact`), ghost Book a Table (`/dining/reserve`) | Standard reveals |
 | S9 | Footer (`#contact`) | Canonical footer per §3.4 | Anchor target for Book a Bay |
 
@@ -210,7 +206,7 @@ A floating back-to-top button appears after scroll and animates the return (inst
 | 04 | Sauna & Amenity · 1F | `#sauna` | Breathing Alongside Nature | `#9db18f` | two plates, flipped |
 | 05 | VIP & VVIP Rooms · 2F | `#vip-rooms` | Iconic 15 and Beyond | `#8a6fc9` | two plates; the second is the "Renders to be revealed · VVIP Suites 1 to 4" placeholder |
 
-The accent colors the index numeral and meta divider only. Panel lines: 01 "Tour-grade simulator bays and a true-roll putting green beneath the canopy." · 02 "Precision club fitting and a curated pro shop along the central promenade." · 03 "Crystal Jade Palace brings Cantonese fine dining to the promenade." · 04 "A dry sauna and full amenities to close out every round." · 05 "Fifteen private rooms and four VVIP suites, one floor above the game."
+Panels are curated Home content (`homePage.journeyPanels`, §11.4), not derived from `zone` documents: panels 01 and 05 are composites of two zones each, so they are authored on the home document, carry an explicit `layout` (two, twoFlipped, solo), and link to zone anchors. The panel index derives from array order. The accent colors the index numeral and meta divider only. Panel lines: 01 "Tour-grade simulator bays and a true-roll putting green beneath the canopy." · 02 "Precision club fitting and a curated pro shop along the central promenade." · 03 "Crystal Jade Palace brings Cantonese fine dining to the promenade." · 04 "A dry sauna and full amenities to close out every round." · 05 "Fifteen private rooms and four VVIP suites, one floor above the game."
 
 ### 5.3 Rates & Hours content (opening placeholders, confirm before launch, §15.2)
 
@@ -224,6 +220,7 @@ Hours & Availability: Open Daily (365 days a year, rain or shine) 06:00 to 24:00
 3. All pricing, the address, the phone number, and reservation windows are placeholders.
 4. The outro Book a Table link points at `greentee-dining.html#reserve`; the production target is `/dining/reserve`.
 5. The panel 05 second plate and the hero and panorama renders carry baked-in deck typography handled by cropping (§11.6).
+6. **Section order deviates from the mockup by decision.** The mockup places the Spaces head and journey directly after the marquee; production places Rates & Hours, News & Offers, and the Dining preview first, with the journey (S6 + S7) between the Dining preview and the outro. The §5.1 table is the order of record; each section still matches its mockup selector internally.
 
 ---
 
@@ -527,8 +524,8 @@ src/
 | Type | Purpose | Key fields |
 |---|---|---|
 | `siteSettings` (singleton) | globals | logo, phone, address, hours, email, socials, bookingUrl, careersUrl, familyLinks[], networkLinks[], default SEO |
-| `homePage` (singleton) | home content | hero {eyebrow, titleLines[2], italicLine, supportLine, media}, manifesto {lines[2], caption}, panoramaBand {image, caption}, marqueeItems[], rates {rateRows[], hourRows[], footnote, stats[] {value, suffix, label}} |
-| `zone` x9 | `/spaces` zones + journey source | slug/anchor, floor, name, conceptTitle, conceptLine, lead, body, facts[], heroImage, order, journey {include, panelName, line, accent, plates[]}, rooms[] (VIP/VVIP only: name, motif, line, image, pending), seo |
+| `homePage` (singleton) | home content | hero {eyebrow, titleLines[2], italicLine, supportLine, media}, manifesto {lines[] {text, emphasis}, caption}, panoramaBand {image, caption}, marqueeItems[], rates {rateRows[] {name, detail, price, unit}, hourRows[] {name, detail, value}, footnote, stats[] {value, suffix, label}}, newsTeaser {eyebrow, title, sub}, journeyPanels[] {name, floorLabel, anchor, line, accent, layout (two, twoFlipped, solo), plates[]} (§5.2), spacesIntro {eyebrow, title, sub, linkLabel}, outro {eyebrow, title, line} (the visit line renders from `siteSettings`) |
+| `zone` x9 | `/spaces` zones | slug/anchor, floor, name, conceptTitle, conceptLine, lead, body, facts[], heroImage, order, rooms[] (VIP/VVIP only: name, motif, line, image, pending), seo. Journey panels live on `homePage` (§5.2) |
 | `restaurant` (singleton) | Crystal Jade Palace | §8.4 |
 | `dish` | dining menu items | §4.1 (name, zhName, line, image, category, seasonal, available, order) |
 | `event` / `promotion` / `newsPost` | content operations | §4.1 (all carry the timing label) |
