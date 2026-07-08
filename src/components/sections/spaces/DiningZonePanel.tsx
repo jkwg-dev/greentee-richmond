@@ -23,7 +23,7 @@ export function DiningZonePanel({ panel }: { panel: DiningZonePanelData }) {
       </div>
       <div className="dz-copy">
         <Eyebrow className="text-jade-text mb-[22px]">{panel.eyebrow}</Eyebrow>
-        <h2 className="font-serif text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.15] font-medium">
+        <h2 className="font-serif text-[clamp(1.4rem,2.2vw,1.7rem)] leading-[1.2] font-medium">
           <RichHeading text={panel.title} />
         </h2>
         <p className="text-mist mt-5 max-w-[480px] text-[14px]">{panel.body}</p>
