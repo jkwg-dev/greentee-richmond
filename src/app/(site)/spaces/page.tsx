@@ -24,13 +24,8 @@ export default function SpacesPage() {
 
   return (
     <SpacesShell nav={nav}>
-      {zones.map((zone, i) => (
-        <ZoneSection
-          key={zone.slug}
-          zone={zone}
-          prev={zones[i - 1]}
-          next={zones[i + 1]}
-        />
+      {zones.map((zone) => (
+        <ZoneSection key={zone.slug} zone={zone} />
       ))}
     </SpacesShell>
   );

@@ -5,22 +5,14 @@ import type { Zone } from "@/types";
 import { DiningZonePanel } from "./DiningZonePanel";
 import { RoomGrid } from "./RoomGrid";
 import { ZoneHero } from "./ZoneHero";
-import { ZonePager } from "./ZonePager";
 
 /**
  * One `/spaces` zone (docs §6.2): hero, then either the standard body (lead,
  * supporting paragraph, fact rows, optional CTA), the Dining hand-off panel, or
- * a VIP/VVIP room grid, then the prev/next pager. Reveals fire at 12 percent.
+ * a VIP/VVIP room grid. Navigation is the rail and chip bar, so there is no
+ * per-zone pager. Reveals fire at 12 percent.
  */
-export function ZoneSection({
-  zone,
-  prev,
-  next,
-}: {
-  zone: Zone;
-  prev?: Zone;
-  next?: Zone;
-}) {
+export function ZoneSection({ zone }: { zone: Zone }) {
   return (
     <section id={zone.slug} className="zone">
       <ZoneHero zone={zone} />
@@ -84,8 +76,6 @@ export function ZoneSection({
           </>
         )}
       </div>
-
-      <ZonePager prev={prev} next={next} />
     </section>
   );
 }
