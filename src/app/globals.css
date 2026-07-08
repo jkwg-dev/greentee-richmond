@@ -957,11 +957,12 @@
   /* ---- Dining zone panel: unified split card (docs §6.3 deviation) ---- */
   .dinezone {
     display: grid;
-    grid-template-columns: 1.05fr 1fr;
-    align-items: stretch;
-    max-width: 820px; /* narrower than its container... */
-    margin-inline: auto; /* ...and centered */
-    overflow: hidden;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 5vw;
+    max-width: 960px; /* long and wide, but narrower than its container */
+    margin-inline: auto; /* centered */
+    padding: 40px 54px; /* short box */
     background: linear-gradient(
       165deg,
       rgba(22, 56, 43, 0.5) 0%,
@@ -969,21 +970,10 @@
     );
     border: 1px solid rgba(201, 166, 107, 0.22);
   }
-  .dz-media {
-    position: relative;
-    min-height: 340px;
-  }
-  .dz-copy {
-    padding: 54px 54px 54px 44px;
-  }
   @media (max-width: 900px) {
     .dinezone {
       grid-template-columns: 1fr;
-    }
-    .dz-media {
-      min-height: 240px;
-    }
-    .dz-copy {
+      gap: 24px;
       padding: 30px 26px;
     }
   }
