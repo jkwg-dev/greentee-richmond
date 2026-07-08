@@ -689,3 +689,354 @@
     }
   }
 }
+
+/* ==========================================================================
+   The Spaces recipes (docs §6). Mockup: greentee-spaces.html (v3).
+   ========================================================================== */
+
+/* Two tunable inter-zone spacing constants (docs §6.2 item 3), first-pass
+   values to be tuned by eye. Unlayered so they are trivially overridable. */
+:root {
+  --zone-body-pb: 96px; /* zone body bottom padding, above the pager */
+  --zone-gap: 96px; /* clear space between a pager and the next zone hero */
+}
+@media (max-width: 900px) {
+  :root {
+    --zone-body-pb: 64px;
+    --zone-gap: 56px;
+  }
+}
+
+@layer components {
+  /* ---- Shell: sticky rail + content (>=1025px) ------------------------ */
+  .spc-shell {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    gap: 4vw;
+    padding: 0 5vw;
+    align-items: start;
+  }
+  .spcrail {
+    position: sticky;
+    top: 104px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    margin-top: 26px;
+    padding: 24px 0 40px 22px;
+    border-left: 1px solid rgba(201, 166, 107, 0.3);
+  }
+  .sr-mark {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+  }
+  .sr-title {
+    font-family: var(--font-serif);
+    font-size: 21px;
+    font-weight: 600;
+  }
+  .sr-sub {
+    margin-top: 7px;
+    font: 500 8px/1 var(--font-sans);
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--color-champagne);
+  }
+  .sr-nav {
+    display: flex;
+    flex-direction: column;
+  }
+  .sr-g {
+    margin: 16px 0 8px;
+    font: 500 8.5px/1 var(--font-sans);
+    letter-spacing: 0.34em;
+    color: var(--color-champagne);
+    opacity: 0.85;
+  }
+  .sr-nav .sr-g:first-child {
+    margin-top: 0;
+  }
+  .sr-link {
+    display: flex;
+    align-items: center;
+    padding: 9px 0;
+    font: 500 9.5px/1 var(--font-sans);
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+    transition: color 0.35s;
+  }
+  .sr-link::before {
+    content: "";
+    width: 0;
+    height: 1px;
+    background: var(--color-champagne);
+    transition:
+      width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      margin 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .sr-link.active {
+    color: var(--color-ivory);
+  }
+  .sr-link.active::before {
+    width: 20px;
+    margin-right: 10px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .sr-link:hover {
+      color: var(--color-ivory);
+    }
+  }
+  @media (max-width: 1024px) {
+    .spc-shell {
+      display: block;
+      padding: 0;
+    }
+    .spcrail {
+      display: none;
+    }
+  }
+
+  /* ---- Zone chip bar (<=1024px) --------------------------------------- */
+  .zonechips {
+    position: sticky;
+    top: 58px;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 5vw;
+    background: rgba(10, 10, 11, 0.86);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(201, 166, 107, 0.14);
+  }
+  @media (min-width: 1025px) {
+    .zonechips {
+      display: none;
+    }
+  }
+  @media (max-width: 900px) {
+    .zonechips {
+      top: 0;
+    }
+  }
+  .zc-g {
+    flex: 0 0 auto;
+    padding-right: 2px;
+    font: 500 9px/1 var(--font-sans);
+    letter-spacing: 0.3em;
+    color: var(--color-champagne);
+  }
+  .zc-sep {
+    flex: 0 0 auto;
+    width: 1px;
+    height: 16px;
+    background: rgba(201, 166, 107, 0.25);
+  }
+  .zc-link {
+    flex: 0 0 auto;
+    padding: 5px 0;
+    font: 500 9.5px/1 var(--font-sans);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+    border-bottom: 1px solid transparent;
+    transition:
+      color 0.3s,
+      border-color 0.3s;
+  }
+  .zc-link.active {
+    color: var(--color-ivory);
+    border-color: var(--color-champagne);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .zc-link:hover {
+      color: var(--color-ivory);
+    }
+  }
+
+  /* ---- Zone template -------------------------------------------------- */
+  .zone {
+    scroll-margin-top: 88px;
+  }
+  .zone + .zone {
+    margin-top: var(--zone-gap);
+  }
+  .zhero {
+    position: relative;
+    height: min(58vh, 560px);
+    min-height: 400px;
+    overflow: hidden;
+  }
+  .zshade {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(
+      200deg,
+      rgba(10, 10, 11, 0.2) 0%,
+      rgba(10, 10, 11, 0.34) 52%,
+      rgba(10, 10, 11, 0.9) 100%
+    );
+  }
+  .zhero-inner {
+    position: absolute;
+    z-index: 5;
+    left: 6vw;
+    right: 6vw;
+    bottom: 44px;
+    max-width: 760px;
+  }
+  .zhero-title {
+    margin-bottom: 12px;
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(2.4rem, 5.4vw, 4.4rem);
+    line-height: 1.06;
+  }
+  .zsub {
+    max-width: 560px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 16px;
+    color: rgba(242, 237, 226, 0.82);
+  }
+  .zbody {
+    padding: 90px 0 var(--zone-body-pb);
+  }
+  @media (max-width: 1024px) {
+    .zbody {
+      padding: 80px 6vw var(--zone-body-pb);
+    }
+  }
+  @media (max-width: 900px) {
+    .zbody {
+      padding: 70px 6vw var(--zone-body-pb);
+    }
+  }
+  .zgrid {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 6vw;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .zgrid {
+      grid-template-columns: 1fr;
+      gap: 44px;
+    }
+  }
+
+  /* ---- Room grid meta (VIP / VVIP). Motif labels are champagne, not the
+     mockup's jade-text: jade on /spaces is scoped to the Dining panel (§6.3). */
+  .r-meta {
+    margin-bottom: 7px;
+    font: 500 8.5px/1 var(--font-sans);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-champagne);
+  }
+  .r-name {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.25;
+  }
+  .r-line {
+    margin-top: 5px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--color-mist);
+  }
+
+  /* ---- Dining zone panel: unified split card (docs §6.3 deviation) ---- */
+  .dinezone {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    align-items: stretch;
+    overflow: hidden;
+    background: linear-gradient(
+      165deg,
+      rgba(22, 56, 43, 0.5) 0%,
+      rgba(12, 26, 20, 0.32) 100%
+    );
+    border: 1px solid rgba(201, 166, 107, 0.22);
+  }
+  .dz-media {
+    position: relative;
+    min-height: 340px;
+  }
+  .dz-copy {
+    padding: 54px 54px 54px 44px;
+  }
+  @media (max-width: 900px) {
+    .dinezone {
+      grid-template-columns: 1fr;
+    }
+    .dz-media {
+      min-height: 240px;
+    }
+    .dz-copy {
+      padding: 30px 26px;
+    }
+  }
+
+  /* ---- Prev / next zone pager (docs §6.2, mockup `.znav`) ------------- */
+  .znav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--hair);
+  }
+  .znav-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 44px 6vw;
+    transition: background 0.4s;
+  }
+  .znav-cell + .znav-cell {
+    border-left: 1px solid var(--hair);
+    text-align: right;
+    align-items: flex-end;
+  }
+  .znav-cell small {
+    font: 500 9px/1 var(--font-sans);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+  }
+  .znav-name {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(1.4rem, 2.4vw, 2rem);
+    transition: color 0.35s;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    a.znav-cell:hover {
+      background: rgba(201, 166, 107, 0.04);
+    }
+    a.znav-cell:hover .znav-name {
+      color: var(--color-champagne);
+    }
+  }
+  @media (max-width: 900px) {
+    .znav-cell {
+      padding: 32px 6vw;
+    }
+  }
+  @media (max-width: 560px) {
+    .znav {
+      grid-template-columns: 1fr;
+    }
+    .znav-cell + .znav-cell {
+      border-left: none;
+      border-top: 1px solid var(--hair);
+      text-align: left;
+      align-items: flex-start;
+    }
+  }
+}

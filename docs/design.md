@@ -239,6 +239,7 @@ Hours & Availability: Open Daily (365 days a year, rain or shine) 06:00 to 24:00
 Every zone follows the same skeleton:
 1. **Zone hero** (`.zhero`): full-bleed render at `min(58vh, 560px)`, minimum 400px, with an irregular fractal-noise grain overlay (SVG `feTurbulence`, blend overlay, never a repeating tile), a placeholder tag ("Deck render · replace with final photography"), then the eyebrow ("1F · General At-Bat" pattern), the concept-title H1, and the concept subline (the poetic line from the deck).
 2. **Zone body** (`.zbody`): a two-column grid of copy (lead + supporting paragraph) and a `dl` of fact rows (three label/value pairs), then a CTA. The grid stacks below 900px; fact rows stack below 560px.
+3. **Vertical rhythm (deviates from the mockup by decision)**: zones get more air between each other than the mockup gives them. The mockup runs the zone body to a 36px bottom padding and starts the next zone hero flush against the pager; production widens both: zone body bottom padding 96px (64px below 900px), and 96px of clear space between the pager and the next zone hero (56px below 900px). These are first-pass values to be tuned by eye; the top padding (90px) and `scroll-margin-top` stay as mocked.
 
 ### 6.3 The nine zones
 
@@ -254,7 +255,7 @@ Every zone follows the same skeleton:
 | `#vip-rooms` | 2F · Private Area | Iconic 15 |
 | `#vvip-rooms` | 2F · Private Area | Beyond the Fifteen |
 
-**Dining zone**: after the hero, a jade-washed panel introduces Crystal Jade Palace (H2 "Cantonese fine dining, on the promenade.") with two CTAs: "Crystal Jade Palace" to `/dining` and "Book a Table" to `/dining/reserve`. Jade appears on `/spaces` only inside this panel. The panel stacks below 900px.
+**Dining zone**: after the hero, a jade-washed panel introduces Crystal Jade Palace (H2 "Cantonese fine dining, on the promenade.") with two CTAs: "Crystal Jade Palace" to `/dining` and "Book a Table" to `/dining/reserve`. Jade appears on `/spaces` only inside this panel. **The panel's internal layout deviates from the mockup by decision**: the mockup centers a fixed 16/10 photo plate inside the padded panel with a 5vw gulf to the copy, so image and text read as two separate objects. Production builds it as a unified split card: keep the jade gradient surface, gold hairline border, and the roughly 1.05fr / 1fr split, but the photo plate stretches to the full panel height and bleeds flush to the panel's outer edge on its side (no panel padding on the image side, `align-items: stretch`, the copy column's height sets the minimum), while the copy column keeps the 54px-class padding and the column gap tightens to about 44px. Below 900px the card stacks: image full-width on top, flush to the panel edges, copy padded beneath. Image and copy must share edges so the panel reads as one object.
 
 **VIP Rooms (Iconic 15)**: intro copy ("fifteen VIP rooms, each translating a property of nature into a room-scale landscape"), fact rows (Rooms: fifteen on the second floor · Motifs: sprout, grain, leaf, crystal · Booking: by the room, hourly), a motif legend (Sprout · Grain · Leaf · Crystal), then "The fifteen rooms": a card grid of thirteen render cards plus two "Render pending" placeholders (Rooms 14 and 15). Rooms 9 & 10 and 11 & 12 are combined cards and carry a one-line description; every card shows its motif label and room name. Grid: 2 columns below 900px, 1 below 560px. CTA: Book a Room (`/#contact`).
 
@@ -264,6 +265,8 @@ Every zone follows the same skeleton:
 1. The mockup footer is the older layout; build the canonical footer (§3.4, §15.9).
 2. Book a Bay and Book a Room CTAs land on the Home `#contact` anchor until booking exists.
 3. VIP Rooms 14 and 15 and all four VVIP suites are placeholder cards by design; the empty-render state is part of the spec, not a gap to fill with stock imagery.
+4. **Inter-zone spacing deviates from the mockup by decision**: production adds air between zones per §6.2 item 3; match the spec values, not the mockup's.
+5. **The dining zone panel deviates from the mockup by decision**: the mockup's centered floating photo plate is replaced by the unified split card in §6.3; everything else about the panel (surface, border, copy, CTAs) still matches the mockup.
 
 ---
 
@@ -386,6 +389,7 @@ The AuroraRibbons module from earlier iterations is retired; v22 carries no ambi
 
 ### 9.5 Global guards
 - `prefers-reduced-motion` adds an `rm` state: the intro curtain is skipped, hero copy renders settled, all reveals show immediately, the marquee and scroll cue stop, counters print final values, the journey uses the snap fallback, and programmatic scrolls are instant.
+- Fail safe on import: if gsap or any motion module fails to load (or has not compiled yet in dev), the intro curtain skips and sections render settled. The page never blocks on a failed or pending dynamic import.
 - GSAP-driven and canvas components are client leaves, dynamically imported, initialized near viewport; a font-ready ScrollTrigger refresh prevents layout drift after webfont swap.
 
 ---
@@ -524,7 +528,7 @@ src/
 | Type | Purpose | Key fields |
 |---|---|---|
 | `siteSettings` (singleton) | globals | logo, phone, address, hours, email, socials, bookingUrl, careersUrl, familyLinks[], networkLinks[], default SEO |
-| `homePage` (singleton) | home content | hero {eyebrow, titleLines[2], italicLine, supportLine, media}, manifesto {lines[] {text, emphasis}, caption}, panoramaBand {image, caption}, marqueeItems[], rates {rateRows[] {name, detail, price, unit}, hourRows[] {name, detail, value}, footnote, stats[] {value, suffix, label}}, newsTeaser {eyebrow, title, sub}, journeyPanels[] {name, floorLabel, anchor, line, accent, layout (two, twoFlipped, solo), plates[]} (§5.2), spacesIntro {eyebrow, title, sub, linkLabel}, outro {eyebrow, title, line} (the visit line renders from `siteSettings`) |
+| `homePage` (singleton) | home content | hero {eyebrow, titleLines[2], italicLine, supportLine, media}, manifesto {lines[] {text, emphasis}, caption}, panoramaBand {image, caption}, marqueeItems[], rates {eyebrow, title, sub, rateRows[] {name, detail, price, unit}, hourRows[] {name, detail, value}, footnote, stats[] {value, suffix, label}} (column labels "Bays & Rooms" / "Hours & Availability" are static UI), newsTeaser {eyebrow, title, sub}, journeyPanels[] {name, conceptTitle, floorLabel, anchor, line, accent, layout (two, twoFlipped, solo), plates[]} (§5.2), spacesIntro {eyebrow, title, sub, linkLabel}, outro {eyebrow, title, line} (the visit line renders from `siteSettings`) |
 | `zone` x9 | `/spaces` zones | slug/anchor, floor, name, conceptTitle, conceptLine, lead, body, facts[], heroImage, order, rooms[] (VIP/VVIP only: name, motif, line, image, pending), seo. Journey panels live on `homePage` (§5.2) |
 | `restaurant` (singleton) | Crystal Jade Palace | §8.4 |
 | `dish` | dining menu items | §4.1 (name, zhName, line, image, category, seasonal, available, order) |
@@ -578,7 +582,7 @@ src/
 | 6 | Sanity wiring | all schemas (§11.4), GROQ, every surface bound, announcement bar, webhook, seed content |
 | | **v1 launch** | `/` + `/spaces` + `/news` + `/dining` (six routes) live |
 | 7 | Content surfaces | `/news/[slug]`, `/events`, `/golf/rates`, `/golf/lessons`, `/spaces/[slug]`, `/shop`, `/contact` |
-| 8 | Polish | journey feel tuning across input devices, a11y pass, perf audit, cross-browser |
+| 8 | Polish | journey feel tuning across input devices, a11y pass, perf audit, cross-browser, motion fail-safe audit (§9.5: IntroCurtain skips when GSAP fails or lags) |
 
 ---
 
@@ -593,7 +597,7 @@ src/
 2. **Rates confirmation**: the Rates & Hours numbers ($60 / $75 / $120 / from $200, 22:30 last tee, 14-day window) are opening placeholders; confirm real pricing and policies before launch
 3. **Restaurant reservation**: OpenTable account and link timing; the reserve page ships with phone and WeChat placeholders and an embed slot
 4. **Bilingual dining**: the EN / 中文 toggle is designed into the rail but inert; Chinese content is pending final human translation. Decide `next-intl` scoped to `/dining` versus linking out to a tenant-run bilingual site
-5. **Clean renders and photography**: typography-free exports from JKWG; VIP Rooms 14 and 15 renders; VVIP suite reveal timing; the full Crystal Jade photo checklist (§8.3)
+5. **Clean renders and photography**: typography-free, full-resolution exports from JKWG (the interim hero render is about 1200px wide and reads soft at full-bleed); VIP Rooms 14 and 15 renders; VVIP suite reveal timing; the full Crystal Jade photo checklist (§8.3)
 6. **Hero video**: a facade walkthrough loop for the Home hero, and the "photo or video loop" slot on the dining hero
 7. **Timeline alignment**: Crystal Jade soft opening Aug 15, grand opening Sep 9; decide when `/dining` goes live relative to the center's site
 8. **Brand and facts**: logo SVG, final address and phone, domain, GreenTee Golf Shop and Academy link handoffs, Crystal Jade private-room count ("eight rooms" is a placeholder), Crystal Jade global footprint list

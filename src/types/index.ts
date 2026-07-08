@@ -18,3 +18,12 @@ export type { JourneyPlate, JourneyLayout, JourneyPanel } from "./journey";
 export type { CredentialRow, RestaurantPreview } from "./restaurant";
 export type { NewsCategory, NewsEntry } from "./news";
 export { NEWS_CATEGORY_LABEL } from "./news";
+export type {
+  ZoneFloor,
+  RoomMotif,
+  ZoneFact,
+  ZoneCta,
+  Room,
+  DiningZonePanel,
+  Zone,
+} from "./zone";

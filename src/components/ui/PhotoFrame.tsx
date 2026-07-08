@@ -7,8 +7,8 @@ export type { PhotoTint };
 export type PhotoFrameProps = {
   /** Placeholder gradient, sampled from the deck renders (docs §11.6). */
   tint?: PhotoTint;
-  /** Centered kicker + name overlay. */
-  label?: { kicker: string; name: string };
+  /** Centered kicker (+ optional name) overlay. */
+  label?: { kicker: string; name?: string };
   /** Bottom-left provenance note, e.g. "Replace with restaurant photography". */
   tag?: string;
   /** Show the crosshair image mark above the label. */
@@ -53,9 +53,11 @@ export function PhotoFrame({
           <span className="text-ivory/40 text-[8.5px] font-medium tracking-[0.4em] uppercase">
             {label.kicker}
           </span>
-          <span className="text-ivory/[0.78] font-serif text-base tracking-[0.04em] italic">
-            {label.name}
-          </span>
+          {label.name && (
+            <span className="text-ivory/[0.78] font-serif text-base tracking-[0.04em] italic">
+              {label.name}
+            </span>
+          )}
         </div>
       )}
 

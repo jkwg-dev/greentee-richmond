@@ -5,15 +5,7 @@ import { BOOK_A_BAY_HREF } from "@/lib/site";
 import type { RatesContent } from "@/types";
 import { GameHead } from "./GameHead";
 
-/**
- * Static section head and column labels (docs §5.1 S3). §11.4's `rates` object
- * carries only the row/footnote/stats data, so this copy lives in the component.
- */
-const HEAD = {
-  eyebrow: "Rates & Hours",
-  title: "Book by the hour,\nplay all year.",
-  sub: "Simple hourly rates for bays and rooms. Doors open 06:00 to 24:00, every day of the year.",
-} as const;
+/** Column labels stay static UI (docs §11.4); the head copy comes from data. */
 const RATES_TITLE = "Bays & Rooms";
 const HOURS_TITLE = "Hours & Availability";
 
@@ -58,7 +50,11 @@ function PriceRow({
 export function RatesHours({ content }: { content: RatesContent }) {
   return (
     <section id="rates" className="relative px-[6vw] py-[130px] max-[900px]:py-24">
-      <GameHead {...HEAD} />
+      <GameHead
+        eyebrow={content.eyebrow}
+        title={content.title}
+        sub={content.sub}
+      />
 
       <div className="grid grid-cols-2 items-start gap-[6vw] max-[900px]:grid-cols-1 max-[900px]:gap-11">
         <Reveal as="div" className="min-w-0">

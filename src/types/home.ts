@@ -70,8 +70,11 @@ export type Stat = {
   label: string;
 };
 
-/** Rates data (docs §11.4). The section head + column labels are static copy. */
+/** Rates content (docs §11.4). The column labels stay static UI copy. */
 export type RatesContent = {
+  eyebrow: string;
+  title: string;
+  sub: string;
   rateRows: RateRow[];
   hourRows: HourRow[];
   footnote: string;

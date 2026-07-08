@@ -64,6 +64,9 @@ export const home: HomeContent = {
   },
 
   rates: {
+    eyebrow: "Rates & Hours",
+    title: "Book by the hour,\nplay all year.",
+    sub: "Simple hourly rates for bays and rooms. Doors open 06:00 to 24:00, every day of the year.",
     rateRows: [
       {
         name: "General Bay · Day",
