@@ -694,14 +694,17 @@
    The Spaces recipes (docs §6). Mockup: greentee-spaces.html (v3).
    ========================================================================== */
 
-/* Inter-zone spacing (docs §6.2 item 3). With no per-zone pager, the zone body's
-   bottom padding is the gap to the next hero. Tunable; unlayered so it wins. */
+/* Inter-zone spacing (docs §6.2 item 3), first-pass values tuned by eye. With no
+   pager, the zone body bottom padding plus the zone gap set the clear space to
+   the next hero (96 + 96 = ~192px). Unlayered so they win easily. */
 :root {
   --zone-body-pb: 96px;
+  --zone-gap: 96px;
 }
 @media (max-width: 900px) {
   :root {
     --zone-body-pb: 64px;
+    --zone-gap: 56px;
   }
 }
 
@@ -861,6 +864,9 @@
   .zone {
     scroll-margin-top: 88px;
   }
+  .zone + .zone {
+    margin-top: var(--zone-gap);
+  }
   .zhero {
     position: relative;
     height: min(58vh, 560px);
@@ -951,7 +957,7 @@
   /* ---- Dining zone panel: unified split card (docs §6.3 deviation) ---- */
   .dinezone {
     display: grid;
-    grid-template-columns: 0.75fr 1fr;
+    grid-template-columns: 1.05fr 1fr;
     align-items: stretch;
     overflow: hidden;
     background: linear-gradient(
