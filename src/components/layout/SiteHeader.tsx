@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { BOOK_A_BAY_HREF, primaryNav } from "@/lib/site";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const isDining = pathname?.startsWith("/dining") ?? false;
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -83,11 +85,9 @@ export function SiteHeader() {
         </div>
       </header>
 
-      <FullMenu
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        isDining={isDining}
-      />
+      <AnimatePresence>
+        {menuOpen && <FullMenu onClose={closeMenu} isDining={isDining} />}
+      </AnimatePresence>
     </>
   );
 }
