@@ -71,7 +71,7 @@ Cross-links between the mockup files stand in for the real routes (`greentee-spa
 
 **Usage rules**
 - 90 percent of any screen is noir + ivory. Champagne is the only global accent.
-- Jade + jade-text belongs exclusively to Crystal Jade Palace content: the `/dining` pages, the Dining zone on `/spaces`, the Dining journey panel, and the Home dining preview.
+- Jade + jade-text belongs exclusively to Crystal Jade Palace content: the `/dining` pages, the Dining zone on `/spaces`, the Dining journey panel, the Home dining preview, and individual pieces of content whose subject is Crystal Jade Palace (a news entry about the restaurant keeps its jade placeholder tint). The scope protects jade's meaning; it never appears as a generic green.
 - The journey panels carry a per-panel accent as an inline `--acc` custom property (§5.2), used for the panel index numeral and meta divider only. These accents are journey-scoped and are not global tokens.
 - Legacy accents from earlier mockups (`--rosegold`, `--emerald`, `--sage`, `--iris`) survive in some mockup `:root` blocks but have no independent UI role in v22/v3; do not promote them to the theme unless a section spec calls for one.
 
@@ -138,9 +138,9 @@ The center belongs to the GreenTee Country Club family (JK World Group), alongsi
 
 ### 3.4 Navigation
 
-**Header (all pages, settled)**: brand mark ("GreenTee Richmond" serif over "Center") linking to `/`, then **The Spaces · News & Offers · Dining**, then a persistent solid `sm` **Book a Bay** button. The header gains a `scrolled` treatment past 40px of scroll. Below 900px the nav collapses to a hamburger.
+**Header (all pages, settled)**: brand mark ("GreenTee Richmond" serif over "Center") linking to `/`, then **The Spaces · News & Offers · Dining**, then a persistent solid `sm` **Book a Bay** button. The current top-level item is marked active (mockup class `on`, pathname-driven; `/dining` sub-routes mark Dining); nothing is marked on `/`. The header gains a `scrolled` treatment past 40px of scroll. Below 900px the nav collapses to a hamburger.
 
-**FullMenu (mobile overlay)**: dialog with focus trap and Escape close. Items: Home · The Spaces · News & Offers · Dining, plus the Book a Bay CTA. On `/dining` pages the Dining item expands into two entries (Crystal Jade Palace · Menu & Reserve). Body scroll locks while open.
+**FullMenu (mobile overlay)**: dialog with focus trap and Escape close. Items: Home · The Spaces · News & Offers · Dining, plus the Book a Bay CTA. On `/dining` pages the Dining item is replaced by the two Crystal Jade entries (Crystal Jade Palace · Menu & Reserve) under a small jade kicker, and the CTA switches to Book a Table (`/dining/reserve`) per §8.2; the header's Book a Bay button remains visible alongside. Body scroll locks while open.
 
 **Footer (canonical, all pages)**: mirrors the header exactly: brand mark to `#top`, then The Spaces · News & Offers · Dining. Beneath: the visit line (address · hours · phone), the design credit ("Interior & exterior design concept: JKWG"), copyright, and two link columns: GreenTee Network (Westwood Plateau · Tobiano · Langley) and Family (JK World Group · GreenTee Golf Shop · GreenTee Golf Academy · JKWG Design & Development · Jess' Restaurants). The Home v22 footer is the canonical reference; the other mockups still show an older footer (see §15.9). The footer carries `id="contact"` and is the Book a Bay anchor target until a booking flow exists.
 
@@ -267,6 +267,7 @@ Every zone follows the same skeleton:
 3. VIP Rooms 14 and 15 and all four VVIP suites are placeholder cards by design; the empty-render state is part of the spec, not a gap to fill with stock imagery.
 4. **Inter-zone spacing deviates from the mockup by decision**: production adds air between zones per §6.2 item 3; match the spec values, not the mockup's.
 5. **The dining zone panel deviates from the mockup by decision**: the mockup's centered floating photo plate is replaced by the unified split card in §6.3; everything else about the panel (surface, border, copy, CTAs) still matches the mockup.
+6. **Motif labels deviate from the mockup by decision**: the mockup colors the VIP motif labels and legend with `--jade-text`, which §2.1 scopes to Crystal Jade content. Production renders them champagne; jade on `/spaces` appears only inside the dining panel.
 
 ---
 
@@ -276,11 +277,16 @@ Every zone follows the same skeleton:
 
 **Structure**
 1. **Page head**: H1 "What's on at the Center." with supporting line.
-2. **Filter bar**: sticky-adjacent chip row: All · Offers · Events · News (`data-filter`: all / offer / event / news). Client-side filter toggles visibility of every entry, including the featured one; the active chip is highlighted. Chips are buttons, minimum 44px touch targets.
+2. **Filter bar**: a plain chip row beneath the page head (not sticky): All · Offers · Events · News (`data-filter`: all / offer / event / news). Client-side filter toggles visibility of every entry, including the featured one. The active chip fills champagne with ink text; idle chips are mist with a champagne hairline border. Chips are buttons, minimum 44px touch targets.
 3. **Featured entry** (`.nfeat`): the latest entry as a large split preview: wide image, meta ("News · This Fall" plus a Featured badge), serif title, one line, "Read the story" link.
-4. **Card grid** (`.ngrid`): nine cards (`.ncard`): photo, meta "Category · Timing", title, one line. Three columns, collapsing to one below 900px.
+4. **Card grid** (`.ngrid`): nine cards (`.ncard`): photo, meta "Category · Timing", title, one line. Three columns, two below 900px, one below 560px.
 
 **Data**: the index is the union of `promotion`, `event`, and `newsPost` documents (§4.1), newest first; the featured slot is simply the latest entry. Category chips map to the three types. In v1 the mockup content is static sample copy; card links are stubs pending `/news/[slug]` detail routes, so cards may render without links until then. The page renders the head and filter bar even when the CMS is empty, with a quiet empty state beneath.
+
+**Mockup notes (news v1)**
+1. The sub line's "Every entry below is managed in Sanity." is a dev note, not user-facing copy; production drops it.
+2. The mockup's ghost "Load more" stub is omitted in v1; real pagination lands with `/news/[slug]` (§15.10).
+3. The "An Evening at Crystal Jade" entry keeps its jade placeholder tint: the card's subject is Crystal Jade Palace (§2.1).
 
 ---
 
@@ -300,10 +306,11 @@ Every zone follows the same skeleton:
 Every `/dining` route renders inside a shared shell beneath the global header.
 
 - **Desktop (1025px and up)**: two-column grid, a 220px sticky left rail (`top` around 120px) beside the page content. The rail carries: the Crystal Jade mark ("Crystal Jade" serif over "Palace") linking to `/dining`, the five page links (**Our Story · The Chef · Menu · Banquet · Reserve**), a solid `sm` **Book a Table** button to `/dining/reserve`, and the **EN / 中文** language toggle. A jade hairline runs down the rail's left edge. The active page link turns jade-text and gains a short gold dash (about 22px) before the label.
-- **Below 1024px**: the rail hides; a sticky, horizontally scrollable chip bar (`.dinechips`) beneath the header carries the five page links on a blurred jade-noir backdrop; the active chip is jade-text with a champagne underline. The Crystal Jade mark moves into each page hero.
+- **Below 1024px**: the rail hides; a sticky, horizontally scrollable chip bar (`.dinechips`) beneath the global header carries the five page links on a blurred jade-noir backdrop; the active chip is jade-text with a champagne underline. The Crystal Jade mark moves into each page hero (a static lockup pinned top-left inside the hero's gold frame, shown below 1025px only).
 - **Language toggle**: EN is active (champagne); 中文 is rendered but inert, pending final human translation (§15.4). Present it as a static indicator, not a broken control.
 - The rail exists only on `/dining` routes and carries only restaurant items, preserving the dual-brand hierarchy (center first, tenant second). Active state is route-driven, not scroll spy.
-- On these pages the FullMenu appends the Crystal Jade entries (§3.4).
+- On these pages the FullMenu appends the Crystal Jade entries (§3.4), and **the FullMenu CTA switches to Book a Table** (`/dining/reserve`), matching the dining mockups. This costs the center nothing: the header's Book a Bay button stays visible at every width (the mockups hide only the nav below 900px, never the button), so both booking paths remain one tap away. Everywhere outside `/dining` the FullMenu CTA is Book a Bay.
+- Every `/dining` route also carries the restaurant info strip above the global footer (name · hours · phone and WeChat · Xiaohongshu and Instagram links), per the tenant framework; the links come from `restaurant.socials` and are stubs until the accounts land.
 
 ### 8.3 Pages
 
@@ -322,7 +329,7 @@ Every `/dining` route renders inside a shared shell beneath the global header.
 **`/dining/chef` · The Chef**
 1. Chef intro: kitchen-setting portrait slot (explicitly not a studio headshot) + "A journey measured in quiet decades."
 2. Credential rail: three gold-gradient emblem bars with SVG line-art crests: Vancouver Michelin Star (four consecutive years, 2022 to 2025) · World Championship of Chinese Cuisine (Individual Supreme Gold Award, 2024) · North America's Best Chinese Cuisine Restaurant (2025). Emblems are placeholders until official award assets arrive.
-3. His Story: "Twenty-three years across five-star kitchens, from Banyan Tree and Marriott to InterContinental and Pan Pacific. A culinary journey that began in China and now settles in Vancouver."
+3. His Story: "Twenty-three years across five-star kitchens, from Banyan Tree and Marriott to InterContinental and Pan Pacific. A culinary journey that began in China and now settles in Vancouver." Beside it, a Notable Moments list: host to a Canadian Prime Minister and senators · commended by a State Councilor of China · featured in culinary publications.
 4. In His Own Words: quote block ("Cantonese cuisine rewards patience. My work is to let the ingredient speak first, and to speak second."), placeholder pending the chef interview.
 
 **`/dining/menu` · Menu**
@@ -341,7 +348,7 @@ Every `/dining` route renders inside a shared shell beneath the global header.
 **Content dependencies** (tenant checklist): chef portrait in kitchen setting, 8 to 10 editorial dish photos, interior and private room photography, banquet-table photography, brand imagery per the Crystal Jade brand guide, footprint list confirmation, private-room count confirmation, chef biography and interview, award visual assets, hero photo or video loop.
 
 ### 8.4 Sanity: `restaurant` singleton
-name, tagline, lede, heroMedia, credentials[] {label, value, detail}, story {heritage (portable text), footprint[], richmond (portable text), philosophy[] {title, line, image}}, chef {portrait, intro, awards[] {title, detail, years}, bio, quote}, banquet {copy, facts[], occasions[], menus[] {label, line}, enquiryTarget}, reserve {openTableUrl, phone, wechat, hours[], address}, seo. Dishes live as separate `dish` documents (§4.1) for frequent updates.
+name, tagline, lede, heroMedia, intro {lede, support}, credentials[] {label, value, detail}, story {heritage (portable text), footprint[], footprintNow, richmond (portable text), philosophy[] {title, line, image}}, chef {portrait, intro, awards[] {title, detail, years}, bio, moments[], quote}, privateDining {copy, facts[]} (the landing preview; its facts differ from banquet's), banquet {copy, facts[], occasions[], menus[] {label, line}, enquiryTarget}, reserve {openTableUrl, phone, wechat, hours[], address}, socials[] {label, url} (info strip), seo. Dishes live as separate `dish` documents (§4.1) for frequent updates.
 
 ---
 
@@ -418,7 +425,8 @@ The AuroraRibbons module from earlier iterations is retired; v22 carries no ambi
 | Panorama band | height 320px, tighter art-directed crop via Sanity hotspot |
 | Journey | snap strip; plates stack inside each panel (large above, small below; solo full-width), panel line and Explore cue hidden, numeral scales to 24vw, progress UI compacts |
 | Rates & Hours | columns stack; stats 2 columns (560px: 1) |
-| News teaser + `/news` grid | single column |
+| News teaser (home) | single column |
+| `/news` grid | two columns; one below 560px |
 | Dining preview | grid stacks, image first |
 | `/spaces` rail | chip bar beneath the header below 1024px (flush top below 900px); zone grids stack; rooms 2 columns (560px: 1) |
 | `/dining` rail | chip bar beneath the header below 1024px; Crystal Jade mark moves into page heroes |
@@ -529,7 +537,7 @@ src/
 |---|---|---|
 | `siteSettings` (singleton) | globals | logo, phone, address, hours, email, socials, bookingUrl, careersUrl, familyLinks[], networkLinks[], default SEO |
 | `homePage` (singleton) | home content | hero {eyebrow, titleLines[2], italicLine, supportLine, media}, manifesto {lines[] {text, emphasis}, caption}, panoramaBand {image, caption}, marqueeItems[], rates {eyebrow, title, sub, rateRows[] {name, detail, price, unit}, hourRows[] {name, detail, value}, footnote, stats[] {value, suffix, label}} (column labels "Bays & Rooms" / "Hours & Availability" are static UI), newsTeaser {eyebrow, title, sub}, journeyPanels[] {name, conceptTitle, floorLabel, anchor, line, accent, layout (two, twoFlipped, solo), plates[]} (§5.2), spacesIntro {eyebrow, title, sub, linkLabel}, outro {eyebrow, title, line} (the visit line renders from `siteSettings`) |
-| `zone` x9 | `/spaces` zones | slug/anchor, floor, name, conceptTitle, conceptLine, lead, body, facts[], heroImage, order, rooms[] (VIP/VVIP only: name, motif, line, image, pending), seo. Journey panels live on `homePage` (§5.2) |
+| `zone` x9 | `/spaces` zones | slug/anchor, floor, name, chipLabel, areaLabel (2F eyebrow override, e.g. "Private Area"), conceptTitle, conceptLine, lead, body, facts[], heroImage, order, cta {label, href} (optional, varies per zone), diningPanel {eyebrow, title, copy} (dining zone only), rooms[] (VIP/VVIP only: name, motif, line, image, pending), seo. Journey panels live on `homePage` (§5.2). Placeholder-only display fields (the deck-render heroTag) belong to the UI layer, not the schema |
 | `restaurant` (singleton) | Crystal Jade Palace | §8.4 |
 | `dish` | dining menu items | §4.1 (name, zhName, line, image, category, seasonal, available, order) |
 | `event` / `promotion` / `newsPost` | content operations | §4.1 (all carry the timing label) |
@@ -602,4 +610,4 @@ src/
 7. **Timeline alignment**: Crystal Jade soft opening Aug 15, grand opening Sep 9; decide when `/dining` goes live relative to the center's site
 8. **Brand and facts**: logo SVG, final address and phone, domain, GreenTee Golf Shop and Academy link handoffs, Crystal Jade private-room count ("eight rooms" is a placeholder), Crystal Jade global footprint list
 9. **Footer drift in mockups**: only `greentee-home.html` (v22) shows the canonical footer (§3.4). The spaces, news, and dining mockups still carry an older footer (Golf · Events · Careers · Contact links); build the canonical footer everywhere and treat those as stale. Likewise the Home outro Book a Table href (`#reserve` on the dining file) predates the sub-pages; the target is `/dining/reserve`
-10. **News card destinations**: `/news` cards link nowhere until `/news/[slug]` ships; decide interim behavior (unlinked cards versus anchor to the featured story)
+10. **News card destinations and pagination**: `/news` cards link nowhere until `/news/[slug]` ships; decide interim behavior (unlinked cards versus anchor to the featured story). The mockup's Load more stub returns as real pagination in the same phase
