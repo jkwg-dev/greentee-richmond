@@ -7,9 +7,9 @@ import type { NewsEntry } from "@/types";
  * the `/news` index (docs §7) uses all ten. CMS-driven in Phase 6; imagery is
  * placeholder frames and detail links are stubbed (§15.10).
  *
- * Flag: the mockup tints the "An Evening at Crystal Jade" card with `t-jade`,
- * but jade is scoped to Crystal Jade content and `/news` is not on that list
- * (§2.1); it uses `emerald` here. Empty states are proven by the two toggles.
+ * "An Evening at Crystal Jade" keeps its jade placeholder tint: the card's
+ * subject is Crystal Jade Palace, which §2.1's subject-based scope covers
+ * (§7 mockup note 3). Empty states are proven by the two toggles.
  */
 const entries: NewsEntry[] = [
   {
@@ -79,7 +79,7 @@ const entries: NewsEntry[] = [
     title: "An Evening at Crystal Jade",
     excerpt:
       "A seasonal tasting across the private rooms, paired with the chef's notes.",
-    frame: { tint: "emerald", kicker: "Photo", name: "Crystal Jade Evening" },
+    frame: { tint: "jade", kicker: "Photo", name: "Crystal Jade Evening" },
   },
   {
     id: "facade-lights-up",
