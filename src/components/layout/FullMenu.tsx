@@ -2,30 +2,28 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { BOOK_A_BAY_HREF, diningSubNav, primaryNav } from "@/lib/site";
+import { cn } from "@/lib/utils";
 
 export type FullMenuProps = {
+  open: boolean;
   onClose: () => void;
   /** On `/dining` the Dining item expands into two entries (docs §3.4). */
   isDining?: boolean;
 };
 
 /**
- * Mobile navigation overlay (docs §3.4, §9.1: motion owns the FullMenu). Mounted
- * only while open (via `AnimatePresence` in the header), so every open is a
- * fresh element that fades in reliably rather than reusing a CSS transition that
- * freezes on reopen. Dialog with a focus trap, Escape to close, and a body
- * scroll lock while mounted.
+ * Mobile navigation overlay (docs §3.4): dialog with a focus trap, Escape to
+ * close, and a body scroll lock while open. Items are Home, the three primary
+ * links, and the Book a Bay CTA; Dining expands to its two entries on `/dining`.
  */
-export function FullMenu({ onClose, isDining = false }: FullMenuProps) {
+export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    if (!open) return;
     const menu = menuRef.current;
     if (!menu) return;
 
@@ -58,26 +56,27 @@ export function FullMenu({ onClose, isDining = false }: FullMenuProps) {
       document.body.style.overflow = "";
       previouslyFocused?.focus();
     };
-  }, [onClose]);
+  }, [open, onClose]);
 
   const items = [{ label: "Home", href: "/" }, ...primaryNav];
 
   return (
-    <motion.div
+    <div
       ref={menuRef}
       role="dialog"
       aria-modal="true"
       aria-label="Site menu"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: reducedMotion ? 0 : 0.4, ease: "easeInOut" }}
-      className="bg-noir/95 fixed inset-0 z-[150] flex flex-col justify-center gap-11 px-[9vw] backdrop-blur-md"
+      aria-hidden={!open}
+      className={cn(
+        "bg-noir/95 fixed inset-0 z-[150] flex flex-col justify-center gap-11 px-[9vw] backdrop-blur-md transition-opacity duration-500",
+        open ? "visible opacity-100" : "invisible opacity-0",
+      )}
     >
       <button
         ref={closeRef}
         type="button"
         onClick={onClose}
+        tabIndex={open ? 0 : -1}
         className="text-mist hover:text-ivory absolute top-[26px] right-[5vw] p-3 text-[10px] font-medium tracking-[0.3em] uppercase transition-colors"
       >
         Close
@@ -89,6 +88,7 @@ export function FullMenu({ onClose, isDining = false }: FullMenuProps) {
             key={item.href + item.label}
             href={item.href}
             onClick={onClose}
+            tabIndex={open ? 0 : -1}
             className="hover:text-champagne font-serif text-[clamp(2rem,9vw,3rem)] leading-[1.3] font-medium transition-colors"
           >
             {item.label}
@@ -101,6 +101,7 @@ export function FullMenu({ onClose, isDining = false }: FullMenuProps) {
                 key={item.href + item.label}
                 href={item.href}
                 onClick={onClose}
+                tabIndex={open ? 0 : -1}
                 className="text-mist hover:text-jade-text font-serif text-[clamp(1.2rem,5vw,1.6rem)] leading-tight italic transition-colors"
               >
                 {item.label}
@@ -110,9 +111,14 @@ export function FullMenu({ onClose, isDining = false }: FullMenuProps) {
         )}
       </nav>
 
-      <Button href={BOOK_A_BAY_HREF} onClick={onClose} className="self-start">
+      <Button
+        href={BOOK_A_BAY_HREF}
+        onClick={onClose}
+        tabIndex={open ? 0 : -1}
+        className="self-start"
+      >
         Book a Bay
       </Button>
-    </motion.div>
+    </div>
   );
 }

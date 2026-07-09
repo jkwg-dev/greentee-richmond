@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence } from "motion/react";
 import { FullMenu } from "@/components/layout/FullMenu";
 import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
@@ -34,9 +33,7 @@ export function FullMenuDemo() {
       <Button variant="ghost" onClick={() => setOpen(true)}>
         Open FullMenu
       </Button>
-      <AnimatePresence>
-        {open && <FullMenu onClose={() => setOpen(false)} />}
-      </AnimatePresence>
+      <FullMenu open={open} onClose={() => setOpen(false)} />
     </>
   );
 }
