@@ -1,9 +1,9 @@
 import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/Button";
 import type { NewsEntry, NewsTeaserHead } from "@/types";
+import { NewsCard } from "@/components/sections/news/NewsCard";
+import { NewsFeature } from "@/components/sections/news/NewsFeature";
 import { GameHead } from "./GameHead";
-import { NewsCard } from "./NewsCard";
-import { NewsFeature } from "./NewsFeature";
 
 /**
  * S4 News & Offers teaser (docs §5.1, §4.2, mockup `#news`). The latest entry as

@@ -43,18 +43,27 @@ export function SiteHeader() {
           aria-label="Primary"
           className="flex items-center gap-8 max-[900px]:hidden"
         >
-          {primaryNav.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "text-mist hover:text-ivory relative text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors",
-                "after:bg-champagne after:absolute after:-bottom-[7px] after:left-0 after:h-px after:w-full after:origin-right after:scale-x-0 after:transition-transform after:duration-[450ms] after:ease-[cubic-bezier(0.22,1,0.36,1)] hover:after:origin-left hover:after:scale-x-100",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {primaryNav.map((link) => {
+            const isActive =
+              !!pathname &&
+              (pathname === link.href ||
+                pathname.startsWith(link.href + "/"));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? "page" : undefined}
+                className={cn(
+                  "after:bg-champagne relative text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors after:absolute after:-bottom-[7px] after:left-0 after:h-px after:w-full after:transition-transform after:duration-[450ms] after:ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  isActive
+                    ? "text-ivory after:origin-left after:scale-x-100"
+                    : "text-mist hover:text-ivory after:origin-right after:scale-x-0 hover:after:origin-left hover:after:scale-x-100",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-1.5">
