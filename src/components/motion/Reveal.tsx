@@ -3,6 +3,7 @@
 import {
   useEffect,
   useRef,
+  useState,
   type ComponentPropsWithoutRef,
   type ElementType,
 } from "react";
@@ -61,8 +62,10 @@ export type RevealProps<T extends ElementType> = RevealOwnProps<T> &
 
 /**
  * Opacity + rise entrance on the `[data-reveal]` system (docs §9.2). Polymorphic
- * so it decorates the real element (a heading, a paragraph) rather than wrapping
- * it in a div. Reduced motion and no-IO settle immediately.
+ * so it decorates the real element rather than wrapping it in a div. The `in`
+ * state lives in React (not an imperative `classList.add`) so it survives
+ * re-renders of dynamic parents like the News filter; reduced motion reveals via
+ * the `html.rm [data-reveal]` CSS rule.
  */
 export function Reveal<T extends ElementType = "div">({
   as,
@@ -74,28 +77,34 @@ export function Reveal<T extends ElementType = "div">({
 }: RevealProps<T>) {
   const Component = (as ?? "div") as ElementType;
   const ref = useRef<HTMLElement>(null);
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
+    if (revealed) return;
     const el = ref.current;
     if (!el) return;
 
-    const settle = () => el.classList.add("in");
-    const reduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (reduced || !("IntersectionObserver" in window)) {
-      settle();
-      return;
-    }
+    // Reduced motion settles via the `html.rm [data-reveal]` rule (globals.css).
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    return observe(el, threshold, () => {
-      if (delay > 0) window.setTimeout(settle, delay);
-      else settle();
+    let timer: number | undefined;
+    const unobserve = observe(el, threshold, () => {
+      if (delay > 0) timer = window.setTimeout(() => setRevealed(true), delay);
+      else setRevealed(true);
     });
-  }, [delay, threshold]);
+    return () => {
+      unobserve();
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [delay, threshold, revealed]);
 
   return (
-    <Component ref={ref} data-reveal className={cn(className)} {...rest}>
+    <Component
+      ref={ref}
+      data-reveal
+      className={cn(className, revealed && "in")}
+      {...rest}
+    >
       {children}
     </Component>
   );
