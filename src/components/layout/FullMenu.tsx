@@ -3,7 +3,13 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { BOOK_A_BAY_HREF, diningSubNav, primaryNav } from "@/lib/site";
+import {
+  BOOK_A_BAY_HREF,
+  BOOK_A_TABLE_HREF,
+  diningSubNav,
+  primaryNav,
+  type NavLink,
+} from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export type FullMenuProps = {
@@ -58,7 +64,16 @@ export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
     };
   }, [open, onClose]);
 
-  const items = [{ label: "Home", href: "/" }, ...primaryNav];
+  // On `/dining` the Dining item expands into the two Crystal Jade entries,
+  // each carrying a small "Dining" kicker (docs §3.4, mockup `.fm-nav`).
+  const items: (NavLink & { kicker?: string })[] = [
+    { label: "Home", href: "/" },
+    ...primaryNav,
+  ].flatMap((item) =>
+    isDining && item.href === "/dining"
+      ? diningSubNav.map((sub) => ({ ...sub, kicker: "Dining" }))
+      : [item],
+  );
 
   return (
     <div
@@ -91,33 +106,25 @@ export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
             tabIndex={open ? 0 : -1}
             className="hover:text-champagne font-serif text-[clamp(2rem,9vw,3rem)] leading-[1.3] font-medium transition-colors"
           >
+            {item.kicker && (
+              <small className="text-jade-text mb-0.5 block font-sans text-[8.5px] leading-none font-medium tracking-[0.4em] uppercase">
+                {item.kicker}
+              </small>
+            )}
             {item.label}
           </Link>
         ))}
-        {isDining && (
-          <span className="mt-2 flex flex-col gap-2 pl-1">
-            {diningSubNav.map((item) => (
-              <Link
-                key={item.href + item.label}
-                href={item.href}
-                onClick={onClose}
-                tabIndex={open ? 0 : -1}
-                className="text-mist hover:text-jade-text font-serif text-[clamp(1.2rem,5vw,1.6rem)] leading-tight italic transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </span>
-        )}
       </nav>
 
+      {/* On /dining the CTA switches to the tenant action; the header's Book a
+          Bay button stays visible at every width (docs §3.4, §8.2). */}
       <Button
-        href={BOOK_A_BAY_HREF}
+        href={isDining ? BOOK_A_TABLE_HREF : BOOK_A_BAY_HREF}
         onClick={onClose}
         tabIndex={open ? 0 : -1}
         className="self-start"
       >
-        Book a Bay
+        {isDining ? "Book a Table" : "Book a Bay"}
       </Button>
     </div>
   );

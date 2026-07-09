@@ -15,7 +15,22 @@ export type {
   HomeContent,
 } from "./home";
 export type { JourneyPlate, JourneyLayout, JourneyPanel } from "./journey";
-export type { CredentialRow, RestaurantPreview } from "./restaurant";
+export type {
+  CredentialRow,
+  RestaurantFact,
+  PhilosophyCard,
+  RestaurantStory,
+  ChefAward,
+  RestaurantChef,
+  BanquetMenu,
+  RestaurantBanquet,
+  RestaurantReserve,
+  RestaurantSocial,
+  Restaurant,
+  RestaurantPreview,
+} from "./restaurant";
+export type { DishCategory, Dish } from "./dish";
+export { DISH_CATEGORY_LABEL } from "./dish";
 export type { NewsCategory, NewsEntry } from "./news";
 export { NEWS_CATEGORY_LABEL } from "./news";
 export type {

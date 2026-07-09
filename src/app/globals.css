@@ -955,6 +955,17 @@
     color: var(--color-mist);
   }
 
+  /* ---- Jade panel surface: gold hairline over a jade wash. Shared by the
+     spaces dining panel and the dining page boxes (docs §6.3, §8.3). ---- */
+  .jade-panel {
+    background: linear-gradient(
+      165deg,
+      rgba(22, 56, 43, 0.5) 0%,
+      rgba(12, 26, 20, 0.32) 100%
+    );
+    border: 1px solid rgba(201, 166, 107, 0.22);
+  }
+
   /* ---- Dining zone panel: unified split card (docs §6.3 deviation) ---- */
   .dinezone {
     display: grid;
@@ -964,12 +975,6 @@
     max-width: 960px; /* long and wide, but narrower than its container */
     margin-inline: auto; /* centered */
     padding: 40px 54px; /* short box */
-    background: linear-gradient(
-      165deg,
-      rgba(22, 56, 43, 0.5) 0%,
-      rgba(12, 26, 20, 0.32) 100%
-    );
-    border: 1px solid rgba(201, 166, 107, 0.22);
   }
   @media (max-width: 900px) {
     .dinezone {
@@ -979,4 +984,247 @@
     }
   }
 
+}
+
+/* ==========================================================================
+   Dining · Crystal Jade Palace recipes (docs §8). Mockups:
+   greentee-dining*.html (v6). Jade + gold are foregrounded on these routes
+   only (§2.1, §8.1).
+   ========================================================================== */
+@layer components {
+  /* Page wash: two jade radials and a faint champagne one over noir
+     (mockup `body.dine`). Applied to the route wrapper, not the body. */
+  .dine-bg {
+    background:
+      radial-gradient(
+        55% 38% at 85% 0%,
+        rgba(31, 107, 79, 0.16),
+        transparent 62%
+      ),
+      radial-gradient(
+        45% 32% at 0% 42%,
+        rgba(31, 107, 79, 0.1),
+        transparent 60%
+      ),
+      radial-gradient(
+        40% 30% at 100% 78%,
+        rgba(201, 166, 107, 0.06),
+        transparent 60%
+      ),
+      var(--color-noir);
+  }
+
+  /* ---- Shell: sticky rail + content (>=1025px) ------------------------- */
+  .dine-shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 5vw;
+    padding: 130px 5vw 0;
+    align-items: start;
+  }
+  .dinerail {
+    position: sticky;
+    top: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding: 0 0 40px 24px;
+    border-left: 1px solid rgba(31, 107, 79, 0.45);
+  }
+  .dr-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 11px 0;
+    font: 500 10px/1 var(--font-sans);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+    transition:
+      color 0.35s,
+      padding 0.35s;
+  }
+  .dr-link::before {
+    content: "";
+    width: 0;
+    height: 1px;
+    background: var(--color-champagne);
+    margin-right: 0;
+    transition:
+      width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      margin 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .dr-link.active {
+    color: var(--color-jade-text);
+  }
+  .dr-link.active::before {
+    width: 22px;
+    margin-right: 12px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .dr-link:hover {
+      color: var(--color-ivory);
+    }
+  }
+
+  /* ---- Chip bar (<=1024px) --------------------------------------------- */
+  .dinechips {
+    position: sticky;
+    top: 60px;
+    z-index: 90;
+    display: flex;
+    gap: 26px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 5vw;
+    background: rgba(9, 15, 12, 0.9);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(201, 166, 107, 0.18);
+    scrollbar-width: none;
+  }
+  .dinechips::-webkit-scrollbar {
+    display: none;
+  }
+  @media (min-width: 1025px) {
+    .dinechips {
+      display: none;
+    }
+  }
+  /* 44px touch target on a mockup bar that padded 14px around a 4px link:
+     the link fills the bar height; the inner label keeps the underline. */
+  .dc-link {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    font: 500 9.5px/1 var(--font-sans);
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+    transition: color 0.3s;
+  }
+  .dc-link span {
+    padding: 4px 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .dc-link.active {
+    color: var(--color-jade-text);
+  }
+  .dc-link.active span {
+    border-color: var(--color-champagne);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .dc-link:hover {
+      color: var(--color-ivory);
+    }
+  }
+
+  /* ---- Section rhythm (mockup `.sec`) ----------------------------------- */
+  .dine-sec {
+    padding: 110px 0;
+  }
+  .dine-sec + .dine-sec {
+    padding-top: 0;
+  }
+  .dine-main > .dine-sec:first-child {
+    padding-top: 0;
+  }
+
+  /* ---- Split layout (mockup `.split`) ------------------------------------ */
+  .dine-split {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 5vw;
+    align-items: center;
+  }
+  .dine-split.img-first {
+    grid-template-columns: 1fr 1.1fr;
+  }
+  @media (max-width: 900px) {
+    .dine-split,
+    .dine-split.img-first {
+      grid-template-columns: 1fr;
+      gap: 44px;
+    }
+  }
+
+  /* ---- Jade split box (mockup `.prooms` / `.banq-box`) ------------------- */
+  .dine-box {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    gap: 5vw;
+    align-items: center;
+    padding: 54px;
+  }
+  @media (max-width: 900px) {
+    .dine-box {
+      grid-template-columns: 1fr;
+      gap: 44px;
+      padding: 26px;
+    }
+  }
+
+  /* ---- Landing hero shade (mockup `.hero-shade`, jade-cast) ------------- */
+  .dine-hero-shade {
+    background: linear-gradient(
+      200deg,
+      rgba(9, 15, 12, 0.14) 0%,
+      rgba(9, 17, 13, 0.4) 55%,
+      rgba(7, 13, 10, 0.9) 100%
+    );
+  }
+
+  /* ---- Scroll cue on the landing hero (mockup `.scrolldown`) ------------ */
+  .dine-scrolldown {
+    position: absolute;
+    z-index: 6;
+    left: 50%;
+    bottom: 26px;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 52px;
+    overflow: hidden;
+    background: rgba(242, 237, 226, 0.16);
+  }
+  .dine-scrolldown span {
+    position: absolute;
+    left: 0;
+    top: -40%;
+    width: 1px;
+    height: 40%;
+    background: var(--color-champagne);
+    animation: dine-sd 2.6s cubic-bezier(0.6, 0.05, 0.3, 0.95) infinite;
+  }
+  @keyframes dine-sd {
+    0% {
+      top: -40%;
+    }
+    60%,
+    100% {
+      top: 110%;
+    }
+  }
+  html.rm .dine-scrolldown span {
+    animation: none;
+    top: 30%;
+  }
+
+  /* ---- Responsive shell (mockup 1024 breakpoint) ------------------------ */
+  @media (max-width: 1024px) {
+    .dine-shell {
+      display: block;
+      padding: 86px 0 0;
+    }
+    .dinerail {
+      display: none;
+    }
+    .dine-main {
+      padding: 0 5vw;
+    }
+    .dine-sec {
+      padding: 88px 0;
+    }
+  }
 }

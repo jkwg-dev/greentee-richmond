@@ -12,7 +12,7 @@ import type { DiningZonePanel as DiningZonePanelData } from "@/types";
  */
 export function DiningZonePanel({ panel }: { panel: DiningZonePanelData }) {
   return (
-    <Reveal as="div" threshold={0.12} className="dinezone">
+    <Reveal as="div" threshold={0.12} className="jade-panel dinezone">
       <div>
         <Eyebrow className="text-jade-text mb-4">{panel.eyebrow}</Eyebrow>
         <h2 className="font-serif text-[clamp(1.5rem,2.2vw,2rem)] leading-[1.2] font-medium">

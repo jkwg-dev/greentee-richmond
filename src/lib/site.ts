@@ -27,6 +27,15 @@ export const diningSubNav: NavLink[] = [
   { label: "Menu & Reserve", href: "/dining/menu" },
 ];
 
+/** The five Crystal Jade Palace pages on the dining rail and chips (docs §8.2). */
+export const diningPages: NavLink[] = [
+  { label: "Our Story", href: "/dining/story" },
+  { label: "The Chef", href: "/dining/chef" },
+  { label: "Menu", href: "/dining/menu" },
+  { label: "Banquet", href: "/dining/banquet" },
+  { label: "Reserve", href: "/dining/reserve" },
+];
+
 export const networkLinks: NavLink[] = [
   {
     label: "Westwood Plateau",

@@ -14,3 +14,10 @@ export const PHOTO_TINT_CLASS: Record<PhotoTint, string> = {
   iris: "tint-iris",
   map: "tint-map",
 };
+
+/**
+ * Slot tints for dining three-up frames (signature trio, philosophy cards):
+ * the mockup's t-jade / t-gold / t-emerald sequence (docs §8.3; t-gold is the
+ * champagne recipe).
+ */
+export const DINING_SLOT_TINTS: PhotoTint[] = ["jade", "champagne", "emerald"];
