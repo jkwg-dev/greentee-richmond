@@ -126,6 +126,24 @@
     display: none !important;
   }
 
+  /* Mobile menu overlay (docs §3.4). The overlay stays in the layout and only
+     its opacity + interactivity toggle. Toggling `visibility` in the same frame
+     as opacity froze the fade (a running transition stuck at time 0), so the
+     menu never reopened; `pointer-events` gates interaction instead, and the
+     opacity transition always animates a visible element. */
+  .fullmenu {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+  .fullmenu.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  html.rm .fullmenu {
+    transition: none;
+  }
+
   /* SplitHeading per-letter bloom (docs §9.2). Letters start hidden; GSAP
      releases them, and reduced motion settles them via CSS (no JS needed). */
   .split-line {

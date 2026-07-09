@@ -68,8 +68,8 @@ export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
       aria-label="Site menu"
       aria-hidden={!open}
       className={cn(
-        "bg-noir/95 fixed inset-0 z-[150] flex flex-col justify-center gap-11 px-[9vw] backdrop-blur-md transition-opacity duration-500",
-        open ? "visible opacity-100" : "invisible opacity-0",
+        "fullmenu bg-noir/95 fixed inset-0 z-[150] flex flex-col justify-center gap-11 px-[9vw] backdrop-blur-md",
+        open && "open",
       )}
     >
       <button
