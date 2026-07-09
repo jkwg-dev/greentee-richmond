@@ -8,7 +8,7 @@ import type { OutroContent } from "@/types";
 /**
  * S8 Outro (docs §5.1, mockup `#outro`). Centered closing statement over a soft
  * champagne glow; the visit line renders from siteSettings (docs §11.4). Book a
- * Bay lands on `#contact`, Book a Table on `/dining/reserve`.
+ * Bay is a stub until booking exists, Book a Table lands on `/dining/reserve`.
  */
 export function Outro({ content }: { content: OutroContent }) {
   return (
