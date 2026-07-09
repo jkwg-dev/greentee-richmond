@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { PHOTO_TINT_CLASS } from "@/lib/tints";
 import { cn } from "@/lib/utils";
@@ -18,14 +19,37 @@ function pad(n: number) {
 }
 
 /**
- * A single placeholder plate (docs §11.6): an overscanned tint fill the journey
- * can kick horizontally, a grain overlay, and an optional pending-state label
- * (the VVIP suites on panel 05).
+ * A single photo plate (docs §11.6): an overscanned fill the journey can kick
+ * horizontally (interim render when present, tint fallback), a grain overlay
+ * per the mockup, and an optional pending-state label (the VVIP suites on
+ * panel 05). Decorative inside the panel link, so the render carries an empty
+ * alt.
  */
-function Plate({ plate, className }: { plate: JourneyPlate; className: string }) {
+function Plate({
+  plate,
+  className,
+  sizes,
+}: {
+  plate: JourneyPlate;
+  className: string;
+  sizes: string;
+}) {
   return (
     <div className={cn(className, "grain-overlay")}>
-      <div className={cn("hp-fill", PHOTO_TINT_CLASS[plate.tint])} />
+      {plate.image ? (
+        <div className="hp-fill">
+          <Image
+            src={plate.image.src}
+            alt=""
+            fill
+            sizes={sizes}
+            className="object-cover"
+            style={{ objectPosition: plate.image.position ?? "50% 50%" }}
+          />
+        </div>
+      ) : (
+        <div className={cn("hp-fill", PHOTO_TINT_CLASS[plate.tint])} />
+      )}
       {plate.label && (
         <div className="pointer-events-none absolute inset-0 z-[2] flex flex-col items-center justify-center gap-2.5">
           <span className="text-ivory/40 text-[8.5px] font-medium tracking-[0.4em] uppercase">
@@ -65,9 +89,21 @@ export function JourneyPanel({
         {label}
       </span>
 
-      <Plate plate={panel.plates[0]} className="hp-a" />
+      <Plate
+        plate={panel.plates[0]}
+        className="hp-a"
+        sizes={
+          panel.layout === "solo"
+            ? "(max-width: 900px) 90vw, 88vw"
+            : "(max-width: 900px) 74vw, 56vw"
+        }
+      />
       {panel.layout !== "solo" && panel.plates[1] && (
-        <Plate plate={panel.plates[1]} className="hp-b" />
+        <Plate
+          plate={panel.plates[1]}
+          className="hp-b"
+          sizes="(max-width: 900px) 60vw, 33vw"
+        />
       )}
 
       <div className="hp-info">

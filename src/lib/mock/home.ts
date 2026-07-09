@@ -145,7 +145,28 @@ export const home: HomeContent = {
       line: "Tour-grade simulator bays and a true-roll putting green beneath the canopy.",
       accent: "#c9a66b",
       layout: "two",
-      plates: [{ tint: "champagne" }, { tint: "champagne" }],
+      plates: [
+        {
+          tint: "champagne",
+          image: {
+            src: "/renders/journey/atbat.jpg",
+            alt: "Simulator bays on the at-bat floor",
+            width: 1400,
+            height: 475,
+            position: "50% 50%",
+          },
+        },
+        {
+          tint: "champagne",
+          image: {
+            src: "/renders/journey/putting.jpg",
+            alt: "The putting green beneath the canopy",
+            width: 1400,
+            height: 383,
+            position: "50% 55%",
+          },
+        },
+      ],
     },
     {
       name: "Fitting Shop & Pro Shop",
@@ -155,7 +176,28 @@ export const home: HomeContent = {
       line: "Precision club fitting and a curated pro shop along the central promenade.",
       accent: "#b98d7a",
       layout: "twoFlipped",
-      plates: [{ tint: "rosegold" }, { tint: "rosegold" }],
+      plates: [
+        {
+          tint: "rosegold",
+          image: {
+            src: "/renders/journey/fitting.jpg",
+            alt: "The club fitting shop",
+            width: 1400,
+            height: 450,
+            position: "50% 45%",
+          },
+        },
+        {
+          tint: "rosegold",
+          image: {
+            src: "/renders/journey/proshop.jpg",
+            alt: "The pro shop on the promenade",
+            width: 1400,
+            height: 427,
+            position: "50% 50%",
+          },
+        },
+      ],
     },
     {
       name: "Dining",
@@ -165,7 +207,18 @@ export const home: HomeContent = {
       line: "Crystal Jade Palace brings Cantonese fine dining to the promenade.",
       accent: "#57ad85",
       layout: "solo",
-      plates: [{ tint: "jade" }],
+      plates: [
+        {
+          tint: "jade",
+          image: {
+            src: "/renders/journey/dining.jpg",
+            alt: "Crystal Jade Palace dining room",
+            width: 1400,
+            height: 440,
+            position: "50% 45%",
+          },
+        },
+      ],
     },
     {
       name: "Sauna & Amenity",
@@ -175,7 +228,28 @@ export const home: HomeContent = {
       line: "A dry sauna and full amenities to close out every round.",
       accent: "#9db18f",
       layout: "twoFlipped",
-      plates: [{ tint: "sage" }, { tint: "sage" }],
+      plates: [
+        {
+          tint: "sage",
+          image: {
+            src: "/renders/journey/sauna.jpg",
+            alt: "The dry sauna",
+            width: 837,
+            height: 759,
+            position: "50% 60%",
+          },
+        },
+        {
+          tint: "sage",
+          image: {
+            src: "/renders/journey/amenity.jpg",
+            alt: "The amenity area",
+            width: 946,
+            height: 401,
+            position: "50% 50%",
+          },
+        },
+      ],
     },
     {
       name: "VIP & VVIP Rooms",
@@ -186,7 +260,17 @@ export const home: HomeContent = {
       accent: "#8a6fc9",
       layout: "two",
       plates: [
-        { tint: "iris" },
+        {
+          tint: "iris",
+          image: {
+            src: "/renders/journey/vip.jpg",
+            alt: "A private VIP room",
+            width: 1100,
+            height: 319,
+            position: "50% 45%",
+          },
+        },
+        // The VVIP plate stays a designed pending state (docs §5.4); no image.
         {
           tint: "champagne",
           label: { kicker: "Renders to be revealed", name: "VVIP Suites 1 to 4" },

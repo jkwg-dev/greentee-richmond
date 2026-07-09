@@ -1,4 +1,4 @@
-import type { PhotoTint } from "./media";
+import type { InterimImage, PhotoTint } from "./media";
 
 /**
  * Spaces Journey domain types (docs §5.2). Panels are curated Home content
@@ -12,8 +12,10 @@ import type { PhotoTint } from "./media";
  */
 
 export type JourneyPlate = {
-  /** Placeholder tint standing in for the render (docs §11.6). */
+  /** Placeholder tint; the fill when no interim render is present (docs §11.6). */
   tint: PhotoTint;
+  /** Interim render under `/public/renders` until Sanity lands (docs §11.6). */
+  image?: InterimImage;
   /** Present only for a designed pending state, e.g. the VVIP suites (docs §5.4). */
   label?: { kicker: string; name: string };
 };
