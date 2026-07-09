@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
  * dark surfaces only. The `sm` size serves the header and rails.
  */
 const button = cva(
-  "inline-flex cursor-pointer items-center justify-center gap-3 border font-medium uppercase leading-none transition-[background-color,color,border-color] duration-400 [will-change:transform]",
+  "inline-flex cursor-pointer items-center justify-center gap-3 border font-medium whitespace-nowrap uppercase leading-none transition-[background-color,color,border-color] duration-400 [will-change:transform]",
   {
     variants: {
       variant: {
