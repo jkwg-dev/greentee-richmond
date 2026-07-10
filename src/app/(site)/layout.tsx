@@ -2,7 +2,6 @@ import { draftMode } from "next/headers";
 import { VisualEditing } from "next-sanity/visual-editing";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
-import { fallbackSettings } from "@/lib/site";
 import { getAnnouncement, getSiteSettings } from "@/sanity/lib/queries";
 
 /**
@@ -24,7 +23,7 @@ export default async function SiteLayout({
     <>
       <SiteHeader announcement={announcement} />
       <main>{children}</main>
-      <SiteFooter settings={settings ?? fallbackSettings} />
+      <SiteFooter settings={settings} />
       {isDraft && (
         <>
           <VisualEditing />

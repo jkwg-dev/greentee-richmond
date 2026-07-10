@@ -53,6 +53,16 @@ type RawImage = {
 
 const pct = (fraction: number) => `${+(fraction * 100).toFixed(2)}%`;
 
+/** Structural content has no mock fallback: missing data fails loudly. */
+function required<T>(value: T | null, what: string): T {
+  if (value === null) {
+    throw new Error(
+      `Sanity: ${what} is missing. Check .env.local and run \`pnpm seed\`.`,
+    );
+  }
+  return value;
+}
+
 /** Hotspot x/y becomes the CSS object-position focal point (§10, §11.6). */
 function toImage(raw: RawImage): InterimImage | undefined {
   if (!raw?.src) return undefined;
@@ -248,9 +258,11 @@ type RawHome = {
 } | null;
 
 /** The homePage singleton mapped to HomeContent (docs §5, §11.4). */
-export async function getHomeContent(): Promise<HomeContent | null> {
-  const raw = await sanityFetch<RawHome>({ query: HOME_QUERY, tags: ["home"] });
-  if (!raw) return null;
+export async function getHomeContent(): Promise<HomeContent> {
+  const raw = required(
+    await sanityFetch<RawHome>({ query: HOME_QUERY, tags: ["home"] }),
+    "the homePage document",
+  );
 
   return {
     hero: {
@@ -355,8 +367,13 @@ type RawZone = {
 /** The nine zones (docs §6, §11.4), pending-state art reattached per §11.6. */
 export async function getZones(): Promise<Zone[]> {
   const docs = await sanityFetch<RawZone[]>({ query: ZONES_QUERY, tags: ["zone"] });
+  if (!docs || docs.length === 0) {
+    throw new Error(
+      "Sanity: no zone documents. Check .env.local and run `pnpm seed`.",
+    );
+  }
 
-  return (docs ?? []).map((doc) => ({
+  return docs.map((doc) => ({
     slug: doc.slug,
     floor: doc.floor,
     name: doc.name,
@@ -464,12 +481,14 @@ const mapFacts = (facts: RawFact[] | null) =>
   }));
 
 /** The restaurant singleton mapped to the §8.4 domain shape. */
-export async function getRestaurant(): Promise<Restaurant | null> {
-  const raw = await sanityFetch<RawRestaurant>({
-    query: RESTAURANT_QUERY,
-    tags: ["restaurant"],
-  });
-  if (!raw) return null;
+export async function getRestaurant(): Promise<Restaurant> {
+  const raw = required(
+    await sanityFetch<RawRestaurant>({
+      query: RESTAURANT_QUERY,
+      tags: ["restaurant"],
+    }),
+    "the restaurant document",
+  );
 
   return {
     name: raw.name,
@@ -522,9 +541,8 @@ export async function getRestaurant(): Promise<Restaurant | null> {
 }
 
 /** The Home dining preview slice (docs §5.1 S5). */
-export async function getRestaurantPreview(): Promise<RestaurantPreview | null> {
+export async function getRestaurantPreview(): Promise<RestaurantPreview> {
   const restaurant = await getRestaurant();
-  if (!restaurant) return null;
   return {
     name: restaurant.name,
     lede: restaurant.lede,
@@ -596,12 +614,14 @@ const toNavLinks = (links: { label: string; url: string }[] | null): NavLink[] =
   }));
 
 /** siteSettings: the single source for the center's hours and address (§11.4). */
-export async function getSiteSettings(): Promise<SiteSettings | null> {
-  const raw = await sanityFetch<RawSettings>({
-    query: SETTINGS_QUERY,
-    tags: ["settings"],
-  });
-  if (!raw) return null;
+export async function getSiteSettings(): Promise<SiteSettings> {
+  const raw = required(
+    await sanityFetch<RawSettings>({
+      query: SETTINGS_QUERY,
+      tags: ["settings"],
+    }),
+    "the siteSettings document",
+  );
 
   return {
     phone: raw.phone,

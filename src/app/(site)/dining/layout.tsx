@@ -1,7 +1,6 @@
 import { DiningChips } from "@/components/sections/dining/DiningChips";
 import { DiningInfoStrip } from "@/components/sections/dining/DiningInfoStrip";
 import { DiningRail } from "@/components/sections/dining/DiningRail";
-import { restaurant as restaurantFallback } from "@/lib/mock/restaurant";
 import { getRestaurant } from "@/sanity/lib/queries";
 
 /**
@@ -15,7 +14,7 @@ import { getRestaurant } from "@/sanity/lib/queries";
 export default async function DiningLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const restaurant = (await getRestaurant()) ?? restaurantFallback;
+  const restaurant = await getRestaurant();
   return (
     <div
       id="top"

@@ -10,9 +10,6 @@ import { PanoramaBand } from "@/components/sections/home/PanoramaBand";
 import { RatesHours } from "@/components/sections/home/RatesHours";
 import { SpacesIntro } from "@/components/sections/home/SpacesIntro";
 import { SpacesJourney } from "@/components/sections/home/SpacesJourney";
-import { home as homeFallback } from "@/lib/mock/home";
-import { restaurantPreview as previewFallback } from "@/lib/mock/restaurant";
-import { fallbackSettings } from "@/lib/site";
 import {
   getHomeContent,
   getNewsEntries,
@@ -23,17 +20,15 @@ import {
 /**
  * Home (docs §5). The route composes the sections in the §5.1 order of record
  * (a deliberate deviation from the mockup, §5.4 note 6) and distributes the
- * Sanity content (docs §11.5); sections stay presentational. The mocks remain
- * only as the unconfigured/unseeded fallback.
+ * Sanity content (docs §11.5); sections stay presentational.
  */
 export default async function HomePage() {
-  const [homeContent, newsEntries, preview, settings] = await Promise.all([
+  const [content, newsEntries, preview, settings] = await Promise.all([
     getHomeContent(),
     getNewsEntries(),
     getRestaurantPreview(),
     getSiteSettings(),
   ]);
-  const content = homeContent ?? homeFallback;
 
   return (
     <>
@@ -44,13 +39,10 @@ export default async function HomePage() {
       <ConceptMarquee items={content.marqueeItems} />
       <RatesHours content={content.rates} />
       <NewsOffersTeaser head={content.newsTeaser} entries={newsEntries} />
-      <DiningPreview restaurant={preview ?? previewFallback} />
+      <DiningPreview restaurant={preview} />
       <SpacesIntro content={content.spacesIntro} />
       <SpacesJourney panels={content.journeyPanels} />
-      <Outro
-        content={content.outro}
-        visitLine={(settings ?? fallbackSettings).openSummary}
-      />
+      <Outro content={content.outro} visitLine={settings.openSummary} />
       <BackToTop />
     </>
   );

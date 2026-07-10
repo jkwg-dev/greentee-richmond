@@ -3,7 +3,6 @@ import { DiningBand } from "@/components/sections/dining/DiningBand";
 import { KitchenPhilosophy } from "@/components/sections/dining/KitchenPhilosophy";
 import { StoryHeritage } from "@/components/sections/dining/StoryHeritage";
 import { StoryRichmond } from "@/components/sections/dining/StoryRichmond";
-import { restaurant as restaurantFallback } from "@/lib/mock/restaurant";
 import { getRestaurant } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
  * Why Richmond Why Now, and the Kitchen Philosophy cards.
  */
 export default async function StoryPage() {
-  const restaurant = (await getRestaurant()) ?? restaurantFallback;
+  const restaurant = await getRestaurant();
   return (
     <>
       <DiningBand

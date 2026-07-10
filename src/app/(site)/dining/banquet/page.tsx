@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { BanquetFacts } from "@/components/sections/dining/BanquetFacts";
 import { BespokeMenus } from "@/components/sections/dining/BespokeMenus";
 import { DiningBand } from "@/components/sections/dining/DiningBand";
-import { restaurant as restaurantFallback } from "@/lib/mock/restaurant";
 import { getRestaurant } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
  * occasions beside the photo slot, and the Bespoke Menus panel.
  */
 export default async function BanquetPage() {
-  const restaurant = (await getRestaurant()) ?? restaurantFallback;
+  const restaurant = await getRestaurant();
   return (
     <>
       <DiningBand

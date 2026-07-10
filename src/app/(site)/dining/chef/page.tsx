@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ChefIntro } from "@/components/sections/dining/ChefIntro";
-import { restaurant as restaurantFallback } from "@/lib/mock/restaurant";
 import { getRestaurant } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
@@ -15,6 +14,6 @@ export const metadata: Metadata = {
  * In His Own Words quote block.
  */
 export default async function ChefPage() {
-  const restaurant = (await getRestaurant()) ?? restaurantFallback;
+  const restaurant = await getRestaurant();
   return <ChefIntro chef={restaurant.chef} />;
 }

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Reveal } from "@/components/motion/Reveal";
 import { DiningBand } from "@/components/sections/dining/DiningBand";
 import { DishGrid } from "@/components/sections/dining/DishGrid";
-import { dishes as dishesFallback } from "@/lib/mock/dishes";
 import { getDishes } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
@@ -16,8 +15,7 @@ export const metadata: Metadata = {
  * Static data from the `dish` mock; CMS-driven in Phase 6 (§4.2).
  */
 export default async function MenuPage() {
-  const cmsDishes = await getDishes();
-  const dishes = cmsDishes.length > 0 ? cmsDishes : dishesFallback;
+  const dishes = await getDishes();
   return (
     <>
       <DiningBand

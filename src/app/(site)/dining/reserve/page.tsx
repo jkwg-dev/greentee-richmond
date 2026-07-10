@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ReserveBlock } from "@/components/sections/dining/ReserveBlock";
-import { restaurant as restaurantFallback } from "@/lib/mock/restaurant";
 import { getRestaurant } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
@@ -14,6 +13,6 @@ export const metadata: Metadata = {
  * banquet crosslink, and the OpenTable embed placeholder (§15.3).
  */
 export default async function ReservePage() {
-  const restaurant = (await getRestaurant()) ?? restaurantFallback;
+  const restaurant = await getRestaurant();
   return <ReserveBlock reserve={restaurant.reserve} />;
 }
