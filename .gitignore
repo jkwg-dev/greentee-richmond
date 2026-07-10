@@ -43,3 +43,6 @@ next-env.d.ts
 
 # sanity deploy build output
 dist
+
+# sanity CLI runtime
+.sanity
