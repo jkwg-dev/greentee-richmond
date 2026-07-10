@@ -9,7 +9,9 @@ import { defineArrayMember, defineField, defineType } from "sanity";
  */
 export const zone = defineType({
   name: "zone",
-  title: "Zone",
+  // Editors see "Space" (the page is The Spaces); the type id stays `zone`
+  // per docs §11.4 and the seeded documents.
+  title: "Space",
   type: "document",
   fields: [
     defineField({

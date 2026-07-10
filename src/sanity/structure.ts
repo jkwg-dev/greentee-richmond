@@ -27,10 +27,10 @@ export const structure: StructureResolver = (S) =>
       ),
       S.divider(),
       S.listItem()
-        .title("Zones")
+        .title("Spaces")
         .child(
           S.documentTypeList("zone")
-            .title("Zones")
+            .title("Spaces")
             .defaultOrdering([{ field: "order", direction: "asc" }]),
         ),
       S.listItem()

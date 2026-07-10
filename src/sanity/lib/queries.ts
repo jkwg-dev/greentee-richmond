@@ -20,6 +20,7 @@ import type {
   SiteSettings,
   Zone,
 } from "@/types";
+import { stegaClean } from "next-sanity";
 import { sanityFetch } from "./fetch";
 
 /**
@@ -53,6 +54,13 @@ type RawImage = {
 
 const pct = (fraction: number) => `${+(fraction * 100).toFixed(2)}%`;
 
+/**
+ * Draft Mode fetches carry stega encoding (invisible unicode for the editor
+ * overlays). Any value used for logic, lookups, hrefs, or CSS must be cleaned
+ * or comparisons silently fail in preview (e.g. `floor === "1F"`).
+ */
+const clean = stegaClean;
+
 /** Structural content has no mock fallback: missing data fails loudly. */
 function required<T>(value: T | null, what: string): T {
   if (value === null) {
@@ -67,7 +75,7 @@ function required<T>(value: T | null, what: string): T {
 function toImage(raw: RawImage): InterimImage | undefined {
   if (!raw?.src) return undefined;
   return {
-    src: raw.src,
+    src: clean(raw.src),
     alt: raw.alt ?? "",
     width: raw.width ?? 0,
     height: raw.height ?? 0,
@@ -184,7 +192,7 @@ export async function getAnnouncement(): Promise<Announcement | null> {
     id: doc._id,
     title: doc.title,
     summary: doc.summary ?? undefined,
-    link: doc.link ?? undefined,
+    link: clean(doc.link) ?? undefined,
   };
 }
 
@@ -302,10 +310,10 @@ export async function getHomeContent(): Promise<HomeContent> {
       name: panel.name,
       conceptTitle: panel.conceptTitle,
       floorLabel: panel.floorLabel,
-      anchor: panel.anchor,
+      anchor: clean(panel.anchor),
       line: panel.line,
-      accent: panel.accent,
-      layout: panel.layout,
+      accent: clean(panel.accent),
+      layout: clean(panel.layout),
       plates: (panel.plates ?? []).map((plate) => ({
         // Plate tints are UI-layer placeholder art (§11.4); champagne is the
         // designed pending fill (the VVIP plate, §5.4).
@@ -373,40 +381,47 @@ export async function getZones(): Promise<Zone[]> {
     );
   }
 
-  return docs.map((doc) => ({
-    slug: doc.slug,
-    floor: doc.floor,
-    name: doc.name,
-    chipLabel: doc.chipLabel ?? doc.name,
-    areaLabel: doc.areaLabel ?? undefined,
-    conceptTitle: doc.conceptTitle,
-    conceptLine: doc.conceptLine,
-    order: doc.order,
-    lead: doc.lead ?? undefined,
-    body: doc.body ?? undefined,
-    facts: doc.facts ?? undefined,
-    cta: doc.cta
-      ? { label: doc.cta.label, href: doc.cta.href, variant: doc.cta.variant ?? undefined }
-      : undefined,
-    heroImage: toImage(doc.heroImage),
-    diningPanel: doc.diningPanel
-      ? {
-          eyebrow: doc.diningPanel.eyebrow,
-          title: doc.diningPanel.title,
-          body: doc.diningPanel.copy,
-          ctaPrimary: DINING_PANEL_CTAS.primary,
-          ctaSecondary: DINING_PANEL_CTAS.secondary,
-        }
-      : undefined,
-    rooms: doc.rooms?.map((room) => ({
-      name: room.name,
-      motif: room.motif ?? undefined,
-      line: room.line ?? undefined,
-      pending: room.pending ?? undefined,
-      ...roomUiFor(doc.slug, room.name),
-    })),
-    ...zoneUiFor(doc.slug),
-  }));
+  return docs.map((doc) => {
+    const slug = clean(doc.slug);
+    return {
+      slug,
+      floor: clean(doc.floor),
+      name: doc.name,
+      chipLabel: doc.chipLabel ?? doc.name,
+      areaLabel: doc.areaLabel ?? undefined,
+      conceptTitle: doc.conceptTitle,
+      conceptLine: doc.conceptLine,
+      order: doc.order,
+      lead: doc.lead ?? undefined,
+      body: doc.body ?? undefined,
+      facts: doc.facts ?? undefined,
+      cta: doc.cta
+        ? {
+            label: doc.cta.label,
+            href: clean(doc.cta.href),
+            variant: clean(doc.cta.variant) ?? undefined,
+          }
+        : undefined,
+      heroImage: toImage(doc.heroImage),
+      diningPanel: doc.diningPanel
+        ? {
+            eyebrow: doc.diningPanel.eyebrow,
+            title: doc.diningPanel.title,
+            body: doc.diningPanel.copy,
+            ctaPrimary: DINING_PANEL_CTAS.primary,
+            ctaSecondary: DINING_PANEL_CTAS.secondary,
+          }
+        : undefined,
+      rooms: doc.rooms?.map((room) => ({
+        name: room.name,
+        motif: clean(room.motif) ?? undefined,
+        line: room.line ?? undefined,
+        pending: room.pending ?? undefined,
+        ...roomUiFor(slug, clean(room.name)),
+      })),
+      ...zoneUiFor(slug),
+    };
+  });
 }
 
 /* -------------------------------------------------------- restaurant §8.4 -- */
@@ -527,16 +542,19 @@ export async function getRestaurant(): Promise<Restaurant> {
         line: menu.line,
         detail: menu.detail ?? undefined,
       })),
-      enquiryTarget: raw.banquet.enquiryTarget,
+      enquiryTarget: clean(raw.banquet.enquiryTarget),
     },
     reserve: {
-      openTableUrl: raw.reserve.openTableUrl ?? undefined,
+      openTableUrl: clean(raw.reserve.openTableUrl) ?? undefined,
       phone: raw.reserve.phone,
       wechat: raw.reserve.wechat,
       hours: raw.reserve.hours ?? [],
       address: raw.reserve.address,
     },
-    socials: raw.socials ?? [],
+    socials: (raw.socials ?? []).map((social) => ({
+      label: social.label,
+      url: clean(social.url),
+    })),
   };
 }
 
@@ -579,7 +597,7 @@ export async function getDishes(): Promise<Dish[]> {
       name: doc.name,
       zhName: doc.zhName,
       line: doc.line,
-      category: doc.category,
+      category: clean(doc.category),
       order: doc.order,
       seasonal: doc.seasonal ?? undefined,
       available: doc.available ?? undefined,
@@ -609,7 +627,7 @@ type RawSettings = {
 const toNavLinks = (links: { label: string; url: string }[] | null): NavLink[] =>
   (links ?? []).map((link) => ({
     label: link.label,
-    href: link.url,
+    href: clean(link.url),
     external: link.url.startsWith("http"),
   }));
 
