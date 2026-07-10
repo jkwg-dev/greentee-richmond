@@ -966,14 +966,15 @@
     border: 1px solid rgba(201, 166, 107, 0.22);
   }
 
-  /* ---- Dining zone panel: unified split card (docs §6.3 deviation) ---- */
+  /* ---- Dining zone panel: unified split card (docs §6.3 deviation) ----
+     No width cap: the card fills its column responsively, held a step
+     narrower than the container by a proportional side margin. */
   .dinezone {
     display: grid;
     grid-template-columns: 1fr 1fr;
     align-items: center;
     gap: 5vw;
-    max-width: 960px; /* long and wide, but narrower than its container */
-    margin-inline: auto; /* centered */
+    margin-inline: 3vw;
     padding: 40px 54px; /* short box */
   }
   @media (max-width: 900px) {
