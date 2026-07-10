@@ -26,6 +26,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Hosted-Studio build output (pnpm studio:deploy).
+    "dist/**",
   ]),
 ]);
 
