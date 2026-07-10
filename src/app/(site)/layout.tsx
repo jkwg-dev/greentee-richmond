@@ -25,7 +25,19 @@ export default async function SiteLayout({
       <SiteHeader announcement={announcement} />
       <main>{children}</main>
       <SiteFooter settings={settings ?? fallbackSettings} />
-      {isDraft && <VisualEditing />}
+      {isDraft && (
+        <>
+          <VisualEditing />
+          {/* Editor-only chrome: the Presentation tool sets a browser-wide
+              Draft Mode cookie; this is the way back out. */}
+          <a
+            href="/api/draft-mode/disable"
+            className="bg-champagne text-ink hover:bg-champagne-bright fixed right-5 bottom-5 z-[300] px-4 py-2.5 text-[9.5px] font-medium tracking-[0.22em] uppercase transition-colors"
+          >
+            Exit draft mode
+          </a>
+        </>
+      )}
     </>
   );
 }
