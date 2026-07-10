@@ -11,7 +11,11 @@ export const siteSettings = defineType({
   title: "Site Settings",
   type: "document",
   fields: [
-    defineField({ name: "logo", type: "image" }),
+    defineField({
+      name: "logo",
+      type: "image",
+      description: "SVG preferred; a monochrome ivory mark reads best on noir.",
+    }),
     defineField({
       name: "phone",
       type: "string",

@@ -51,6 +51,8 @@ export const zone = defineType({
       name: "heroImage",
       type: "image",
       options: { hotspot: true },
+      description:
+        "Zone hero band. Landscape, 2400×1000 or larger (renders about 2.4:1 on desktop); set the hotspot.",
     }),
     defineField({
       name: "order",
@@ -100,6 +102,7 @@ export const zone = defineType({
               name: "image",
               type: "image",
               options: { hotspot: true },
+              description: "Room card, cropped 16:10. 1600×1000 or larger.",
             }),
             defineField({ name: "pending", type: "boolean" }),
           ],

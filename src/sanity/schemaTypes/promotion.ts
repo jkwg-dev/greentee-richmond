@@ -16,7 +16,12 @@ export const promotion = defineType({
       type: "string",
       validation: (rule) => rule.required(),
     }),
-    defineField({ name: "image", type: "image", options: { hotspot: true } }),
+    defineField({
+      name: "image",
+      type: "image",
+      options: { hotspot: true },
+      description: "News card, cropped 16:10 (the featured slot crops 16:9). 1600×1000 or larger.",
+    }),
     defineField({
       name: "timing",
       title: "Timing label",

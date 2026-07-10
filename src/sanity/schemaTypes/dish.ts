@@ -25,7 +25,13 @@ export const dish = defineType({
       type: "string",
       description: "One line under the name.",
     }),
-    defineField({ name: "image", type: "image", options: { hotspot: true } }),
+    defineField({
+      name: "image",
+      type: "image",
+      options: { hotspot: true },
+      description:
+        "Cropped 16:10 on the menu and 4:5 in the landing trio. 1600×1200 or larger with the dish centered; set the hotspot.",
+    }),
     defineField({
       name: "category",
       type: "string",

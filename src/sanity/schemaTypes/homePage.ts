@@ -25,7 +25,13 @@ export const homePage = defineType({
         }),
         defineField({ name: "italicLine", type: "string" }),
         defineField({ name: "supportLine", type: "string" }),
-        defineField({ name: "media", type: "image", options: { hotspot: true } }),
+        defineField({
+          name: "media",
+          type: "image",
+          options: { hotspot: true },
+          description:
+            "Full-screen hero. Landscape JPG, 2400×1350 or larger; keep the entrance portal in frame and set the hotspot (portrait crops pull toward it).",
+        }),
       ],
     }),
     defineField({
@@ -53,7 +59,13 @@ export const homePage = defineType({
       name: "panoramaBand",
       type: "object",
       fields: [
-        defineField({ name: "image", type: "image", options: { hotspot: true } }),
+        defineField({
+          name: "image",
+          type: "image",
+          options: { hotspot: true },
+          description:
+            "Full-bleed panorama band. Very wide: 2800×950 or larger (about 3:1); art-direct the crop with the hotspot.",
+        }),
         defineField({ name: "caption", type: "string" }),
       ],
     }),
@@ -169,6 +181,8 @@ export const homePage = defineType({
                       name: "image",
                       type: "image",
                       options: { hotspot: true },
+                      description:
+                        "Journey plate. Landscape, 1600×1000 or larger; plates crop to cover, so set the hotspot.",
                     }),
                     defineField({
                       name: "pendingLabel",

@@ -32,7 +32,8 @@ export const restaurant = defineType({
       name: "heroMedia",
       type: "image",
       options: { hotspot: true },
-      description: "Landing hero photo or video-loop poster; pending until the tenant delivers (§11.6).",
+      description:
+        "Landing hero photo or video-loop poster; pending until the tenant delivers (§11.6). Landscape, 2400×1350 or larger.",
     }),
     defineField({
       name: "intro",
@@ -97,6 +98,8 @@ export const restaurant = defineType({
                   name: "image",
                   type: "image",
                   options: { hotspot: true },
+                  description:
+                    "Concept card, cropped 16:11. 1600×1100 or larger.",
                 }),
               ],
             }),
@@ -112,7 +115,8 @@ export const restaurant = defineType({
           name: "portrait",
           type: "image",
           options: { hotspot: true },
-          description: "Kitchen setting, not a studio headshot (§8.3).",
+          description:
+            "Kitchen setting, not a studio headshot (§8.3). Portrait, cropped 4:5; 1200×1500 or larger.",
         }),
         defineField({
           name: "intro",

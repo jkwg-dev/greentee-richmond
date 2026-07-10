@@ -32,7 +32,12 @@ export const newsPost = defineType({
       description: "Short editorial label, e.g. \"This Fall\".",
       validation: (rule) => rule.required(),
     }),
-    defineField({ name: "image", type: "image", options: { hotspot: true } }),
+    defineField({
+      name: "image",
+      type: "image",
+      options: { hotspot: true },
+      description: "News card, cropped 16:10 (the featured slot crops 16:9). 1600×1000 or larger.",
+    }),
     defineField({ name: "excerpt", type: "text", rows: 2 }),
     defineField({ name: "body", type: "array", of: [{ type: "block" }] }),
   ],
