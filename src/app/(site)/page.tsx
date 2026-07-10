@@ -11,15 +11,18 @@ import { RatesHours } from "@/components/sections/home/RatesHours";
 import { SpacesIntro } from "@/components/sections/home/SpacesIntro";
 import { SpacesJourney } from "@/components/sections/home/SpacesJourney";
 import { home } from "@/lib/mock/home";
-import { newsEntries } from "@/lib/mock/news";
 import { restaurantPreview } from "@/lib/mock/restaurant";
+import { getNewsEntries } from "@/sanity/lib/queries";
 
 /**
  * Home (docs §5). The route composes the sections in the §5.1 order of record
- * (a deliberate deviation from the mockup, §5.4 note 6) and distributes static
- * mock data (docs §11.5); sections stay presentational.
+ * (a deliberate deviation from the mockup, §5.4 note 6) and distributes the
+ * data (docs §11.5); sections stay presentational. The News & Offers teaser is
+ * CMS-driven (§4.2) and renders nothing when empty; the rest binds in Phase 6
+ * Build 2.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const newsEntries = await getNewsEntries();
   return (
     <>
       <IntroCurtain />

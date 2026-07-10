@@ -13,7 +13,9 @@ import { structure } from "@/sanity/structure";
 
 export default defineConfig({
   basePath: "/studio",
-  projectId,
+  // "unconfigured" keeps the route mounting before credentials land; the
+  // Studio is unusable until NEXT_PUBLIC_SANITY_PROJECT_ID is real (§11.5).
+  projectId: projectId || "unconfigured",
   dataset,
   schema: { types: schemaTypes },
   plugins: [

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "seed": "sanity exec scripts/seed.ts"
   },
   "dependencies": {
     "@sanity/image-url": "^2.1.1",

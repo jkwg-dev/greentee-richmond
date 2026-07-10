@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { NewsIndex } from "@/components/sections/news/NewsIndex";
 import { NewsIndexHead } from "@/components/sections/news/NewsIndexHead";
-import { newsIndexEntries } from "@/lib/mock/news";
+import { getNewsEntries } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
   title: "News & Offers",
@@ -10,14 +10,17 @@ export const metadata: Metadata = {
 };
 
 /**
- * News & Offers index (docs §7). A page head over a client-filtered featured
- * entry and card grid. Static data from the mock; CMS-driven in Phase 6.
+ * News & Offers index (docs §7): the promotion/event/newsPost union from
+ * Sanity (§4.1), newest first, over the client-filtered featured entry and
+ * card grid. An empty CMS renders the head, the filter bar, and the quiet
+ * empty state.
  */
-export default function NewsPage() {
+export default async function NewsPage() {
+  const entries = await getNewsEntries();
   return (
     <>
       <NewsIndexHead />
-      <NewsIndex entries={newsIndexEntries} />
+      <NewsIndex entries={entries} />
     </>
   );
 }

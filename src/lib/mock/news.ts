@@ -99,6 +99,12 @@ const entries: NewsEntry[] = [
   },
 ];
 
+/**
+ * The raw sample set: the Phase 6 seed source (scripts/seed.ts) and the
+ * UI-layer placeholder frame map (src/lib/placeholders.ts) both read it.
+ */
+export const sampleNewsEntries: NewsEntry[] = entries;
+
 /** Flip to true to prove the empty state on the Home teaser (docs §4.2). */
 export const NEWS_TEASER_EMPTY = false;
 /** Flip to true to prove the empty state on the `/news` index (docs §7). */
