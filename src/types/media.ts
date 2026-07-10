@@ -25,4 +25,6 @@ export type InterimImage = {
   height: number;
   /** CSS object-position focal point, matching the mockup crop. */
   position?: string;
+  /** LQIP blur placeholder from the Sanity asset metadata (Phase 6, additive). */
+  lqip?: string;
 };

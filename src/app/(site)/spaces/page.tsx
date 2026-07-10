@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { SpacesShell } from "@/components/sections/spaces/SpacesShell";
 import { ZoneSection } from "@/components/sections/spaces/ZoneSection";
-import { zones } from "@/lib/mock/zones";
+import { zones as zonesFallback } from "@/lib/mock/zones";
+import { getZones } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
   title: "The Spaces",
@@ -11,10 +12,14 @@ export const metadata: Metadata = {
 
 /**
  * The Spaces (docs §6). Nine anchored zones on one page inside the sticky
- * rail / chip shell. Static zone data from the mock; sections stay
- * presentational. Per-zone detail routes are a later phase.
+ * rail / chip shell, read from the `zone` documents in page order (§11.4);
+ * pending-state art reattaches in the mapping layer (§11.6). The mock remains
+ * only as the unconfigured/unseeded fallback.
  */
-export default function SpacesPage() {
+export default async function SpacesPage() {
+  const cmsZones = await getZones();
+  const zones = cmsZones.length > 0 ? cmsZones : zonesFallback;
+
   const nav = zones.map((zone) => ({
     slug: zone.slug,
     name: zone.name,

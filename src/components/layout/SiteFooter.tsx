@@ -1,12 +1,7 @@
 import Link from "next/link";
+import { primaryNav, type NavLink } from "@/lib/site";
+import type { SiteSettings } from "@/types";
 import { BrandMark } from "./BrandMark";
-import {
-  familyLinks,
-  networkLinks,
-  primaryNav,
-  visit,
-  type NavLink,
-} from "@/lib/site";
 
 function FooterLink({ link, className }: { link: NavLink; className: string }) {
   if (link.external) {
@@ -30,10 +25,12 @@ function FooterLink({ link, className }: { link: NavLink; className: string }) {
 
 /**
  * Canonical footer (docs §3.4), mirroring the header and carrying `id="contact"`
- * as the Book a Bay anchor target. Home v22 is the reference; the stale footers
- * in the other mockups are ignored (docs §15.9).
+ * as the Book a Bay anchor target. The visit line and link columns read from
+ * `siteSettings` (docs §11.4), the single source for the center's hours and
+ * address. Home v22 is the reference; the stale footers in the other mockups
+ * are ignored (docs §15.9).
  */
-export function SiteFooter() {
+export function SiteFooter({ settings }: { settings: SiteSettings }) {
   const columnLinkClass =
     "text-[9.5px] font-medium tracking-[0.22em] text-mist uppercase transition-colors hover:text-ivory";
 
@@ -54,9 +51,9 @@ export function SiteFooter() {
 
       <div className="text-mist/65 text-right text-[10.5px] leading-[2] tracking-[0.06em]">
         <p>
-          {visit.address} · {visit.hours} · {visit.phone}
+          {settings.address} · {settings.hours} · {settings.phone}
         </p>
-        <p>{visit.designCredit}</p>
+        <p>Interior & exterior design concept: JKWG</p>
         <p>© 2026 GreenTee Richmond Center.</p>
       </div>
 
@@ -65,7 +62,7 @@ export function SiteFooter() {
           <b className="text-mist/50 text-[8.5px] font-medium tracking-[0.3em] uppercase">
             GreenTee Network
           </b>
-          {networkLinks.map((link) => (
+          {settings.networkLinks.map((link) => (
             <FooterLink
               key={link.label}
               link={link}
@@ -77,7 +74,7 @@ export function SiteFooter() {
           <b className="text-mist/50 text-[8.5px] font-medium tracking-[0.3em] uppercase">
             Family
           </b>
-          {familyLinks.map((link) => (
+          {settings.familyLinks.map((link) => (
             <FooterLink
               key={link.label}
               link={link}

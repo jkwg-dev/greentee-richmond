@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ChefIntro } from "@/components/sections/dining/ChefIntro";
-import { restaurant } from "@/lib/mock/restaurant";
+import { restaurant as restaurantFallback } from "@/lib/mock/restaurant";
+import { getRestaurant } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
   title: "The Chef · Crystal Jade Palace",
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
  * gold-gradient credential bars, His Story with Notable Moments, and the
  * In His Own Words quote block.
  */
-export default function ChefPage() {
+export default async function ChefPage() {
+  const restaurant = (await getRestaurant()) ?? restaurantFallback;
   return <ChefIntro chef={restaurant.chef} />;
 }

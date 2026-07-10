@@ -3,7 +3,9 @@
  * so the seeded dataset mirrors the static site 1:1, and uploads the interim
  * renders (hero facade, panorama, the eight journey plates) as image assets
  * wired to homePage. Idempotent: stable _ids via createOrReplace; asset
- * uploads dedupe by content hash. Placeholder-only display fields (tints,
+ * uploads dedupe by content hash. Ids use dashes (`<type>-<slug>`): ids
+ * containing dots are path ids, hidden from unauthenticated reads.
+ * Placeholder-only display fields (tints,
  * pending frame art) stay in the UI layer (§11.4) and are not seeded.
  *
  * Run: pnpm seed
@@ -245,7 +247,7 @@ function buildRestaurant() {
 
 function buildZones() {
   return zones.map((zone) => ({
-    _id: `zone.${zone.slug}`,
+    _id: `zone-${zone.slug}`,
     _type: "zone",
     name: zone.name,
     slug: { _type: "slug", current: zone.slug },
@@ -280,7 +282,7 @@ function buildZones() {
 
 function buildDishes() {
   return dishes.map((dish) => ({
-    _id: `dish.${dish.id}`,
+    _id: `dish-${dish.id}`,
     _type: "dish",
     name: dish.name,
     zhName: dish.zhName,
@@ -304,7 +306,7 @@ function buildNews() {
     const date = new Date(NEWS_BASE_DATE - index * 86_400_000).toISOString();
     if (entry.category === "news") {
       return {
-        _id: `newsPost.${entry.id}`,
+        _id: `newsPost-${entry.id}`,
         _type: "newsPost",
         title: entry.title,
         slug: { _type: "slug", current: entry.id },
@@ -315,7 +317,7 @@ function buildNews() {
     }
     if (entry.category === "event") {
       return {
-        _id: `event.${entry.id}`,
+        _id: `event-${entry.id}`,
         _type: "event",
         title: entry.title,
         slug: { _type: "slug", current: entry.id },
@@ -325,7 +327,7 @@ function buildNews() {
       };
     }
     return {
-      _id: `promotion.${entry.id}`,
+      _id: `promotion-${entry.id}`,
       _type: "promotion",
       title: entry.title,
       timing: entry.timing,

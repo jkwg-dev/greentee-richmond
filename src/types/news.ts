@@ -28,3 +28,14 @@ export const NEWS_CATEGORY_LABEL: Record<NewsCategory, string> = {
   event: "Event",
   news: "News",
 };
+
+/**
+ * The announcement bar payload (docs §4.2): one `promotion` with
+ * `placement: banner`, active window guarded in GROQ, dismissible per session.
+ */
+export type Announcement = {
+  id: string;
+  title: string;
+  summary?: string;
+  link?: string;
+};

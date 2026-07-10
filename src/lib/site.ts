@@ -63,3 +63,16 @@ export const visit = {
   /** Compact hours + location line for the Home outro (docs §5.1 S8, §11.4). */
   openSummary: "Open daily · 06:00 to 24:00 · Garden Way, Richmond",
 } as const;
+
+/**
+ * The siteSettings shape from the constants above: the seed source and the
+ * render fallback while the CMS is unconfigured or unseeded (docs §11.5).
+ */
+export const fallbackSettings = {
+  phone: visit.phone,
+  address: visit.address,
+  hours: visit.hours,
+  openSummary: visit.openSummary,
+  familyLinks,
+  networkLinks,
+};

@@ -3,8 +3,9 @@ import { Reveal } from "@/components/motion/Reveal";
 import { DiningHero } from "@/components/sections/dining/DiningHero";
 import { PrivatePreview } from "@/components/sections/dining/PrivatePreview";
 import { SignatureTrio } from "@/components/sections/dining/SignatureTrio";
-import { signatureDishes } from "@/lib/mock/dishes";
-import { restaurant } from "@/lib/mock/restaurant";
+import { signatureDishes as signatureFallback, signatureDishIds } from "@/lib/mock/dishes";
+import { restaurant as restaurantFallback } from "@/lib/mock/restaurant";
+import { getDishes, getRestaurant } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
   title: "Crystal Jade Palace",
@@ -17,7 +18,17 @@ export const metadata: Metadata = {
  * Signature Dishes trio, and the Private Dining preview. Static data from the
  * `restaurant` and `dish` mocks; CMS-driven in Phase 6.
  */
-export default function DiningPage() {
+export default async function DiningPage() {
+  const [cmsRestaurant, cmsDishes] = await Promise.all([
+    getRestaurant(),
+    getDishes(),
+  ]);
+  const restaurant = cmsRestaurant ?? restaurantFallback;
+  // The landing trio (§8.3 item 3): the three signature dishes in mockup order.
+  const signatureDishes = signatureDishIds
+    .map((id) => cmsDishes.find((dish) => dish.id === `dish-${id}`))
+    .filter((dish) => dish !== undefined);
+  const trio = signatureDishes.length === 3 ? signatureDishes : signatureFallback;
   return (
     <>
       <DiningHero title={restaurant.name} tagline={restaurant.tagline} />
@@ -40,7 +51,7 @@ export default function DiningPage() {
         </div>
       </section>
 
-      <SignatureTrio dishes={signatureDishes} />
+      <SignatureTrio dishes={trio} />
       <PrivatePreview privateDining={restaurant.privateDining} />
     </>
   );

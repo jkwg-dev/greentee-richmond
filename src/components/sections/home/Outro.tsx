@@ -2,15 +2,21 @@ import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { RichHeading } from "@/components/ui/RichHeading";
-import { BOOK_A_BAY_HREF, BOOK_A_TABLE_HREF, visit } from "@/lib/site";
+import { BOOK_A_BAY_HREF, BOOK_A_TABLE_HREF } from "@/lib/site";
 import type { OutroContent } from "@/types";
 
 /**
  * S8 Outro (docs §5.1, mockup `#outro`). Centered closing statement over a soft
- * champagne glow; the visit line renders from siteSettings (docs §11.4). Book a
+ * champagne glow; the visit line arrives from siteSettings (docs §11.4). Book a
  * Bay is a stub until booking exists, Book a Table lands on `/dining/reserve`.
  */
-export function Outro({ content }: { content: OutroContent }) {
+export function Outro({
+  content,
+  visitLine,
+}: {
+  content: OutroContent;
+  visitLine: string;
+}) {
   return (
     <section
       id="outro"
@@ -43,7 +49,7 @@ export function Outro({ content }: { content: OutroContent }) {
         delay={240}
         className="text-mist mb-11 text-[9.5px] leading-[1.9] font-medium tracking-[0.28em] uppercase"
       >
-        {visit.openSummary}
+        {visitLine}
       </Reveal>
 
       <Reveal

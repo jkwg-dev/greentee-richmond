@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/SiteFooter";
+import { fallbackSettings } from "@/lib/site";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { HeroParticles } from "@/components/canvas/HeroParticles";
 import { IntroCurtain } from "@/components/motion/IntroCurtain";
@@ -343,7 +344,7 @@ export default function StyleguidePage() {
         </Block>
       </main>
 
-      <SiteFooter />
+      <SiteFooter settings={fallbackSettings} />
     </>
   );
 }

@@ -31,7 +31,8 @@ export type {
 } from "./restaurant";
 export type { DishCategory, Dish } from "./dish";
 export { DISH_CATEGORY_LABEL } from "./dish";
-export type { NewsCategory, NewsEntry } from "./news";
+export type { SiteSettings } from "./settings";
+export type { NewsCategory, NewsEntry, Announcement } from "./news";
 export { NEWS_CATEGORY_LABEL } from "./news";
 export type {
   ZoneFloor,

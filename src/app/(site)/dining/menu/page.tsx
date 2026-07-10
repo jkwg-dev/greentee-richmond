@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Reveal } from "@/components/motion/Reveal";
 import { DiningBand } from "@/components/sections/dining/DiningBand";
 import { DishGrid } from "@/components/sections/dining/DishGrid";
-import { dishes } from "@/lib/mock/dishes";
+import { dishes as dishesFallback } from "@/lib/mock/dishes";
+import { getDishes } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
   title: "Menu · Crystal Jade Palace",
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
  * `/dining/menu` (docs §8.3): hero band over the category-filtered dish grid.
  * Static data from the `dish` mock; CMS-driven in Phase 6 (§4.2).
  */
-export default function MenuPage() {
+export default async function MenuPage() {
+  const cmsDishes = await getDishes();
+  const dishes = cmsDishes.length > 0 ? cmsDishes : dishesFallback;
   return (
     <>
       <DiningBand

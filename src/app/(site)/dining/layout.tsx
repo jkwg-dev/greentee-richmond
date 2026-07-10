@@ -1,7 +1,8 @@
 import { DiningChips } from "@/components/sections/dining/DiningChips";
 import { DiningInfoStrip } from "@/components/sections/dining/DiningInfoStrip";
 import { DiningRail } from "@/components/sections/dining/DiningRail";
-import { restaurant } from "@/lib/mock/restaurant";
+import { restaurant as restaurantFallback } from "@/lib/mock/restaurant";
+import { getRestaurant } from "@/sanity/lib/queries";
 
 /**
  * Crystal Jade Palace shell (docs §8.2): every `/dining` route renders inside
@@ -11,9 +12,10 @@ import { restaurant } from "@/lib/mock/restaurant";
  * Below 1025px the wrapper clears the fixed header so the chip bar sits
  * beneath it (docs §8.2; the mockup let the bar slide under the header).
  */
-export default function DiningLayout({
+export default async function DiningLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const restaurant = (await getRestaurant()) ?? restaurantFallback;
   return (
     <div
       id="top"

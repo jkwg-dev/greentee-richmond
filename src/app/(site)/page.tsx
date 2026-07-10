@@ -10,32 +10,47 @@ import { PanoramaBand } from "@/components/sections/home/PanoramaBand";
 import { RatesHours } from "@/components/sections/home/RatesHours";
 import { SpacesIntro } from "@/components/sections/home/SpacesIntro";
 import { SpacesJourney } from "@/components/sections/home/SpacesJourney";
-import { home } from "@/lib/mock/home";
-import { restaurantPreview } from "@/lib/mock/restaurant";
-import { getNewsEntries } from "@/sanity/lib/queries";
+import { home as homeFallback } from "@/lib/mock/home";
+import { restaurantPreview as previewFallback } from "@/lib/mock/restaurant";
+import { fallbackSettings } from "@/lib/site";
+import {
+  getHomeContent,
+  getNewsEntries,
+  getRestaurantPreview,
+  getSiteSettings,
+} from "@/sanity/lib/queries";
 
 /**
  * Home (docs §5). The route composes the sections in the §5.1 order of record
  * (a deliberate deviation from the mockup, §5.4 note 6) and distributes the
- * data (docs §11.5); sections stay presentational. The News & Offers teaser is
- * CMS-driven (§4.2) and renders nothing when empty; the rest binds in Phase 6
- * Build 2.
+ * Sanity content (docs §11.5); sections stay presentational. The mocks remain
+ * only as the unconfigured/unseeded fallback.
  */
 export default async function HomePage() {
-  const newsEntries = await getNewsEntries();
+  const [homeContent, newsEntries, preview, settings] = await Promise.all([
+    getHomeContent(),
+    getNewsEntries(),
+    getRestaurantPreview(),
+    getSiteSettings(),
+  ]);
+  const content = homeContent ?? homeFallback;
+
   return (
     <>
       <IntroCurtain />
-      <HomeHero hero={home.hero} />
-      <Manifesto content={home.manifesto} />
-      <PanoramaBand content={home.panorama} />
-      <ConceptMarquee items={home.marqueeItems} />
-      <RatesHours content={home.rates} />
-      <NewsOffersTeaser head={home.newsTeaser} entries={newsEntries} />
-      <DiningPreview restaurant={restaurantPreview} />
-      <SpacesIntro content={home.spacesIntro} />
-      <SpacesJourney panels={home.journeyPanels} />
-      <Outro content={home.outro} />
+      <HomeHero hero={content.hero} />
+      <Manifesto content={content.manifesto} />
+      <PanoramaBand content={content.panorama} />
+      <ConceptMarquee items={content.marqueeItems} />
+      <RatesHours content={content.rates} />
+      <NewsOffersTeaser head={content.newsTeaser} entries={newsEntries} />
+      <DiningPreview restaurant={preview ?? previewFallback} />
+      <SpacesIntro content={content.spacesIntro} />
+      <SpacesJourney panels={content.journeyPanels} />
+      <Outro
+        content={content.outro}
+        visitLine={(settings ?? fallbackSettings).openSummary}
+      />
       <BackToTop />
     </>
   );
