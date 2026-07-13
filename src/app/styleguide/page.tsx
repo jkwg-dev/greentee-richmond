@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Chip";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { FactRows } from "@/components/ui/FactRows";
+import { Field } from "@/components/ui/Field";
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ChipFilterDemo, FullMenuDemo } from "./demos";
@@ -254,6 +255,34 @@ export default function StyleguidePage() {
                 },
                 { label: "Booking", value: "By the room, hourly" },
               ]}
+            />
+          </div>
+        </Block>
+
+        {/* Field */}
+        <Block
+          title="Field"
+          note="The only text input primitive (booking.md §9.6). Hairline border, champagne focus, autofill repainted to noir-soft. Errors render champagne; the palette has no red."
+        >
+          <div className="grid max-w-[420px] gap-8">
+            <Field
+              label="Email"
+              name="demo-email"
+              type="email"
+              autoComplete="email"
+            />
+            <Field
+              label="Password"
+              name="demo-password"
+              type="password"
+              hint="At least 6 characters."
+            />
+            <Field
+              label="Email"
+              name="demo-email-error"
+              type="email"
+              defaultValue="guest@greentee"
+              error="That email and password do not match. Try again."
             />
           </div>
         </Block>

@@ -201,7 +201,10 @@ value change plus the §9.9 smoke test, nothing more.
 ### 9.2 Environment
 
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, added to `.env.local`
-(dev project values now, vendor values later) and documented in `.env.example`. The publishable
+(dev project values now, vendor values later) and documented in `.env.local.example` (the
+repo's example-file convention). When the two values are absent, the session interceptor
+passes through untouched and any actual auth use throws a clear error referencing this
+section; the site never hard-depends on these values at build time. The publishable
 key is public by design. No other Supabase variable is ever added; no secret or service key
 exists in this repo in any form.
 
