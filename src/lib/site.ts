@@ -10,8 +10,8 @@ export type NavLink = {
   external?: boolean;
 };
 
-/** Book a Bay is a stub (`#`) until a booking flow exists; deviates from docs §3.4/§15.1, which still name the footer `#contact` anchor. */
-export const BOOK_A_BAY_HREF = "#";
+/** Book a Bay routes to the B1 booking browse page; this constant is the single source for the CTA target (booking.md §5.1). */
+export const BOOK_A_BAY_HREF = "/book";
 /** Book a Table routes to the reservation page everywhere (docs §3.4). */
 export const BOOK_A_TABLE_HREF = "/dining/reserve";
 

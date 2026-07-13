@@ -104,9 +104,15 @@ This section is the spec; there is no mockup. Build entirely from existing syste
 ### 5.5 Summary
 - `FactRows`: Date, Time (the range rendered from the slot's `startsAt` and `endsAt` strings), Space, Party, Price (formatted CAD with `detail` "Before GST and PST").
 - Empty selection: a single mist line per §7.
-- CTA area, gated by `bookingCreateEnabled`:
-  - `false` (B1): solid `Button` "Call to Hold This Time" with `href` `tel:` built from the siteSettings phone (fallback `#contact` when no phone), followed by the mist note per §7.
-  - `true` (B3 and later): the reserve flow entry point; specified with B3.
+- The primary action is a solid `Button` labeled "Reserve This Time", gated by
+  `bookingCreateEnabled`:
+  - `false` (B1): rendered disabled. `aria-disabled="true"`, no action on click or Enter,
+    reduced opacity through an opacity utility on the existing solid variant (not a new button
+    style), still 44px and in the tab order.
+  - `true` (B3 and later): the same button becomes the reserve flow entry point; specified
+    with B3.
+- Beneath it, the mist note per §7. The phone number inside the note renders from the settings
+  phone as a `tel:` link; the rest of the note is plain text.
 - The summary region is `aria-live="polite"` so selection changes are announced.
 
 ### 5.6 States
@@ -118,7 +124,7 @@ This section is the spec; there is no mockup. Build entirely from existing syste
 ### 5.7 Data layer
 - `src/types/booking.ts`: `BookingRoom { id, name, maxCapacity, order }` · `BookingSlot { roomId, startsAt, endsAt, priceCents, currency }` · `Availability { date, slots, reasons }` · `AvailabilityReason` union of the four reason strings · `BookingSelection { room, slot, partySize }`.
 - `src/lib/booking/provider.ts` (server only): the `BookingProvider` interface, `getRooms(): Promise<BookingRoom[]>` and `getAvailability({ date, partySize, roomId? }): Promise<Availability>`, plus an `activeProvider` export currently bound to the fixture provider. B3 swaps the binding; nothing above this module changes.
-- `src/lib/booking/fixtures.ts`: a deterministic fixture provider. Rooms: Bay 01 · Practice (capacity 4), Bay 02 · Play (4), Bay 05 · Play (4), VIP Room 12 (8). Slots: 30 minute blocks from 10:00 to 22:00 venue time, emitted as ISO strings with the `-07:00` offset. Prices in cents, all placeholders: standard 3200, peak (17:00 to 21:00) 4800; VIP 6400 standard and 9000 peak. Availability thins by a small deterministic hash of date, room id, and start time; never `Math.random`, so the same query always returns the same slots. Scripted states: today plus 3 days returns `closed_today`; today plus 5 days returns empty slots with empty reasons (sold out). A party size above a room's capacity drops that room; if nothing remains, return `no_rooms`.
+- `src/lib/booking/fixtures.ts`: a deterministic fixture provider. Rooms: Bay 01 · Practice (capacity 4), Bay 02 · Play (4), Bay 05 · Play (4), VIP Room 12 (8). Slots: 30 minute blocks from 10:00 to 22:00 venue time, emitted as ISO strings with the `-07:00` offset. Prices in cents, all placeholders: standard 3200, peak (17:00 to 21:00) 4800; VIP 6400 standard and 9000 peak. Availability thins by a small deterministic hash of date, room id, and start time; never `Math.random`, so the same query always returns the same slots. Scripted states: today plus 3 days returns `closed_today`; today plus 5 days returns empty slots with empty reasons (sold out). A party size above a room's capacity drops that room; if nothing remains, return `no_rooms`. Empty-state precedence: closed_today, then no_rooms, then sold out.
 - `src/lib/booking/format.ts`: `formatCad(cents)` via `Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" })`; `formatSlotTime(iso)` and `formatSlotRange(startIso, endIso)` via `Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Vancouver" })` for the "2:30 PM" form; `formatDateChip(date)` for the strip labels. All formatting reads the ISO strings; no manual time arithmetic anywhere.
 - Route handlers: `GET /api/booking/rooms` (revalidate about 300 seconds) and `GET /api/booking/availability` (`no-store`; validates `date`, `partySize`, optional `roomId`; 400 with the error envelope shape on bad input). Both call `activeProvider`. The client island fetches only these routes and never imports the provider.
 - The page (server component) awaits `getRooms()` and today's availability from the provider directly, plus `getSiteSettings()` for the phone, and passes them to the island as initial data, so first paint is populated without a client fetch.
@@ -154,8 +160,8 @@ All copy is dash free per the global rule. Placeholders are marked in their `det
 - Control labels: `Date` · `Party` · `Space` · space chip `All spaces`
 - Summary empty state: `Select a time to see the details here.`
 - Summary price detail: `Before GST and PST`
-- Summary CTA: `Call to Hold This Time`
-- Summary note: `Online checkout is on its way. Any open time you see here can be held by phone.`
+- Summary CTA: `Reserve This Time`
+- Summary note: `Online reservations are opening soon. To hold a time today, call +1 000 000 0000.` (the number substitutes the settings phone and is tel: linked; the sentence is otherwise verbatim)
 - Empty, closed_today: `The club is closed on this date.`
 - Empty, no_rooms: `No spaces fit this party size. Try a smaller group or another date.`
 - Empty, pricing pending: `Times for this date are still being finalized. Call us and we will set you up.`

@@ -59,3 +59,19 @@ export function formatDateChip(date: string): string {
     parts.find((part) => part.type === type)?.value ?? "";
   return `${get("weekday")} ${get("day")}`;
 }
+
+const longDay = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: VENUE_TIME_ZONE,
+});
+
+/**
+ * "Friday, July 18, 2026" for a `YYYY-MM-DD` venue date: the date chips' full
+ * `aria-label` (booking.md §5.3) and the summary Date row (§5.5).
+ */
+export function formatDateLong(date: string): string {
+  return longDay.format(calendarDateAnchor(date));
+}
