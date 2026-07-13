@@ -592,6 +592,9 @@ src/
 | 7 | Content surfaces | `/news/[slug]`, `/events`, `/golf/rates`, `/golf/lessons`, `/spaces/[slug]`, `/shop`, `/contact` |
 | 8 | Polish | journey feel tuning across input devices, a11y pass, perf audit, cross-browser, motion fail-safe audit (§9.5: IntroCurtain skips when GSAP fails or lags) |
 
+The booking track (B1 to B4) runs beside Phases 7 and 8 with its own numbering; see
+`docs/booking.md` §3.
+
 ---
 
 ## 14. Working with Claude Code
@@ -601,7 +604,9 @@ src/
 ---
 
 ## 15. Open issues
-1. **Bay booking**: siblings run tee-time booking (Chronogolf app at Westwood). Decide the indoor equivalent: third-party bay booking, owned form, or phone-first. Until then, Book a Bay and Book a Room land on `#contact`
+1. **Bay booking**: resolved. Online booking runs through the vendor's Green Tee middleware;
+   `docs/booking.md` owns the track (phases B1 to B4). `/book` ships in B1 and the Book a Bay
+   CTA moves from the `#` stub to `/book`; the `#contact` fallback applies only until B1 lands.
 2. **Rates confirmation**: the Rates & Hours numbers ($60 / $75 / $120 / from $200, 22:30 last tee, 14-day window) are opening placeholders; confirm real pricing and policies before launch
 3. **Restaurant reservation**: OpenTable account and link timing; the reserve page ships with phone and WeChat placeholders and an embed slot
 4. **Bilingual dining**: the EN / 中文 toggle is designed into the rail but inert; Chinese content is pending final human translation. Decide `next-intl` scoped to `/dining` versus linking out to a tenant-run bilingual site

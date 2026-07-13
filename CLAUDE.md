@@ -4,13 +4,14 @@ Next.js (App Router) + TypeScript + Tailwind v4 + Sanity + Vercel. Premium **ind
 
 ## Sources of truth, in order
 1. `docs/design.md` (architecture and page specs)
-2. `docs/mockups/*.html` (nine page mockups, table below)
-3. This file (working rules)
+2. `docs/booking.md` (the booking track: `/book`, phases B1 to B4)
+3. `docs/mockups/*.html` (nine page mockups, table below)
+4. This file (working rules)
 
 If code and docs disagree, docs win. If the two docs disagree, ask before proceeding.
 
 ## The mockup contract
-The nine files in `docs/mockups/` define the look, motion, and copy tone of their routes. Treat them as the spec, not as source code.
+The nine files in `docs/mockups/` define the look, motion, and copy tone of their routes. Treat them as the spec, not as source code. `/book` has no mockup; `docs/booking.md` §5 plays the mockup's role for that route.
 
 | Mockup | Route | Version |
 |---|---|---|
@@ -55,6 +56,36 @@ Cross-links between mockup files stand in for real routes; anchors carry over (`
 - No literal flower, petal, or leaf illustrations. No regular repeating decorative patterns; grain comes from the irregular fractal-noise overlay recipe (spaces zone heroes).
 - English only. Never use an em dash or an en dash in copy; write ranges as "2022 to 2025". No exclamation points anywhere in Crystal Jade Palace copy.
 - Every image renders through `<SanityImage>` (production) or `<PhotoFrame>` (placeholder). Never a bare `<img>`.
+
+## Booking track rules (B phases)
+
+- `docs/booking.md` is authoritative for `/book` and the booking data layer; its §5 is the page
+  spec. The vendor's API spec (Korean) is read-only reference at
+  `docs/vendor/customer-site-screen-golf-api-spec-ko.md`: wire shapes come from the vendor spec,
+  conventions and behavior from booking.md.
+- Vendor DTO shapes and their mapping live only inside `src/lib/booking/`. Components import
+  domain types from `src/types/booking.ts` (plus the format and config helpers) and nothing else.
+  This mirrors the Sanity rule: sections never see raw wire shapes.
+- The browser talks only to our `/api/booking/*` Route Handlers. The provider module is
+  server-only. The vendor middleware and Supabase are never called from a client component, at
+  any phase.
+- `BookingProvider` (booking.md §5.7) is the swap seam: the fixture provider in B1, the
+  middleware provider in B3. Nothing above the provider changes when the binding swaps.
+- Availability responses are never cached (`no-store`). Rooms may revalidate for about 300
+  seconds.
+- Money is integer cents end to end; formatting to dollars happens only at render through
+  `src/lib/booking/format.ts`. No float arithmetic on prices, ever.
+- Slot `startsAt` and `endsAt` strings render and echo verbatim. Display formatting is Intl with
+  `timeZone: "America/Vancouver"`; never the browser timezone, never manual time arithmetic.
+  Time ranges read "6:00 to 6:30 PM"; the dash rule applies to times too.
+- Booking fixtures are deterministic. The scripted demo states in booking.md §5.7 are part of
+  the contract; the same query always returns the same slots.
+- Booking copy never uses member language. It is "sign in" and "your reservations". Jade never
+  appears on `/book` (it is not Crystal Jade content).
+- `bookingCreateEnabled` in `src/lib/booking/config.ts` gates the reserve flow. B1 ships it
+  `false` with the call-to-hold CTA (booking.md §5.5).
+- B1 adds no booking environment variables and no secrets. The B2 and B3 variables are listed in
+  booking.md §8 and are not added early.
 
 ## Responsive rules (summary of docs §10)
 - Verify every UI task at 1440 and 390. Reference widths: 390 / 768 / 1024 / 1440. Working breakpoints: 1024 (rails to chip bars), 900 (hamburger, stacks, journey fallback), 760 (dining internals), 560 (fine grids).
@@ -148,3 +179,7 @@ Done: matches spec on all six routes, 1440 + 390 verified, lint/typecheck pass.
 - Filling designed pending states (VIP 14 and 15, VVIP suites) with stock imagery
 - Client-side Sanity calls; fetching inside presentational components
 - Shipping a section without its reduced-motion, mobile, and empty-state paths
+- Vendor DTO types, or any booking fetch, outside `src/lib/booking/`
+- Calling the booking middleware or Supabase from the browser or a client component
+- Recomputing, constructing, or doing arithmetic on slot time strings
+- `Math.random` or time-seeded randomness in booking fixtures
