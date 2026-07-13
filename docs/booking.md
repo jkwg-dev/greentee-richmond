@@ -146,6 +146,8 @@ This section is the spec; there is no mockup. Build entirely from existing syste
 | 4 | `expiresAt` semantics, what triggers `confirmed`, payment plans | Out of B1 scope | B3 |
 | 5 | Booking window and same day cutoff | 14 day strip as a placeholder | The strip length is one constant in the island |
 | 6 | A room type field (bay versus VIP versus VVIP) | Rooms carry names only; grouping is by room | If a type field lands, map it in the provider; the UI already groups per room |
+| 7 | User metadata the vendor app expects at sign up (name fields, profile trigger), queued for round 2 | Sign up collects email and password only | A metadata field joins the §9.4 sign up form and the signUp call without reshaping anything |
+| 8 | Forgot password (vendor app shows coming soon; SMTP and redirect registration pending, A3) | No recovery flow in B2 | A recovery route slots beside sign in when the vendor enables it |
 
 ---
 
@@ -174,3 +176,117 @@ All copy is dash free per the global rule. Placeholders are marked in their `det
 ## 8. Environment and security posture
 
 B1 introduces no environment variables, no external calls, and no secrets. For planning only, do not add now: B2 brings `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; B3 brings `BOOKING_API_BASE_URL`. The vendor middleware and Supabase are never called from the browser at any phase, and the vendor's `sgsk_` key never appears in this repository in any form.
+
+B2 adds `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (dev project
+values until the vendor's arrive; §9.2). B3 brings `BOOKING_API_BASE_URL`.
+
+---
+
+## 9. B2 · Auth spec
+
+This section is the spec for the account surfaces; there is no mockup. Build from existing
+primitives plus the one new primitive defined in §9.6, in the established language: noir ground,
+ivory text, champagne accent, Cormorant display, Inter UI. No jade. No new tokens, easings, or
+button styles.
+
+### 9.1 Scope and posture
+
+B2 ships auth infrastructure and the account pages with zero visible change to the existing
+site: no header or nav edits, no `/book` changes, no gate anywhere. Gate placement waits on the
+vendor's guest access answer and lands with B3. Until the vendor's project credentials arrive,
+the app points at our own dev Supabase project configured for parity with the vendor app
+(email and password provider on, Confirm email off); the swap to the vendor project is an env
+value change plus the §9.9 smoke test, nothing more.
+
+### 9.2 Environment
+
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, added to `.env.local`
+(dev project values now, vendor values later) and documented in `.env.example`. The publishable
+key is public by design. No other Supabase variable is ever added; no secret or service key
+exists in this repo in any form.
+
+Parity assumptions from the vendor app: password sign in enabled, no email confirmation at
+sign up. If `signUp` returns a user without a session, treat it as project misconfiguration:
+surface the §9.7 config error and log the cause; do not build a confirmation wait screen.
+
+### 9.3 Modules
+
+- `src/lib/supabase/server.ts`: the server client factory on `cookies()`, plus a `getUser()`
+  helper. The only place a Supabase client is created for request handling.
+- `src/lib/supabase/session.ts`: `updateSession(request)` for the root request interceptor
+  (Next names it `proxy.ts` on 16, `middleware.ts` before; use what the installed major
+  documents). Inside it, nothing runs between `createServerClient` and the user fetch; code in
+  that gap causes random sign outs (documented Supabase footgun).
+- No browser Supabase client exists in B2. Every auth operation is a Server Action; the browser
+  talks to our server only, for auth exactly as for booking data.
+- Server Actions live in `src/app/(site)/account/actions.ts`: `signIn`, `signUp`, `signOut`,
+  returning mapped errors per §9.7, redirecting on success.
+
+### 9.4 Routes
+
+All three: inside `(site)` (header and footer render as everywhere), `robots: noindex`, absent
+from the sitemap, standard reveals, verified at 1440 and 390. Forms are narrow single-column
+blocks (max width about 420px) under a news-pagehead-proportioned head.
+
+- `/account/sign-in`: Eyebrow, H1, support line, Email and Password fields, solid submit,
+  cross link to sign up. Honors `?next=` (internal paths only: must start with a single `/`,
+  reject `//` and anything with a scheme). Visited while signed in: redirect to `next`, else
+  `/account`.
+- `/account/sign-up`: same shell; Email and Password (single field, microcopy per §9.7), solid
+  submit, cross link to sign in. Same `next` behavior, same signed-in redirect.
+- `/account`: requires a session; signed out visitors redirect to
+  `/account/sign-in?next=/account`. Head plus `FactRows` (one Email row in B2), the §9.7
+  reservations note line, and a ghost Sign Out button. B3 adds the reservations rows here.
+
+### 9.5 Behavior
+
+- Actions use the `useActionState` pattern: pending disables the submit (`aria-disabled`,
+  reduced opacity on the existing solid variant, mirroring the Reserve button treatment) and
+  errors render in the §9.6 error slot without losing field values.
+- Success: sign in and sign up redirect to `next`, else `/account`; sign out redirects to `/`.
+- `/account` reads the session via `getUser()` server side; it is dynamic by nature of
+  `cookies()` and must not be forced static.
+
+### 9.6 Field, the first text input primitive
+
+`src/components/ui/Field.tsx`: label (9.5px tracked uppercase, mist), input (transparent
+background, 1px `--hair` border, ivory 14px text, 44px minimum height, comfortable padding),
+focus state swaps the border to champagne (the global focus-visible outline still applies for
+keyboard), autofill repainted to noir-soft, and an error line beneath (champagne, 11.5px).
+Champagne is the error color by ruling: the palette has no red and gains none. Password inputs
+have no show toggle in B2 (backlog). Add a Field block to `/styleguide` alongside the other
+primitives.
+
+### 9.7 B2 copy (exact strings)
+
+- Eyebrow, all three pages: `Your Account`
+- Sign in H1: `Sign in.` · support: `Reserve bays and manage your bookings with one account.`
+- Field labels: `Email` · `Password` · password microcopy (sign up only): `At least 6 characters.`
+- Sign in submit: `Sign In` · cross link: `New here? Create an account.`
+- Sign up H1: `Create your account.` · support: `Set up once. Reserve bays and manage your
+  bookings in one place.`
+- Sign up submit: `Create Account` · cross link: `Already with us? Sign in.`
+- Account H1: `Your account.` · reservations note: `Your reservations will appear here once
+  online booking opens.` · sign out button: `Sign Out`
+- Errors: invalid credentials `That email and password do not match. Try again.` · existing
+  account `An account with this email already exists. Sign in instead.` · weak password
+  `Passwords need at least 6 characters.` · rate limited `Too many attempts. Wait a moment and
+  try again.` · config (no session after sign up) `Sign up is not available right now. Please
+  try again later.` · fallback `Something went wrong. Please try again.`
+
+### 9.8 Security posture
+
+The `next` parameter is sanitized as in §9.4. Passwords never appear in logs, errors, or
+console output. Rate limiting is Supabase's default. Cookie handling is `@supabase/ssr`
+default; do not override.
+
+### 9.9 Done criteria and smoke test
+
+CLAUDE.md definition of done, plus this walkthrough, which is also the smoke test rerun on the
+day the vendor credentials replace the dev values: sign up with a fresh email lands on
+`/account` showing that email; sign out lands on `/`; sign in with the wrong password shows the
+credentials error and keeps the email value; sign in succeeds; visiting a sign-in URL with
+`?next=/book` returns to `/book` after auth; visiting sign in while authed redirects away;
+both auth pages carry noindex and the sitemap is unchanged; session survives a reload and a
+dev server restart; the refresh helper matches the documented pattern (reviewed, since token
+expiry cannot be waited out in QA).

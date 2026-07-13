@@ -86,6 +86,14 @@ Cross-links between mockup files stand in for real routes; anchors carry over (`
   `false` with the call-to-hold CTA (booking.md §5.5).
 - B1 adds no booking environment variables and no secrets. The B2 and B3 variables are listed in
   booking.md §8 and are not added early.
+- Auth: Supabase code lives in `src/lib/supabase/` only. Every auth operation is a Server
+  Action; no browser Supabase client is instantiated. In the session refresh helper, nothing
+  runs between `createServerClient` and the user fetch.
+- The only Supabase env vars are `NEXT_PUBLIC_SUPABASE_URL` and
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Never a secret or service key, in env or code.
+- Account routes are noindex, out of the sitemap, and out of the header and nav until a docs
+  ruling adds entry points.
+- `Field` (booking.md §9.6) is the only text input primitive; form errors render champagne.
 
 ## Responsive rules (summary of docs §10)
 - Verify every UI task at 1440 and 390. Reference widths: 390 / 768 / 1024 / 1440. Working breakpoints: 1024 (rails to chip bars), 900 (hamburger, stacks, journey fallback), 760 (dining internals), 560 (fine grids).
@@ -183,3 +191,6 @@ Done: matches spec on all six routes, 1440 + 390 verified, lint/typecheck pass.
 - Calling the booking middleware or Supabase from the browser or a client component
 - Recomputing, constructing, or doing arithmetic on slot time strings
 - `Math.random` or time-seeded randomness in booking fixtures
+- A browser-side Supabase client, or any Supabase secret or service key
+- Code between `createServerClient` and the user fetch in the session refresh helper
+- Auth copy with member language, or account entry points in the header without a docs ruling
