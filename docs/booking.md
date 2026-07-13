@@ -240,6 +240,8 @@ blocks (max width about 420px) under a news-pagehead-proportioned head.
 - `/account`: requires a session; signed out visitors redirect to
   `/account/sign-in?next=/account`. Head plus `FactRows` (one Email row in B2), the §9.7
   reservations note line, and a ghost Sign Out button. B3 adds the reservations rows here.
+- Cross links between sign in and sign up preserve `?next=` (URL encoded), so switching forms
+  mid-flow never strands the return path.
 
 ### 9.5 Behavior
 
@@ -249,6 +251,9 @@ blocks (max width about 420px) under a news-pagehead-proportioned head.
 - Success: sign in and sign up redirect to `next`, else `/account`; sign out redirects to `/`.
 - `/account` reads the session via `getUser()` server side; it is dynamic by nature of
   `cookies()` and must not be forced static.
+- Errors route to a field: the existing-account error renders under Email; credentials, weak
+  password, rate limit, config, and fallback render under Password. Pending submits are also
+  guarded against double fire; aria-disabled alone leaves a button clickable.
 
 ### 9.6 Field, the first text input primitive
 
@@ -276,6 +281,7 @@ primitives.
   `Passwords need at least 6 characters.` · rate limited `Too many attempts. Wait a moment and
   try again.` · config (no session after sign up) `Sign up is not available right now. Please
   try again later.` · fallback `Something went wrong. Please try again.`
+- Page titles: Sign In · Create Account · Your Account.
 
 ### 9.8 Security posture
 
