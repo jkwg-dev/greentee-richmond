@@ -97,6 +97,9 @@ Cross-links between mockup files stand in for real routes; anchors carry over (`
 - Live mode is the presence of `BOOKING_API_BASE_URL`; it arms the middleware provider, the
   route handler auth requirement, and the /book gate together. The stub in `scripts/` is dev
   only: never deployed, never imported by app code.
+- Writing the Supabase top-level phone field, or any auth identity field, from sign-up or
+profile forms (user metadata only)
+- Creating first_name or last_name metadata keys; display_name is the single stored name
 
 ## Responsive rules (summary of docs §10)
 - Verify every UI task at 1440 and 390. Reference widths: 390 / 768 / 1024 / 1440. Working breakpoints: 1024 (rails to chip bars), 900 (hamburger, stacks, journey fallback), 760 (dining internals), 560 (fine grids).
