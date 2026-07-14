@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import { activeProvider } from "@/lib/booking/provider";
+import { bookingErrorResponse, requireLiveSession } from "../guard";
 
 /**
- * GET /api/booking/rooms (booking.md §5.7). Room inventory changes rarely, so
- * this handler is static with a short revalidate window; availability is the
- * never-cached surface.
+ * GET /api/booking/rooms (booking.md §10.3). The handler is dynamic; caching
+ * lives in the upstream fetch only (revalidate 300 inside the middleware
+ * provider; fixture data needs none). Live mode requires a session.
  */
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json(await activeProvider.getRooms());
+  const denied = await requireLiveSession();
+  if (denied) return denied;
+
+  try {
+    return NextResponse.json(await activeProvider.getRooms());
+  } catch (error) {
+    return bookingErrorResponse(error);
+  }
 }

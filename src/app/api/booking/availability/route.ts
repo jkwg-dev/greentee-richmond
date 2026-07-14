@@ -1,7 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { activeProvider } from "@/lib/booking/provider";
+import { bookingErrorResponse, requireLiveSession } from "../guard";
 
-/** Availability responses are never cached (booking.md §2). */
+/** Availability responses are never cached (booking.md §2); live mode requires a session (§10.3). */
 export const dynamic = "force-dynamic";
 
 const NO_STORE = { "Cache-Control": "no-store" };
@@ -32,6 +33,9 @@ function isCalendarDate(value: string): boolean {
  * B1, the vendor middleware in B3.
  */
 export async function GET(request: NextRequest) {
+  const denied = await requireLiveSession();
+  if (denied) return denied;
+
   const params = request.nextUrl.searchParams;
 
   const date = params.get("date");
@@ -65,10 +69,14 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const availability = await activeProvider.getAvailability({
-    date,
-    partySize,
-    roomId,
-  });
-  return NextResponse.json(availability, { headers: NO_STORE });
+  try {
+    const availability = await activeProvider.getAvailability({
+      date,
+      partySize,
+      roomId,
+    });
+    return NextResponse.json(availability, { headers: NO_STORE });
+  } catch (error) {
+    return bookingErrorResponse(error);
+  }
 }

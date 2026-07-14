@@ -1,7 +1,9 @@
 import "server-only";
 
 import type { Availability, BookingRoom } from "@/types/booking";
+import { isBookingLive } from "./config";
 import { fixtureProvider } from "./fixtures";
+import { middlewareProvider } from "./middleware";
 
 /** The availability query (booking.md §4): a venue calendar date, the party, optionally one room. */
 export type AvailabilityQuery = {
@@ -21,5 +23,11 @@ export type BookingProvider = {
   getAvailability(query: AvailabilityQuery): Promise<Availability>;
 };
 
-/** Bound to the fixture provider in B1; the middleware provider replaces it in B3. */
-export const activeProvider: BookingProvider = fixtureProvider;
+/**
+ * Live mode selects the middleware provider, fixture mode keeps B1's
+ * (booking.md §10.1). The environment is fixed per process, so the binding
+ * is module scoped; nothing above the seam changes when it swaps.
+ */
+export const activeProvider: BookingProvider = isBookingLive()
+  ? middlewareProvider
+  : fixtureProvider;
