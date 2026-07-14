@@ -200,3 +200,4 @@ Done: matches spec on all six routes, 1440 + 390 verified, lint/typecheck pass.
 - Serving middleware-backed data from an unauthenticated route in live mode, or caching a
   user's access token across requests
 - A session-aware header
+- Creating any account in the shared Supabase pool other than the two approved test accounts(earlyoonj@gmail.com / yoonji.lee@jkworldgroup.com). Sign-in may be verified end to end using SUPABASE_QA_EMAIL and SUPABASE_QA_PASSWORD from .env.local; never print, log, or echo the password value in any report or command output. Verify the Create Account entry point by checking its link destination only (href and the next parameter); do not submit a live sign-up.
