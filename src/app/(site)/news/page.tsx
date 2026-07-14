@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { NewsIndex } from "@/components/sections/news/NewsIndex";
-import { NewsIndexHead } from "@/components/sections/news/NewsIndexHead";
+import { PageHead } from "@/components/ui/PageHead";
 import { getNewsEntries } from "@/sanity/lib/queries";
 
 export const metadata: Metadata = {
@@ -19,7 +19,13 @@ export default async function NewsPage() {
   const entries = await getNewsEntries();
   return (
     <>
-      <NewsIndexHead />
+      {/* The mockup sub ends "Every entry below is managed in Sanity."; that
+          is a dev note, not user copy, so it stays dropped (docs §7 note). */}
+      <PageHead
+        eyebrow="News & Offers"
+        title="What's on at the Center."
+        support="Leagues, seasonal offers, and news from the club and Crystal Jade Palace."
+      />
       <NewsIndex entries={entries} />
     </>
   );

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Reveal } from "@/components/motion/Reveal";
-import { AccountHead } from "@/components/sections/account/AccountHead";
+import { PageHead } from "@/components/ui/PageHead";
 import { SignInForm } from "@/components/sections/account/SignInForm";
 import { getUser } from "@/lib/supabase/server";
 import { sanitizeNext } from "../redirect-target";
@@ -27,7 +27,8 @@ export default async function SignInPage({
 
   return (
     <>
-      <AccountHead
+      <PageHead
+        eyebrow="Your Account"
         title="Sign in."
         support="Reserve bays and manage your bookings with one account."
       />

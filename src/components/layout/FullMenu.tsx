@@ -116,16 +116,26 @@ export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
         ))}
       </nav>
 
-      {/* On /dining the CTA switches to the tenant action; the header's Book a
-          Bay button stays visible at every width (docs §3.4, §8.2). */}
-      <Button
-        href={isDining ? BOOK_A_TABLE_HREF : BOOK_A_BAY_HREF}
-        onClick={onClose}
-        tabIndex={open ? 0 : -1}
-        className="self-start"
-      >
-        {isDining ? "Book a Table" : "Book a Bay"}
-      </Button>
+      {/* Utility area: the CTA (switching to the tenant action on /dining,
+          docs §3.4, §8.2) plus the session-unaware Sign In link mirroring the
+          desktop header (booking.md §10.5). */}
+      <div className="flex flex-wrap items-center gap-7">
+        <Button
+          href={isDining ? BOOK_A_TABLE_HREF : BOOK_A_BAY_HREF}
+          onClick={onClose}
+          tabIndex={open ? 0 : -1}
+        >
+          {isDining ? "Book a Table" : "Book a Bay"}
+        </Button>
+        <Link
+          href="/account/sign-in"
+          onClick={onClose}
+          tabIndex={open ? 0 : -1}
+          className="text-mist hover:text-ivory px-1 py-3 text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors"
+        >
+          Sign In
+        </Link>
+      </div>
     </div>
   );
 }

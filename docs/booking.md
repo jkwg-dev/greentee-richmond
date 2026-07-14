@@ -351,7 +351,9 @@ specific); availability is `no-store`. Handler level caching is removed (§10.3)
 In live mode both `/api/booking/*` handlers require a session before touching the provider and
 answer 401 with the §4 envelope when there is none; in fixture mode they stay open. The
 handlers are dynamic; caching lives in the upstream fetch only. Middleware-backed data is
-never served from an unauthenticated path.
+never served from an unauthenticated path. The handler session check uses the local session
+(a politeness gate for clean 401s); the vendor middleware validating the relayed JWT is the
+security boundary. The /book page gate uses the verified user check.
 
 ### 10.4 The gate on /book
 

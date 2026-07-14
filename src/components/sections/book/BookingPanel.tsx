@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { dateStripDays, defaultPartySize } from "@/lib/booking/config";
@@ -42,6 +43,7 @@ export function BookingPanel({
   const [selection, setSelection] = useState<BookingSelection | null>(null);
   const [attempt, setAttempt] = useState(0);
   const initialQuery = useRef(query);
+  const router = useRouter();
 
   // The strip is generated from the server's venue-time today (booking.md
   // §5.3), so a visitor sees the club's calendar, not their own.
@@ -67,10 +69,16 @@ export function BookingPanel({
       signal: controller.signal,
     })
       .then((response) => {
+        if (response.status === 401) {
+          // The live session lapsed mid browse (booking.md §10.4).
+          router.push("/account/sign-in?next=/book");
+          return null;
+        }
         if (!response.ok) throw new Error(`availability ${response.status}`);
         return response.json() as Promise<Availability>;
       })
       .then((data) => {
+        if (!data) return;
         setAvailability(data);
         setStatus("ready");
       })
@@ -80,7 +88,7 @@ export function BookingPanel({
         setStatus("error");
       });
     return () => controller.abort();
-  }, [query, attempt]);
+  }, [query, attempt, router]);
 
   // Any control change resets the pick; the old slot may not exist under the
   // new query.

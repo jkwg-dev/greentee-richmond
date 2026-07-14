@@ -22,7 +22,6 @@ import { sampleNewsEntries } from "../src/lib/mock/news";
 import { restaurant } from "../src/lib/mock/restaurant";
 import { zones } from "../src/lib/mock/zones";
 import {
-  BOOK_A_BAY_HREF,
   familyLinks,
   networkLinks,
   visit,
@@ -83,9 +82,7 @@ function toBlocks(paragraphs: string[], prefix: string) {
     _key: `${prefix}${index}`,
     style: "normal",
     markDefs: [],
-    children: [
-      { _type: "span", _key: `${prefix}${index}s`, text, marks: [] },
-    ],
+    children: [{ _type: "span", _key: `${prefix}${index}s`, text, marks: [] }],
   }));
 }
 
@@ -177,7 +174,6 @@ function buildSiteSettings() {
     address: visit.address,
     hours: visit.hours,
     openSummary: visit.openSummary,
-    bookingUrl: BOOK_A_BAY_HREF,
     careersUrl: "#",
     familyLinks: toLinks(familyLinks, "fl"),
     networkLinks: toLinks(networkLinks, "nl"),

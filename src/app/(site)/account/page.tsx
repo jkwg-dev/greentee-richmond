@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Reveal } from "@/components/motion/Reveal";
-import { AccountHead } from "@/components/sections/account/AccountHead";
+import { PageHead } from "@/components/ui/PageHead";
 import { Button } from "@/components/ui/Button";
 import { FactRows } from "@/components/ui/FactRows";
 import { getUser } from "@/lib/supabase/server";
@@ -24,7 +24,7 @@ export default async function AccountPage() {
 
   return (
     <>
-      <AccountHead title="Your account." />
+      <PageHead eyebrow="Your Account" title="Your account." />
       <div className="mx-auto max-w-[1360px] px-[6vw] pt-[46px] pb-[110px]">
         <Reveal as="div" delay={120} className="max-w-[420px]">
           <FactRows facts={[{ label: "Email", value: user.email ?? "" }]} />

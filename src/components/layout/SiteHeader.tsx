@@ -78,6 +78,15 @@ export function SiteHeader({
           </nav>
 
           <div className="flex items-center gap-1.5">
+            {/* Static href by design: the header stays session unaware, and
+                B2's signed-in redirect makes the destination correct in both
+                states (booking.md §10.5, the ruling permitting this edit). */}
+            <Link
+              href="/account/sign-in"
+              className="text-mist hover:text-ivory mr-5 px-1 py-3 text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors max-[900px]:hidden"
+            >
+              Sign In
+            </Link>
             <Button href={BOOK_A_BAY_HREF} size="sm">
               Book a Bay
             </Button>
