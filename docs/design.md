@@ -542,6 +542,11 @@ src/
 | `dish` | dining menu items | §4.1 (name, zhName, line, image, category, seasonal, available, order) |
 | `event` / `promotion` / `newsPost` | content operations | §4.1 (all carry the timing label) |
 
+Ruling (B3a): `siteSettings.bookingUrl` is removed from the schema, types, and seeds; the
+`BOOK_A_BAY_HREF` constant in `src/lib/site.ts` is the single source for the CTA target.
+Seeds are updated so the three spaces zone CTAs point at `/book` (they carried the old `#`
+constant value baked at seed time).
+
 ### 11.5 Data and rendering
 - SSG + ISR everywhere; `sanityFetch` with cache tags (`home`, `zone`, `restaurant`, `dish`, `event`, `promotion`, `news`, `settings`)
 - Sanity webhook to `/api/revalidate` calling `revalidateTag()`

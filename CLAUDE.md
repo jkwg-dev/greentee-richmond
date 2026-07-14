@@ -94,6 +94,9 @@ Cross-links between mockup files stand in for real routes; anchors carry over (`
 - Account routes are noindex, out of the sitemap, and out of the header and nav until a docs
   ruling adds entry points.
 - `Field` (booking.md §9.6) is the only text input primitive; form errors render champagne.
+- Live mode is the presence of `BOOKING_API_BASE_URL`; it arms the middleware provider, the
+  route handler auth requirement, and the /book gate together. The stub in `scripts/` is dev
+  only: never deployed, never imported by app code.
 
 ## Responsive rules (summary of docs §10)
 - Verify every UI task at 1440 and 390. Reference widths: 390 / 768 / 1024 / 1440. Working breakpoints: 1024 (rails to chip bars), 900 (hamburger, stacks, journey fallback), 760 (dining internals), 560 (fine grids).
@@ -194,3 +197,6 @@ Done: matches spec on all six routes, 1440 + 390 verified, lint/typecheck pass.
 - A browser-side Supabase client, or any Supabase secret or service key
 - Code between `createServerClient` and the user fetch in the session refresh helper
 - Auth copy with member language, or account entry points in the header without a docs ruling
+- Serving middleware-backed data from an unauthenticated route in live mode, or caching a
+  user's access token across requests
+- A session-aware header

@@ -44,7 +44,8 @@ The booking track runs beside roadmap Phases 7 and 8 and carries its own numberi
 |---|---|---|
 | **B1 · Browse** (this) | `/book`: rooms, date, party size, time slot grid with prices, selection summary, hold by phone CTA. Fixture backed. Book a Bay CTA switches to `/book`. | Nothing external |
 | B2 · Auth | Supabase sign in and sign up in the site's design language, session handling, gate placement per the vendor's guest access answer | Vendor: project URL and publishable key |
-| B3 · Reserve | Middleware provider behind the same interface, reservation creation, confirmation screen, my bookings, cancel | Vendor: staging URL, slot model answer, expiry semantics |
+| B3a | Live reads: middleware provider behind the seam, per-user JWT relay, the /book gate, header and FullMenu sign-in entry points, housekeeping (PageHead extraction, bookingUrl removal, seed CTA fix) | verified against the local stub (§10.6); the vendor base URL only flips the env value |
+| B3b | Reserve flow (create, 409 and timeout handling), confirmation screen, my reservations list, detail, and cancel on /account | slot model answer (attachment item 1) · base URL or staging (item 2) |
 | B4 · Payment | Payment step inserted between summary and confirmation | Vendor: payment proxy |
 
 ---
@@ -80,6 +81,9 @@ This section is the spec; there is no mockup. Build entirely from existing syste
 - `src/app/(site)/book/page.tsx`, inheriting the site header and footer from the `(site)` layout. Indexable, present in the sitemap, not a `primaryNav` item; the page is reached through the Book a Bay CTA.
 - `BOOK_A_BAY_HREF` in `src/lib/site.ts` becomes `"/book"`. Every existing consumer (header, FullMenu, outro, zone CTAs) follows automatically.
 - Feature flag: `src/lib/booking/config.ts` exports `bookingCreateEnabled = false`. B1 renders the hold by phone CTA in the summary; B3 flips the flag and replaces it with the reserve flow.
+Gate behavior in live mode is defined in §10.4; the route remains indexable in every mode (the
+gate is an inline panel, never a redirect).
+
 
 ### 5.2 Layout
 1. **Head** (server): mirrors the `/news` index head proportions. `Eyebrow` "Book a Bay", serif H1 "Choose your *time*." through `RichHeading` (champagne italic em), support line per §7. Standard reveals.
@@ -148,6 +152,18 @@ This section is the spec; there is no mockup. Build entirely from existing syste
 | 6 | A room type field (bay versus VIP versus VVIP) | Rooms carry names only; grouping is by room | If a type field lands, map it in the provider; the UI already groups per room |
 | 7 | User metadata the vendor app expects at sign up (name fields, profile trigger), queued for round 2 | Sign up collects email and password only | A metadata field joins the §9.4 sign up form and the signUp call without reshaping anything |
 | 8 | Forgot password (vendor app shows coming soon; SMTP and redirect registration pending, A3) | No recovery flow in B2 | A recovery route slots beside sign in when the vendor enables it |
+| 9 | The vendor will enable email confirmation in their production environment (A3); when it flips, signUp stops returning an immediate session and our §9.2 config error becomes wrong | Advance notice requested; parity holds today | A confirmation wait screen and redirect coordination land as their production launch approaches; tracked as B-later |
+| 10 | Identity mapping key (attachment item 4): if screen golf keys users by the (provider, externalUserId) pair and a web provider value is ever introduced, one person's history could split between app and web | We build nothing for this; it is the vendor's data model | The remedy is a vendor policy request (link web users to the same record), not code; if unification is refused it escalates to a product decision |
+
+Answered: A1 keys (URL + publishable key received; all secret material discarded and rotation
+recommended) · A2 guest reads declined, the documented fallback is now the ruling: /book gates
+at the browse step in live mode (§10.4) · A4 shared user pool confirmed.
+Half answered: A3, email confirmation and forgot password are off today because the vendor app
+is pre production; the vendor will enable email confirmation in their production environment
+and we have requested advance notice (hedge 9).
+Open, attachment of 2026-07-21: 1 slot model (resend, gates B3b UI) · 2 staging base URL and
+test data, idempotency timeline, OpenAPI export (base URL gates the live flip) · 3 sign-up
+metadata expectations · 4 identity mapping key · 5 booking window and cutoff.
 
 ---
 
@@ -179,6 +195,11 @@ B1 introduces no environment variables, no external calls, and no secrets. For p
 
 B2 adds `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (dev project
 values until the vendor's arrive; §9.2). B3 brings `BOOKING_API_BASE_URL`.
+
+`BOOKING_API_BASE_URL` (B3a): its presence is live mode. One variable arms both the middleware
+provider and the /book gate, so real data and the sign-in wall appear together; absent, the
+site runs fixture mode with the open browse experience (local dev and preview deployments).
+No trailing slash; validated on first use with a clear error when malformed.
 
 ---
 
@@ -299,3 +320,76 @@ credentials error and keeps the email value; sign in succeeds; visiting a sign-i
 both auth pages carry noindex and the sitemap is unchanged; session survives a reload and a
 dev server restart; the refresh helper matches the documented pattern (reviewed, since token
 expiry cannot be waited out in QA).
+
+## 10. B3a · Live reads, the gate, and sign-in entry points
+
+### 10.1 Mode
+
+Live mode is the presence of `BOOKING_API_BASE_URL` (§8). `isBookingLive()` in
+`src/lib/booking/config.ts` is the single check; the provider binding, the route handler auth
+requirement, and the /book gate all read it. Fixture mode keeps today's open behavior
+everywhere.
+
+### 10.2 The middleware provider
+
+`src/lib/booking/middleware.ts` implements `BookingProvider` against the two read endpoints
+(wire shapes per §4; mapping stays in `map.ts`, the only DTO-aware file). Inside the request
+scope it obtains the current user's access token from the Supabase server client; with no
+session in live mode it throws a typed auth error. Nothing above the provider changes (the
+seam rule). Tokens are read per request and never cached or shared across requests.
+
+Requests carry `Authorization: Bearer <token>`, `Accept: application/json`, and a generated
+`x-request-id` (crypto.randomUUID). Failures log the request id and the middleware error
+envelope. Vendor errors map: `UNAUTHORIZED` to our 401, `VALIDATION_FAILED` to 400, anything
+else to the §5.6 error state.
+
+Caching: the rooms upstream fetch uses `next: { revalidate: 300 }` (room data is not user
+specific); availability is `no-store`. Handler level caching is removed (§10.3).
+
+### 10.3 Route handlers
+
+In live mode both `/api/booking/*` handlers require a session before touching the provider and
+answer 401 with the §4 envelope when there is none; in fixture mode they stay open. The
+handlers are dynamic; caching lives in the upstream fetch only. Middleware-backed data is
+never served from an unauthenticated path.
+
+### 10.4 The gate on /book
+
+Live mode, signed out: the page renders the head exactly as always (the route stays indexable;
+the gate is an inline panel, never a redirect), and the controls, slot area, and summary are
+replaced by one quiet panel: the §10.7 line, a solid Button "Sign In" linking to
+`/account/sign-in?next=/book`, and a ghost Button "Create Account" linking to
+`/account/sign-up?next=/book`. The notes band renders beneath the gate; the timezone line
+belongs to the slot area and is absent. Signed in, or fixture mode: the page behaves exactly
+as today. If a live fetch returns 401 mid session, the island navigates to
+`/account/sign-in?next=/book`.
+
+### 10.5 Sign-in entry points
+
+Desktop header: a "Sign In" text link left of the Book a Bay CTA, nav-item type at reduced
+emphasis (mist, ivory on hover), static href `/account/sign-in`. The header never becomes
+session aware; B2's signed-in redirect makes the static destination correct in both states.
+FullMenu mirrors the same link in its utility area without touching the primary nav hierarchy.
+This section is the docs ruling that permits editing the header surface.
+
+### 10.6 The local middleware stub
+
+`scripts/booking-middleware-stub.mjs`: a dev-only, dependency-free server emulating the two
+read endpoints with spec-shaped payloads. It returns 401 without a Bearer token, serves
+deterministic rooms and slots, and has a switch for forcing an error response. It exists so
+the relay, the gate, and the error paths are verifiable end to end before the vendor URL
+exists, and it stays until vendor staging arrives. Never deployed, never imported by app code.
+
+### 10.7 B3a copy
+
+Gate line: `Sign in to see open times and reserve your bay.` Buttons: `Sign In` and
+`Create Account`. Header and FullMenu link label: `Sign In`.
+
+### 10.8 Done criteria
+
+Fixture mode is byte-for-byte today's behavior: open browse, no gate, handlers open. Live mode
+against the stub: signed out shows the gate with the head intact; both gate buttons round trip
+through auth and land back on /book; slots render from the stub; stopping the stub yields the
+§5.6 error state; a forced 401 mid session redirects to sign in and returns. /news, /book, and
+/account render pixel identical after the PageHead extraction. Lint, typecheck, and the dash
+check pass.
