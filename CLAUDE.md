@@ -200,4 +200,11 @@ Done: matches spec on all six routes, 1440 + 390 verified, lint/typecheck pass.
 - Serving middleware-backed data from an unauthenticated route in live mode, or caching a
   user's access token across requests
 - A session-aware header
-- Creating any account in the shared Supabase pool other than the two approved test accounts(earlyoonj@gmail.com / yoonji.lee@jkworldgroup.com). Sign-in may be verified end to end using SUPABASE_QA_EMAIL and SUPABASE_QA_PASSWORD from .env.local; never print, log, or echo the password value in any report or command output. Verify the Create Account entry point by checking its link destination only (href and the next parameter); do not submit a live sign-up.
+- Creating any account in the shared Supabase pool other than the two approved QA accounts.
+  Their identities and credentials live only in .env.local (SUPABASE_QA_EMAIL,
+  SUPABASE_QA_PASSWORD), never in this file, a commit, or a report, and the password value
+  is never printed, logged, or echoed. Signing in with those env values, or a manual
+  sign-in by us, verifies authenticated flows; Claude Code never handles any credential
+  other than these two env values. The Create Account entry point is verified by link
+  destination only; a live sign-up is permitted solely against a development Supabase
+  project, never the shared pool.
