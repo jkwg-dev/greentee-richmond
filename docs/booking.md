@@ -184,7 +184,7 @@ All copy is dash free per the global rule. Placeholders are marked in their `det
 - Summary empty state: `Select a time to see the details here.`
 - Summary price detail: `Before GST and PST`
 - Summary CTA: `Reserve This Time`
-- Summary note: `Online reservations are opening soon. To hold a time today, call +1 000 000 0000.` (the number substitutes the settings phone and is tel: linked; the sentence is otherwise verbatim)
+- Summary note: `Online reservations are opening soon.`
 - Empty, closed_today: `The club is closed on this date.`
 - Empty, no_rooms: `No spaces fit this party size. Try a smaller group or another date.`
 - Empty, pricing pending: `Times for this date are still being finalized. Call us and we will set you up.`

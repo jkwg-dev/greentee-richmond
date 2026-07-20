@@ -18,14 +18,7 @@ function CallNote({ phone, className }: { phone: string; className?: string }) {
   const telHref = `tel:${phone.replace(/[^+\d]/g, "")}`;
   return (
     <p className={cn("text-mist text-[12px] leading-[1.8]", className)}>
-      Online reservations are opening soon. To hold a time today, call{" "}
-      <a
-        href={telHref}
-        className="text-ivory/90 hover:text-ivory transition-colors"
-      >
-        {phone}
-      </a>
-      .
+      Online reservations are opening soon.
     </p>
   );
 }
