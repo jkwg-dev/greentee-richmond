@@ -46,6 +46,19 @@ export function formatSlotRange(startIso: string, endIso: string): string {
     : `${start.time} ${start.period} to ${end.time} ${end.period}`;
 }
 
+/**
+ * Slot count times 30 minutes as "30 minutes", "1 hour", "1 hour 30 minutes"
+ * (booking.md §5.5 as amended). Duration is always derived from the count,
+ * never from date math on the slot strings.
+ */
+export function formatDuration(slotCount: number): string {
+  const hours = Math.floor(slotCount / 2);
+  const halfHour = slotCount % 2 === 1;
+  if (hours === 0) return "30 minutes";
+  const hourPart = hours === 1 ? "1 hour" : `${hours} hours`;
+  return halfHour ? `${hourPart} 30 minutes` : hourPart;
+}
+
 const chipDay = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
   day: "numeric",

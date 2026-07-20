@@ -9,6 +9,13 @@ export type AvailabilityReason =
   "closed_today" | "no_rooms" | "no_pricing_configured" | "pricing_gaps";
 
 /**
+ * The room's type for the §11.2 cards and the §11.3 filter. Derived by name
+ * heuristic in the mapper until real room ids and the Sanity room mapping
+ * supply curated categories (booking.md §11.3, interim by ruling).
+ */
+export type BookingRoomCategory = "bay" | "vip" | "vvip" | "other";
+
+/**
  * A bookable simulator room. Vendor data supplies inventory, capacity, and
  * order; presentation (imagery, descriptions) is ours and arrives elsewhere
  * (booking.md §1), so the domain type carries none of it.
@@ -18,6 +25,7 @@ export type BookingRoom = {
   name: string;
   maxCapacity: number;
   order: number;
+  category: BookingRoomCategory;
 };
 
 /**
@@ -43,9 +51,15 @@ export type Availability = {
   reasons: AvailabilityReason[];
 };
 
-/** The visitor's pick on /book: a single slot, no duration control in B1 (booking.md §6.2). */
+/**
+ * The visitor's pick on /book (booking.md §5.7 as amended): a contiguous
+ * same-room range of one or more slots, in chronological order. Invariants
+ * (non-empty, contiguous by string-equality adjacency, single room) are
+ * maintained by `src/lib/booking/selection.ts`, the only writer; a range may
+ * never span an unavailable slot (§2 decision 2). It maps 1:1 onto the future
+ * create payload: the first slot's `startsAt` plus the last slot's `endsAt`.
+ */
 export type BookingSelection = {
-  room: BookingRoom;
-  slot: BookingSlot;
-  partySize: number;
+  kind: "range";
+  slots: BookingSlot[];
 };

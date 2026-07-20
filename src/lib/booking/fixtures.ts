@@ -1,7 +1,8 @@
 import "server-only";
 
 import type { Availability, BookingRoom, BookingSlot } from "@/types/booking";
-import { addDaysIso, venueTodayIso } from "./dates";
+import { addDaysIso, venueNowMinutes, venueTodayIso } from "./dates";
+import { categorizeRoom } from "./map";
 import type { AvailabilityQuery, BookingProvider } from "./provider";
 
 /**
@@ -21,23 +22,25 @@ type FixtureRoom = {
 const STANDARD = { offPeakCents: 3200, peakCents: 4800 };
 const VIP = { offPeakCents: 6400, peakCents: 9000 };
 
+/** Categories run through the one §11.3 heuristic so fixtures and live data agree. */
+const room = (
+  id: string,
+  name: string,
+  maxCapacity: number,
+  order: number,
+): BookingRoom => ({
+  id,
+  name,
+  maxCapacity,
+  order,
+  category: categorizeRoom(name),
+});
+
 const FIXTURE_ROOMS: FixtureRoom[] = [
-  {
-    room: { id: "bay-01", name: "Bay 01 · Practice", maxCapacity: 4, order: 1 },
-    ...STANDARD,
-  },
-  {
-    room: { id: "bay-02", name: "Bay 02 · Play", maxCapacity: 4, order: 2 },
-    ...STANDARD,
-  },
-  {
-    room: { id: "bay-05", name: "Bay 05 · Play", maxCapacity: 4, order: 3 },
-    ...STANDARD,
-  },
-  {
-    room: { id: "vip-12", name: "VIP Room 12", maxCapacity: 8, order: 4 },
-    ...VIP,
-  },
+  { room: room("bay-01", "Bay 01 · Practice", 4, 1), ...STANDARD },
+  { room: room("bay-02", "Bay 02 · Play", 4, 2), ...STANDARD },
+  { room: room("bay-05", "Bay 05 · Play", 4, 3), ...STANDARD },
+  { room: room("vip-12", "VIP Room 12", 8, 4), ...VIP },
 ];
 
 /** 30 minute block boundaries, 10:00 to 22:00 venue time; adjacent pairs form slots. */
@@ -78,11 +81,38 @@ function hashKey(key: string): number {
 const isTaken = (date: string, roomId: string, start: string) =>
   hashKey(`${date}|${roomId}|${start}`) % 4 === 0;
 
-function slotsFor(date: string, fixture: FixtureRoom): BookingSlot[] {
+/** The vendor's creation cutoff, minutes before a slot's start (booking.md §4). */
+export const CUTOFF_MINUTES = 60;
+
+/**
+ * The §5.7 cutoff rule, replacing past-slots-only for today: a slot starting
+ * within 60 minutes of venue-time now is dropped; one starting at or beyond
+ * the cutoff stays (the vendor enforces "60 minutes before the slot start",
+ * so the boundary slot is still creatable). Pure and count based; both
+ * arguments are minutes since venue midnight.
+ */
+export const meetsCutoff = (
+  blockStartMinutes: number,
+  nowMinutes: number,
+): boolean => blockStartMinutes >= nowMinutes + CUTOFF_MINUTES;
+
+/** "HH:MM" block boundaries (fixture-internal generation values, not slot strings). */
+const blockMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(":").map(Number);
+  return hours * 60 + minutes;
+};
+
+function slotsFor(
+  date: string,
+  fixture: FixtureRoom,
+  nowMinutes: number | null,
+): BookingSlot[] {
   const slots: BookingSlot[] = [];
   for (let index = 0; index < BLOCK_BOUNDARIES.length - 1; index++) {
     const start = BLOCK_BOUNDARIES[index];
     if (isTaken(date, fixture.room.id, start)) continue;
+    if (nowMinutes !== null && !meetsCutoff(blockMinutes(start), nowMinutes))
+      continue;
     const peak = start >= PEAK_FROM && start < PEAK_UNTIL;
     slots.push({
       roomId: fixture.room.id,
@@ -130,9 +160,13 @@ export const fixtureProvider: BookingProvider = {
       return { date, slots: [], reasons: [] };
     }
 
+    // The 60 minute cutoff applies to today only (booking.md §5.7); future
+    // dates keep every open block.
+    const nowMinutes = date === today ? venueNowMinutes() : null;
+
     return {
       date,
-      slots: open.flatMap((fixture) => slotsFor(date, fixture)),
+      slots: open.flatMap((fixture) => slotsFor(date, fixture, nowMinutes)),
       reasons: [],
     };
   },

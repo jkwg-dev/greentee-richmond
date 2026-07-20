@@ -5,23 +5,33 @@ import { useEffect, useRef, useState } from "react";
 import { Reveal } from "@/components/motion/Reveal";
 import { dateStripDays, defaultPartySize } from "@/lib/booking/config";
 import { addDaysIso } from "@/lib/booking/dates";
+import {
+  formatCad,
+  formatDuration,
+  formatSlotRange,
+} from "@/lib/booking/format";
+import { applyTap, selectionSummary } from "@/lib/booking/selection";
 import type {
   Availability,
   BookingRoom,
   BookingSelection,
   BookingSlot,
 } from "@/types/booking";
+import { BookingBrowse, type BrowseSpace, type SlotStatus } from "./BookingBrowse";
 import { BookingControls } from "./BookingControls";
 import { BookingSummary } from "./BookingSummary";
-import { SlotArea, type SlotStatus } from "./SlotArea";
+import { CATEGORY_FILTER_ORDER, type FilterableCategory } from "./categories";
+import type { TypeFilterValue } from "./TypeFilter";
 
-type SlotQuery = { date: string; partySize: number; roomId?: string };
+type SlotQuery = { date: string; partySize: number };
 
 /**
- * The /book island (booking.md §5.2 item 2): controls and slots on the left,
- * the sticky summary right at 1024px and above, one column below. State lives
- * here; the browser talks only to /api/booking/availability, and the server
- * render supplies the initial data so first paint needs no client fetch.
+ * The /book island (booking.md §5.2 item 2, §11): the master-detail browse.
+ * State lives here; the browser talks only to /api/booking/availability, and
+ * the server render supplies the initial data so first paint needs no client
+ * fetch. The type filter narrows the cards client side (no refetch); date and
+ * party changes refetch. A single SR-only live region announces the range so
+ * the desktop and mobile summaries never announce twice.
  */
 export function BookingPanel({
   rooms,
@@ -41,20 +51,19 @@ export function BookingPanel({
   const [availability, setAvailability] = useState(initialAvailability);
   const [status, setStatus] = useState<SlotStatus>("ready");
   const [selection, setSelection] = useState<BookingSelection | null>(null);
+  const [filter, setFilter] = useState<TypeFilterValue>("all");
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+  const [expandedRoomId, setExpandedRoomId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const initialQuery = useRef(query);
   const router = useRouter();
 
-  // The strip is generated from the server's venue-time today (booking.md
-  // §5.3), so a visitor sees the club's calendar, not their own.
   const dates = Array.from({ length: dateStripDays }, (_, index) =>
     addDaysIso(initialDate, index),
   );
   const maxPartySize = Math.max(...rooms.map((room) => room.maxCapacity));
 
   useEffect(() => {
-    // The server render already carries the initial query's data (§5.7);
-    // only control changes and retries fetch.
     if (query === initialQuery.current && attempt === 0) return;
 
     const controller = new AbortController();
@@ -63,14 +72,12 @@ export function BookingPanel({
       date: query.date,
       partySize: String(query.partySize),
     });
-    if (query.roomId) params.set("roomId", query.roomId);
 
     fetch(`/api/booking/availability?${params.toString()}`, {
       signal: controller.signal,
     })
       .then((response) => {
         if (response.status === 401) {
-          // The live session lapsed mid browse (booking.md §10.4).
           router.push("/account/sign-in?next=/book");
           return null;
         }
@@ -90,66 +97,130 @@ export function BookingPanel({
     return () => controller.abort();
   }, [query, attempt, router]);
 
-  // Any control change resets the pick; the old slot may not exist under the
-  // new query.
+  // Eligible spaces: rooms the party fits (booking.md §11.2). A room with no
+  // slots today keeps its card, dimmed; a room too small is dropped entirely.
+  const spaces: BrowseSpace[] = rooms
+    .filter((room) => room.maxCapacity >= query.partySize)
+    .map((room) => {
+      const slots = availability.slots.filter((slot) => slot.roomId === room.id);
+      const minPriceCents = slots.length
+        ? Math.min(...slots.map((slot) => slot.priceCents))
+        : null;
+      return {
+        room,
+        slots,
+        priceLabel:
+          minPriceCents === null
+            ? null
+            : `From ${formatCad(minPriceCents)} per 30 minutes`,
+      };
+    });
+
+  const present: FilterableCategory[] = CATEGORY_FILTER_ORDER.filter(
+    (category) => spaces.some((space) => space.room.category === category),
+  );
+  const shown =
+    filter === "all"
+      ? spaces
+      : spaces.filter((space) => space.room.category === filter);
+  // Desktop auto-selects the first shown space; the stored id wins when it is
+  // still in view (booking.md §11.1).
+  const selectedRoom =
+    shown.find((space) => space.room.id === selectedRoomId) ?? shown[0] ?? null;
+
+  const selectionRoom = selection
+    ? (rooms.find((room) => room.id === selection.slots[0].roomId) ?? null)
+    : null;
+
+  const tapSlot = (slot: BookingSlot) =>
+    setSelection((current) => applyTap(availability.slots, current, slot));
+
+  // Date or party changes refetch and reset the pick and any open accordion.
   const update = (patch: Partial<SlotQuery>) => {
     setSelection(null);
+    setExpandedRoomId(null);
     setQuery((current) => ({ ...current, ...patch }));
   };
 
-  const toggleSlot = (slot: BookingSlot) => {
-    setSelection((current) => {
-      if (
-        current?.slot.roomId === slot.roomId &&
-        current?.slot.startsAt === slot.startsAt
-      )
-        return null;
-      const room = rooms.find((entry) => entry.id === slot.roomId);
-      return room ? { room, slot, partySize: query.partySize } : null;
-    });
+  // The filter narrows client side; switching scope clears the pick.
+  const changeFilter = (value: TypeFilterValue) => {
+    setSelection(null);
+    setExpandedRoomId(null);
+    setFilter(value);
   };
 
+  // Switching to a different space clears the pick (a range is single-room).
+  const selectCard = (id: string) => {
+    if (id !== selectedRoom?.room.id) setSelection(null);
+    setSelectedRoomId(id);
+  };
+  const toggleCard = (id: string) => {
+    if (id !== selectionRoom?.id) setSelection(null);
+    setExpandedRoomId((current) => (current === id ? null : id));
+  };
+
+  const summary = selection ? selectionSummary(selection) : null;
+  const announcement = summary
+    ? `${formatSlotRange(summary.startsAt, summary.endsAt)}, ${formatDuration(summary.slotCount)}, ${formatCad(summary.priceCents)}`
+    : "";
+  const showBar = status === "ready" && availability.slots.length > 0;
+
   return (
-    <section className="grid grid-cols-[minmax(0,1fr)_360px] items-start gap-[5vw] max-[1023px]:grid-cols-1 max-[1023px]:gap-14">
-      <div>
-        <Reveal as="div">
-          <BookingControls
-            dates={dates}
-            rooms={rooms}
-            date={query.date}
-            partySize={query.partySize}
-            maxPartySize={maxPartySize}
-            roomId={query.roomId}
-            onDateChange={(date) => update({ date })}
-            onPartySizeChange={(partySize) => update({ partySize })}
-            onRoomChange={(roomId) => update({ roomId })}
-          />
-        </Reveal>
-        {/* The slot container is tall and data-sized, so a fraction threshold
-            would keep it hidden at short viewports; reveal on first contact. */}
-        <Reveal as="div" delay={120} threshold={0.01} className="mt-12">
-          <SlotArea
-            availability={availability}
-            rooms={rooms}
-            roomId={query.roomId}
-            status={status}
-            selectedSlot={selection?.slot ?? null}
-            onToggleSlot={toggleSlot}
-            onRetry={() => setAttempt((count) => count + 1)}
-          />
-        </Reveal>
-      </div>
-      <Reveal
-        as="aside"
-        delay={180}
-        className="sticky top-[110px] max-[1023px]:static"
-      >
-        <BookingSummary
-          selection={selection}
-          date={availability.date}
-          phone={phone}
+    <section>
+      <Reveal as="div">
+        <BookingControls
+          dates={dates}
+          date={query.date}
+          partySize={query.partySize}
+          maxPartySize={maxPartySize}
+          onDateChange={(date) => update({ date })}
+          onPartySizeChange={(partySize) => update({ partySize })}
         />
       </Reveal>
+
+      <Reveal as="div" delay={120} threshold={0.01} className="mt-12">
+        <BookingBrowse
+          availability={availability}
+          status={status}
+          spaces={shown}
+          present={present}
+          filter={filter}
+          onFilterChange={changeFilter}
+          selection={selection}
+          selectedRoom={selectedRoom}
+          expandedRoomId={expandedRoomId}
+          onTapSlot={tapSlot}
+          onSelectCard={selectCard}
+          onToggleCard={toggleCard}
+          onRetry={() => setAttempt((count) => count + 1)}
+          date={availability.date}
+          phone={phone}
+          partySize={query.partySize}
+        />
+      </Reveal>
+
+      {/* Single announcer for both summary forms (booking.md §11.4). */}
+      <p aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
+
+      {/* Mobile fixed bottom bar (booking.md §5.8, §11.1); desktop keeps the
+          summary inside the detail pane. */}
+      {showBar && (
+        <>
+          <div aria-hidden="true" className="h-40 min-[1024px]:hidden" />
+          <div className="border-hair bg-noir-soft/95 fixed inset-x-0 bottom-0 z-40 border-t px-[6vw] py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur min-[1024px]:hidden">
+            <BookingSummary
+              variant="bar"
+              selection={selection}
+              room={selectionRoom}
+              partySize={query.partySize}
+              date={availability.date}
+              phone={phone}
+            />
+          </div>
+        </>
+      )}
     </section>
   );
 }

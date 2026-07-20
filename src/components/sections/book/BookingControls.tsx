@@ -2,7 +2,6 @@
 
 import { Chip } from "@/components/ui/Chip";
 import { formatDateChip, formatDateLong } from "@/lib/booking/format";
-import type { BookingRoom } from "@/types/booking";
 
 /** Small tracked group label above each control row (booking.md §5.3). */
 function ControlLabel({ children }: { children: React.ReactNode }) {
@@ -14,31 +13,26 @@ function ControlLabel({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * The three control rows (booking.md §5.3): the 14 day date strip in venue
- * time, party sizes to the largest capacity in the data, and All spaces plus
- * one chip per room. All single select `Chip` buttons; date chips carry the
- * full date as `aria-label`.
+ * The top control rows (booking.md §5.3, §11.1): the 14 day date strip in
+ * venue time and party sizes to the largest capacity in the data. The type
+ * filter that replaced the B1 space chips lives in the browse layout's left
+ * column (§11.2), not here. All single select `Chip` buttons; date chips
+ * carry the full date as `aria-label`.
  */
 export function BookingControls({
   dates,
-  rooms,
   date,
   partySize,
   maxPartySize,
-  roomId,
   onDateChange,
   onPartySizeChange,
-  onRoomChange,
 }: {
   dates: string[];
-  rooms: BookingRoom[];
   date: string;
   partySize: number;
   maxPartySize: number;
-  roomId?: string;
   onDateChange: (date: string) => void;
   onPartySizeChange: (partySize: number) => void;
-  onRoomChange: (roomId?: string) => void;
 }) {
   return (
     <div>
@@ -79,27 +73,6 @@ export function BookingControls({
               </Chip>
             ),
           )}
-        </div>
-      </div>
-
-      <div className="mt-7">
-        <ControlLabel>Space</ControlLabel>
-        <div className="flex flex-wrap gap-2">
-          <Chip
-            active={roomId === undefined}
-            onClick={() => onRoomChange(undefined)}
-          >
-            All spaces
-          </Chip>
-          {rooms.map((room) => (
-            <Chip
-              key={room.id}
-              active={roomId === room.id}
-              onClick={() => onRoomChange(room.id)}
-            >
-              {room.name}
-            </Chip>
-          ))}
         </div>
       </div>
     </div>
