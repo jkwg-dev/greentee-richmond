@@ -294,9 +294,9 @@ In live mode both `/api/booking/*` handlers require a session before touching th
 
 ### 10.4 The gate on /book
 
-Live mode, signed out: the page renders the head exactly as always (the route stays indexable; the gate is an inline panel, never a redirect), and the controls, slot area, and summary are replaced by one quiet panel: the §10.7 line, a solid Button "Sign In" linking to `/account/sign-in?next=/book`, and a ghost Button "Create Account" linking to `/account/sign-up?next=/book`. The notes band renders beneath the gate; the timezone line belongs to the slot area and is absent. Signed in, or fixture mode: the page behaves exactly as today. If a live fetch returns 401 mid session, the island navigates to `/account/sign-in?next=/book`.
+Live mode, signed out (amended 2026-07-20, superseding the inline-panel ruling above this date): the server render redirects to `/account/sign-in?next=/book`. The sign-in action honors the sanitized next, and the sign-in form propagates it to the sign-up link, so completing either flow lands the visitor back on /book. The signed-out route is never served in live mode, so the earlier indexability rationale no longer applies there; fixture mode stays open and serves the page to everyone, exactly as today. Signed in, the page behaves exactly as today. If a live fetch returns 401 mid session, the island navigates to `/account/sign-in?next=/book`.
 
-Hardening (B3a finding, ruled into B3b): the /book server render catches the provider's auth error and renders the gate instead of an error page. The case is reachable when the vendor rejects a token the local session still considers valid (clock skew, revocation, a forced 401 in QA); the gate is the correct answer in every such case, because sign-in is the only remedy the visitor has.
+Hardening (B3a finding, ruled into B3b, implemented with the 2026-07-20 amendment): the /book server render catches the provider's auth error thrown mid render and renders the §10.7 inline gate panel (head as always, the gate where the booking panel would sit, notes beneath, no timezone line) for that one case: the vendor rejects a token the local session still considers valid (clock skew, revocation, a forced 401 in QA). A redirect cannot answer it, because the sign-in page bounces signed-in visitors straight back to next and the pair would loop. The panel keeps the §10.7 line and both buttons with next=/book.
 
 ### 10.5 Sign-in entry points
 
@@ -312,7 +312,7 @@ Gate line: `Sign in to see open times and reserve your bay.` Buttons: `Sign In` 
 
 ### 10.8 Done criteria
 
-Fixture mode is byte-for-byte today's behavior: open browse, no gate, handlers open. Live mode against the stub: signed out shows the gate with the head intact; both gate buttons round trip through auth and land back on /book; slots render from the stub; stopping the stub yields the §5.6 error state; a forced 401 mid session redirects to sign in and returns. /news, /book, and /account render pixel identical after the PageHead extraction. Lint, typecheck, and the dash check pass.
+Fixture mode is byte-for-byte today's behavior: open browse, no gate, handlers open. Live mode against the stub (amended 2026-07-20): signed out redirects to `/account/sign-in?next=/book`, and signing in (or signing up through the form's link) lands back on /book; the auth desync case (stub forced 401 while a local session holds) shows the inline gate with the head intact; slots render from the stub; stopping the stub yields the §5.6 error state; a forced 401 mid session redirects to sign in and returns. /news, /book, and /account render pixel identical after the PageHead extraction. Lint, typecheck, and the dash check pass.
 
 ---
 
