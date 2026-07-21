@@ -45,7 +45,7 @@ export function SpaceCard({
         selected
           ? "border-champagne bg-champagne/[0.04]"
           : "border-hair hover:border-champagne/40",
-        noTimes && !selected && "opacity-55",
+        noTimes && "opacity-55",
       )}
     >
       <span className="text-mist text-[9.5px] leading-none font-medium tracking-[0.28em] uppercase">

@@ -6,10 +6,13 @@ import { signUp, type AuthFormState } from "@/app/(site)/account/actions";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
+import { NameFields } from "./NameFields";
 
 /**
- * Sign up form (booking.md §9.4, §9.5): email and a single password field
- * with the §9.7 microcopy. Same pending and error behavior as sign in.
+ * Sign up form (booking.md §9.4, §9.5): the two-column name row, then Email
+ * and a single password field with the §9.7 microcopy. Both name parts are
+ * required; the action stores them alongside a derived `display_name`,
+ * matching the app's own shape. Same pending and error behavior as sign in.
  */
 export function SignUpForm({ next }: { next: string | null }) {
   const [state, formAction, pending] = useActionState<AuthFormState, FormData>(
@@ -29,12 +32,19 @@ export function SignUpForm({ next }: { next: string | null }) {
       className="max-w-[420px]"
     >
       {next && <input type="hidden" name="next" value={next} />}
+      <NameFields
+        firstName={state.firstName}
+        lastName={state.lastName}
+        firstNameError={state.field === "firstName" ? state.error : undefined}
+        lastNameError={state.field === "lastName" ? state.error : undefined}
+      />
       <Field
         label="Email"
         name="email"
         type="email"
         autoComplete="email"
         required
+        className="mt-7"
         defaultValue={state.email}
         error={state.field === "email" ? state.error : undefined}
       />

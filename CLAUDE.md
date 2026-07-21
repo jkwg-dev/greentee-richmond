@@ -99,7 +99,9 @@ Cross-links between mockup files stand in for real routes; anchors carry over (`
   only: never deployed, never imported by app code.
 - Writing the Supabase top-level phone field, or any auth identity field, from sign-up or
 profile forms (user metadata only)
-- Creating first_name or last_name metadata keys; display_name is the single stored name
+- Storing a name any way other than the app's own shape: first_name and last_name as entered,
+plus a derived display_name of first + a single space + last. Forms read the parts and write
+all three keys; display_name is never an independent input and is never the prefill source
 
 ## Responsive rules (summary of docs §10)
 - Verify every UI task at 1440 and 390. Reference widths: 390 / 768 / 1024 / 1440. Working breakpoints: 1024 (rails to chip bars), 900 (hamburger, stacks, journey fallback), 760 (dining internals), 560 (fine grids).
