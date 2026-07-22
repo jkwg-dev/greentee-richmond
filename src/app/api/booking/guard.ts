@@ -11,7 +11,15 @@ import { createClient } from "@/lib/supabase/server";
  * Middleware-backed data is never served from an unauthenticated path.
  */
 
-const NO_STORE = { "Cache-Control": "no-store" };
+export const NO_STORE = { "Cache-Control": "no-store" };
+
+/** The booking.md §4 error envelope, for input this handler rejects itself. */
+export function badRequest(code: string, message: string): NextResponse {
+  return NextResponse.json(
+    { error: { code, message } },
+    { status: 400, headers: NO_STORE },
+  );
+}
 
 const unauthorized = () =>
   NextResponse.json(
@@ -21,14 +29,27 @@ const unauthorized = () =>
     { status: 401, headers: NO_STORE },
   );
 
-/** A 401 envelope when live mode has no session; null when clear to proceed. */
-export async function requireLiveSession(): Promise<NextResponse | null> {
-  if (!isBookingLive()) return null;
+async function hasSession(): Promise<boolean> {
   const supabase = await createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  return session ? null : unauthorized();
+  return Boolean(session);
+}
+
+/** A 401 envelope when live mode has no session; null when clear to proceed. */
+export async function requireLiveSession(): Promise<NextResponse | null> {
+  if (!isBookingLive()) return null;
+  return (await hasSession()) ? null : unauthorized();
+}
+
+/**
+ * The reserve and checkout handlers require a session in every mode
+ * (booking.md §12.2), not only live mode: a mutation is always somebody's, and
+ * the relayed JWT is what the middleware checks ownership against.
+ */
+export async function requireSession(): Promise<NextResponse | null> {
+  return (await hasSession()) ? null : unauthorized();
 }
 
 /** Provider failures to the §4 envelope; unknown failures log and answer 500. */

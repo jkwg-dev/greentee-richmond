@@ -5,12 +5,16 @@ import { BookGate } from "@/components/sections/book/BookGate";
 import { BookingNotes } from "@/components/sections/book/BookingNotes";
 import { PageHead } from "@/components/ui/PageHead";
 import { BookingPanel } from "@/components/sections/book/BookingPanel";
-import { defaultPartySize, isBookingLive } from "@/lib/booking/config";
+import {
+  defaultPartySize,
+  isBookingCreateEnabled,
+  isBookingLive,
+} from "@/lib/booking/config";
 import { venueTodayIso } from "@/lib/booking/dates";
 import { BookingAuthError } from "@/lib/booking/errors";
+import { getBookingPolicy } from "@/lib/booking/policy";
 import { activeProvider } from "@/lib/booking/provider";
 import { getUser } from "@/lib/supabase/server";
-import { getSiteSettings } from "@/sanity/lib/queries";
 
 /** The strip and the initial availability follow the venue's current day. */
 export const dynamic = "force-dynamic";
@@ -36,15 +40,16 @@ const BookPageHead = () => (
  */
 async function loadBookingData() {
   const today = venueTodayIso();
-  const [rooms, availability, settings] = await Promise.all([
+  const [rooms, availability, policy] = await Promise.all([
     activeProvider.getRooms(),
     activeProvider.getAvailability({
       date: today,
       partySize: defaultPartySize,
     }),
-    getSiteSettings(),
+    // The window, cutoff, and caps are the server's to state (booking.md §12.5).
+    getBookingPolicy(),
   ]);
-  return { today, rooms, availability, settings };
+  return { today, rooms, availability, policy };
 }
 
 export default async function BookPage() {
@@ -80,7 +85,7 @@ export default async function BookPage() {
     );
   }
 
-  const { today, rooms, availability, settings } = data;
+  const { today, rooms, availability, policy } = data;
 
   return (
     <>
@@ -90,7 +95,8 @@ export default async function BookPage() {
           rooms={rooms}
           initialDate={today}
           initialAvailability={availability}
-          phone={settings.phone}
+          createEnabled={isBookingCreateEnabled()}
+          policy={policy}
         />
         <Reveal as="p" className="text-mist mt-16 text-[12px]">
           All times Pacific.

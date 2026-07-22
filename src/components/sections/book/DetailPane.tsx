@@ -1,12 +1,20 @@
 "use client";
 
 import type { BookingRoom, BookingSelection, BookingSlot } from "@/types/booking";
-import { BookingSummary } from "./BookingSummary";
+import { BookingSummary, type ReserveAffordance } from "./BookingSummary";
 import { CATEGORY_MICROLABEL } from "./categories";
 import { SpaceTimeline } from "./SpaceTimeline";
 
-/** Viewport-keyed so the sticky pane never outgrows the screen (booking.md §11.4). */
-const DESKTOP_TIMELINE_MAX_H = "max-h-[clamp(300px,calc(100svh-320px),640px)]";
+/**
+ * Viewport-keyed so the sticky pane (top 110px) never outgrows the screen
+ * (booking.md §11.4). Two caps by breakpoint: at 1280 and up the summary sits
+ * beside the timeline, so the timeline may run tall; below 1280 the summary
+ * stacks beneath it, so the timeline is capped short enough that the summary,
+ * Reserve included, stays inside the sticky pane rather than clipped below the
+ * fold where sticky pinning would hide it (B3c gate ruling).
+ */
+const DESKTOP_TIMELINE_MAX_H =
+  "max-h-[clamp(180px,calc(100svh-700px),360px)] min-[1280px]:max-h-[clamp(300px,calc(100svh-320px),640px)]";
 
 const HELPER_LINE = "Tap a start time, then an end time. Times in between must be open.";
 
@@ -23,7 +31,7 @@ export function DetailPane({
   selection,
   onTapSlot,
   date,
-  phone,
+  reserve,
   partySize,
 }: {
   room: BookingRoom;
@@ -31,7 +39,7 @@ export function DetailPane({
   selection: BookingSelection | null;
   onTapSlot: (slot: BookingSlot) => void;
   date: string;
-  phone: string;
+  reserve: ReserveAffordance;
   partySize: number;
 }) {
   return (
@@ -72,7 +80,7 @@ export function DetailPane({
           room={room}
           partySize={partySize}
           date={date}
-          phone={phone}
+          reserve={reserve}
         />
       </div>
     </div>

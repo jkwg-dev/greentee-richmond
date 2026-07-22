@@ -229,6 +229,8 @@ Cutoff rule (vendor answer 5): for today, slots starting within 60 minutes of ve
 | 9 | The vendor will enable email confirmation in their production environment; when it flips, signUp stops returning an immediate session and our §9.2 config error becomes wrong | Advance notice requested; parity holds today | A confirmation wait screen and redirect coordination land as their production launch approaches; tracked as B-later |
 | 10 | Identity mapping key: the (provider, externalUserId) pair | Closed: provider stays green_tee_flutter for web, no green_tee_web planned, vendor commits to explicit linking if a provider is ever added | Closed; the remedy, if it ever recurs, is a vendor policy request, not code |
 | 11 | No maximum range duration is stated by the vendor | We impose none in the UI; the server may reject at creation | If a maximum ever surfaces, it becomes a selection-rule constant beside the cutoff |
+| 12 | The Moneris Hosted Checkout URL is absent from the documented `checkout/session` response (`paymentId`, `ticket`, `expiresAt`, `environment`), and the return-leg URL shape is undocumented: does Moneris put the `ticket` in the callback query, or do we carry it ourselves. Also, does the session response carry the checkout URL or do we compose it from the ticket, and if so at what host and format | `checkoutUrl` is mapped as an optional wire field and the session call fails loudly when it is missing; a Moneris host is never guessed. The callback reads the ticket from the query but also keeps a same-tab `sessionStorage` copy, and `history.replaceState`s the ticket and mode out of the URL after reading (§12.3). The stub supplies both the URL and the return shape | **Live-payment blocker.** Blocks nothing on the stub; §12 is built and verified against it |
+| 13 | The per-day cap returns a bare `422 VALIDATION_FAILED` with no distinguishable code. Is a second same-day reservation rejected or does it replace the first, and can a specific code be returned | Interim heuristic: a create-time `422` reads as cap-reached when the policy names a `maxPerDayPerUser`, and as generic rule copy otherwise | §12.5, §12.6. A real code replaces the heuristic the moment it lands |
 
 Answered (attachment of 2026-07-21, replies received): 1 slot model, ranges allowed and recommended (recorded in §2 and §5.4) · 3 sign-up metadata, email and password are the only requirements; `display_name`, `phone`, `preferred_locale` are optional metadata and a profile is auto-created with the email local part as the fallback display name (recorded in §9) · 4 identity key is the (provider, externalUserId) pair, the provider stays `green_tee_flutter` for web, no `green_tee_web` is planned, and any future provider addition will ship with an explicit linking step on the vendor side (hedge 10 closed) · 5 window 14 days, cutoff 60 minutes, server enforced (recorded in §4).
 Open: the staging schedule itself (base URL, test data, customer OpenAPI arrive together); the date has been asked and remains the single external gate, for B3c live only.
@@ -239,6 +241,9 @@ replaces our hardcoded window and cutoff. New external gates for B3c live: Moner
 credentials, and the feature branches merging to staging. Neither blocks the stub-backed build.
 Safety-net question still open (blocking nothing): whether the app reads any name key beyond
 first_name, last_name, display_name.
+Raised by the B3c build (hedges 12 and 13, both to the vendor): the Hosted Checkout URL missing
+from the session response, which blocks live payment and nothing else, and the per-day cap
+returning no distinguishable error code, which leaves a heuristic in the create path.
 
 ---
 
@@ -279,9 +284,18 @@ stays `false` through B3c and B3d and flips only when Moneris QA and the live ba
 in place.
 
 QA toggle: config.ts also reads a BOOKING_CREATE_ENABLED env override, so the reserve flow is
-exercised locally with `BOOKING_CREATE_ENABLED=1 pnpm dev` while the committed constant stays
-false. The env var is never set in .env.local or on Vercel; it exists only as an inline QA
-override, so the committed default can never ship enabled by accident.
+exercised locally while the committed constant stays false. The env var is never set in
+.env.local or on Vercel; it exists only as an inline QA override, so the committed default can
+never ship enabled by accident.
+
+`isBookingCreateEnabled()` is `(committed || override) && isBookingLive()`: reservations exist
+only behind the middleware, so an enabled Reserve button in fixture mode could lead nowhere but
+an error. Create QA therefore needs the stub up and pointed at, in one command:
+
+```
+node scripts/booking-middleware-stub.mjs
+BOOKING_CREATE_ENABLED=1 BOOKING_API_BASE_URL=http://127.0.0.1:4141 pnpm dev
+```
 
 ---
 
@@ -486,6 +500,13 @@ Because the browser callback is not proof of payment, this page opens in a neutr
 your payment" state, never a success state. Success is rendered only after `complete` (and any
 polling) returns `succeeded`.
 
+URL scrub: once the island has read the query, it `history.replaceState`s the ticket and the
+mode out of the address bar, keeping only `reservationId` so a refresh still resolves. The
+ticket is a public handoff value, not a secret (the vendor calls it exactly that), but our Never
+list names it, and the full URL otherwise reaches the request logger, deployment access logs,
+browser history, and the referrer. The scrub is correct whether or not real Moneris returns the
+ticket in the URL (hedge 12).
+
 ### 12.4 Screens
 
 - **Review** (the B3b detail pane summary, now actionable): with `bookingCreateEnabled` true,
@@ -557,6 +578,18 @@ the redirect leg is exercised without a real Moneris environment.
   button `Back to Availability`
 - Cap reached: `You already have a reservation for that day. See your reservations to change it.`
   · button `My Reservations`
+- Slot conflict (a 409 on the create leg): `That time was just taken. Choose another time.` ·
+  button `Back to Availability`
+- Unexpected failure (any other create-leg error): `Something went wrong. Please try again.` ·
+  button `Try Again`. Intentionally identical to the §9.7 config-error fallback, for
+  consistency across the site's failure copy.
+
+Screen eyebrows (the tracked uppercase label above each heading): interstitial and confirming
+`One moment` · confirmed `Confirmed` · declined `Payment declined` (not "Not completed": a card
+decline is not the customer's omission) · review_required `In review` · timed-out `Timed out`.
+The review_required copy is one string split across the heading (`We are confirming this payment
+with our team.`) and a body line carrying the rest, so the phone renders as a `tel:` link;
+wording is verbatim.
 
 ### 12.9 Done criteria
 
@@ -567,8 +600,12 @@ confirmation, with the paid total itemizing real GST and PST. Each non-happy sta
 §12.6 screen. A create `422` for the per-day cap shows the cap copy and routes to My
 Reservations. Idempotency: a resend with the same key and body replays; a different body is
 rejected. the callback route requires a session and never shows success before verification. No
-key, ticket, or token is logged. `bookingCreateEnabled` is committed `false`. Lint, typecheck,
-dash check pass, verified at 1440 and 390.
+key, ticket, or token is logged, and the callback URL is scrubbed of the ticket and mode after
+read. `bookingCreateEnabled` is committed `false`. Lint, typecheck, dash check pass, verified at
+1440 and 390 (mobile verified below every breakpoint; pixel-exact 390 and the 1024 to 1279
+stacked detail-pane width both want a real device or device emulation, the same honest limit
+carried since B1). The stacked-layout Reserve reachability fix (§11.1 note) is code verified;
+confirm it on a device where the window can sit in that band.
 
 ### 12.10 Read-only reservation detail
 

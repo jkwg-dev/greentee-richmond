@@ -13,14 +13,17 @@ import {
 import { applyTap, selectionSummary } from "@/lib/booking/selection";
 import type {
   Availability,
+  BookingPolicy,
   BookingRoom,
   BookingSelection,
   BookingSlot,
 } from "@/types/booking";
 import { BookingBrowse, type BrowseSpace, type SlotStatus } from "./BookingBrowse";
 import { BookingControls } from "./BookingControls";
-import { BookingSummary } from "./BookingSummary";
+import { BookingSummary, type ReserveAffordance } from "./BookingSummary";
 import { CATEGORY_FILTER_ORDER, type FilterableCategory } from "./categories";
+import { ReserveOverlay } from "./ReserveOverlay";
+import { useReserveFlow } from "./useReserveFlow";
 import type { TypeFilterValue } from "./TypeFilter";
 
 type SlotQuery = { date: string; partySize: number };
@@ -37,12 +40,15 @@ export function BookingPanel({
   rooms,
   initialDate,
   initialAvailability,
-  phone,
+  createEnabled,
+  policy,
 }: {
   rooms: BookingRoom[];
   initialDate: string;
   initialAvailability: Availability;
-  phone: string;
+  /** booking.md §5.5, §8: the server's read of the flag, live mode included. */
+  createEnabled: boolean;
+  policy: BookingPolicy;
 }) {
   const [query, setQuery] = useState<SlotQuery>({
     date: initialDate,
@@ -159,6 +165,26 @@ export function BookingPanel({
     setExpandedRoomId((current) => (current === id ? null : id));
   };
 
+  // The reserve leg (booking.md §12.1). The cap heuristic and the §12.4 note
+  // both read the policy the server fetched, never a hardcoded limit.
+  const hasDailyCap = policy.maxPerDayPerUser !== null;
+  const { state: reserveState, reserve: startReserve, dismiss } = useReserveFlow(
+    { partySize: query.partySize, hasDailyCap },
+  );
+  const reserve: ReserveAffordance = {
+    createEnabled,
+    showDailyCapNote: createEnabled && policy.maxPerDayPerUser === 1,
+    onReserve: () => {
+      if (selection) void startReserve(selection);
+    },
+  };
+
+  // A conflict means the availability we drew is stale (booking.md §12.6).
+  const dismissOverlay = () => {
+    if (reserveState.kind === "conflict") setAttempt((count) => count + 1);
+    dismiss();
+  };
+
   const summary = selection ? selectionSummary(selection) : null;
   const announcement = summary
     ? `${formatSlotRange(summary.startsAt, summary.endsAt)}, ${formatDuration(summary.slotCount)}, ${formatCad(summary.priceCents)}`
@@ -194,7 +220,7 @@ export function BookingPanel({
           onToggleCard={toggleCard}
           onRetry={() => setAttempt((count) => count + 1)}
           date={availability.date}
-          phone={phone}
+          reserve={reserve}
           partySize={query.partySize}
         />
       </Reveal>
@@ -216,11 +242,13 @@ export function BookingPanel({
               room={selectionRoom}
               partySize={query.partySize}
               date={availability.date}
-              phone={phone}
+              reserve={reserve}
             />
           </div>
         </>
       )}
+
+      <ReserveOverlay state={reserveState} onDismiss={dismissOverlay} />
     </section>
   );
 }

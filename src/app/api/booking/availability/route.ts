@@ -1,19 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { activeProvider } from "@/lib/booking/provider";
-import { bookingErrorResponse, requireLiveSession } from "../guard";
+import {
+  badRequest,
+  bookingErrorResponse,
+  NO_STORE,
+  requireLiveSession,
+} from "../guard";
 
 /** Availability responses are never cached (booking.md §2); live mode requires a session (§10.3). */
 export const dynamic = "force-dynamic";
-
-const NO_STORE = { "Cache-Control": "no-store" };
-
-/** The booking.md §4 error envelope. */
-function badRequest(code: string, message: string) {
-  return NextResponse.json(
-    { error: { code, message } },
-    { status: 400, headers: NO_STORE },
-  );
-}
 
 /** `YYYY-MM-DD` and a real calendar date (rejects 2026-02-31). */
 function isCalendarDate(value: string): boolean {

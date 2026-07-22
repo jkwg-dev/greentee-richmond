@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/Button";
 import { FactRows } from "@/components/ui/FactRows";
-import { bookingCreateEnabled } from "@/lib/booking/config";
 import {
   formatCad,
   formatDateLong,
@@ -13,9 +12,19 @@ import { selectionSummary } from "@/lib/booking/selection";
 import { cn } from "@/lib/utils";
 import type { BookingRoom, BookingSelection } from "@/types/booking";
 
-/** The §7 call-to-hold note; the phone substitutes in as a `tel:` link. */
-function CallNote({ phone, className }: { phone: string; className?: string }) {
-  const telHref = `tel:${phone.replace(/[^+\d]/g, "")}`;
+/**
+ * The reserve affordance, travelling as one prop because its three parts are
+ * one decision made once on the server: whether the flow is open (§5.5),
+ * whether the policy caps a user at one a day (§12.4), and what to run.
+ */
+export type ReserveAffordance = {
+  createEnabled: boolean;
+  showDailyCapNote: boolean;
+  onReserve: () => void;
+};
+
+/** The §7 note that stands in until the reserve flow is enabled. */
+function CallNote({ className }: { className?: string }) {
   return (
     <p className={cn("text-mist text-[12px] leading-[1.8]", className)}>
       Online reservations are opening soon.
@@ -23,14 +32,35 @@ function CallNote({ phone, className }: { phone: string; className?: string }) {
   );
 }
 
-/** The disabled Reserve button (booking.md §5.5): gated by the flag, still 44px and tabbable. */
-function ReserveButton({ className }: { className?: string }) {
-  const disabled = !bookingCreateEnabled;
+/** The §12.8 line, so the cap is never a surprise at submit (booking.md §12.4). */
+function DailyCapNote({ className }: { className?: string }) {
+  return (
+    <p className={cn("text-mist text-[12px] leading-[1.8]", className)}>
+      One reservation per day. Booking a second time replaces today&apos;s.
+    </p>
+  );
+}
+
+/**
+ * The Reserve action (booking.md §5.5, §12.4). Disabled by the flag through
+ * B3b and still disabled with nothing selected; enabled it opens the reserve
+ * flow. Either way it stays 44px and in the tab order.
+ */
+function ReserveButton({
+  enabled,
+  onReserve,
+  className,
+}: {
+  enabled: boolean;
+  onReserve?: () => void;
+  className?: string;
+}) {
   return (
     <Button
       variant="solid"
-      aria-disabled={disabled || undefined}
-      className={cn("min-h-[44px]", disabled && "opacity-40", className)}
+      aria-disabled={enabled ? undefined : true}
+      onClick={enabled ? onReserve : undefined}
+      className={cn("min-h-[44px]", !enabled && "opacity-40", className)}
     >
       Reserve This Time
     </Button>
@@ -50,16 +80,19 @@ export function BookingSummary({
   room,
   partySize,
   date,
-  phone,
   variant,
+  reserve,
 }: {
   selection: BookingSelection | null;
   room: BookingRoom | null;
   partySize: number;
   date: string;
-  phone: string;
   variant: "panel" | "bar";
+  reserve: ReserveAffordance;
 }) {
+  const { createEnabled, showDailyCapNote, onReserve } = reserve;
+  // Nothing to reserve without a selection, whatever the flag says.
+  const canReserve = createEnabled && selection !== null;
   const summary = selection ? selectionSummary(selection) : null;
   const range = summary
     ? formatSlotRange(summary.startsAt, summary.endsAt)
@@ -69,26 +102,29 @@ export function BookingSummary({
     : null;
 
   if (variant === "bar") {
+    // The cap and call notes sit on their own row above the details, never
+    // wrapped beneath the button where the bar's edge would clip them.
     return (
-      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-        <div className="min-w-0">
-          {summary ? (
-            <>
-              <p className="text-ivory text-[14px]">{range}</p>
-              <p className="text-mist mt-1 text-[11.5px]">
-                {formatCad(summary.priceCents)} · {priceDetail}
+      <div className="flex flex-col gap-3">
+        {showDailyCapNote && <DailyCapNote />}
+        {!createEnabled && <CallNote />}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            {summary ? (
+              <>
+                <p className="text-ivory text-[14px]">{range}</p>
+                <p className="text-mist mt-1 text-[11.5px]">
+                  {formatCad(summary.priceCents)} · {priceDetail}
+                </p>
+              </>
+            ) : (
+              <p className="text-mist text-[13.5px]">
+                Select a time to see the details here.
               </p>
-            </>
-          ) : (
-            <p className="text-mist text-[13.5px]">
-              Select a time to see the details here.
-            </p>
-          )}
+            )}
+          </div>
+          <ReserveButton enabled={canReserve} onReserve={onReserve} />
         </div>
-        <ReserveButton />
-        {!bookingCreateEnabled && (
-          <CallNote phone={phone} className="w-full" />
-        )}
       </div>
     );
   }
@@ -114,8 +150,13 @@ export function BookingSummary({
           Select a time to see the details here.
         </p>
       )}
-      <ReserveButton className="mt-8 w-full" />
-      {!bookingCreateEnabled && <CallNote phone={phone} className="mt-4" />}
+      {showDailyCapNote && <DailyCapNote className="mt-8" />}
+      <ReserveButton
+        enabled={canReserve}
+        onReserve={onReserve}
+        className={cn("w-full", showDailyCapNote ? "mt-4" : "mt-8")}
+      />
+      {!createEnabled && <CallNote className="mt-4" />}
     </div>
   );
 }

@@ -88,3 +88,12 @@ const longDay = new Intl.DateTimeFormat("en-US", {
 export function formatDateLong(date: string): string {
   return longDay.format(calendarDateAnchor(date));
 }
+
+/**
+ * The same long date read straight off a slot or reservation ISO string, in
+ * venue time (booking.md §12.4). Intl on the verbatim string: the calendar day
+ * is never sliced out of it, and no arithmetic touches it.
+ */
+export function formatSlotDateLong(iso: string): string {
+  return longDay.format(new Date(iso));
+}

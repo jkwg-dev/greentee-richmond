@@ -8,6 +8,7 @@ import type {
   BookingSelection,
   BookingSlot,
 } from "@/types/booking";
+import type { ReserveAffordance } from "./BookingSummary";
 import { DetailPane } from "./DetailPane";
 import { SpaceCard } from "./SpaceCard";
 import { SpaceTimeline } from "./SpaceTimeline";
@@ -61,7 +62,7 @@ export function BookingBrowse({
   onToggleCard,
   onRetry,
   date,
-  phone,
+  reserve,
   partySize,
 }: {
   availability: Availability;
@@ -78,7 +79,7 @@ export function BookingBrowse({
   onToggleCard: (id: string) => void;
   onRetry: () => void;
   date: string;
-  phone: string;
+  reserve: ReserveAffordance;
   partySize: number;
 }) {
   if (status === "error") {
@@ -185,7 +186,7 @@ export function BookingBrowse({
               selection={selection}
               onTapSlot={onTapSlot}
               date={date}
-              phone={phone}
+              reserve={reserve}
               partySize={partySize}
             />
           )}

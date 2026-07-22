@@ -3,9 +3,15 @@ import "server-only";
 import type {
   Availability,
   AvailabilityReason,
+  BookingPolicy,
+  BookingReservation,
+  BookingReservationStatus,
   BookingRoom,
   BookingRoomCategory,
   BookingSlot,
+  CheckoutSession,
+  CheckoutState,
+  CheckoutStatus,
 } from "@/types/booking";
 
 /**
@@ -75,6 +81,164 @@ export function mapRooms(dtos: VendorRoomDto[]): BookingRoom[] {
  */
 const byStartsAt = (a: BookingSlot, b: BookingSlot): number =>
   a.startsAt < b.startsAt ? -1 : a.startsAt > b.startsAt ? 1 : 0;
+
+/**
+ * `GET /api/v1/simulator/policies/booking` (booking.md §4 deltas). Caps may be
+ * absent or null when the vendor states no limit.
+ */
+export type VendorPolicyDto = {
+  advanceBookingDays: number;
+  sameDayCutoffMinutes: number;
+  maxPerDayPerUser?: number | null;
+  maxPerWeekPerUser?: number | null;
+  pendingHoldMinutes: number;
+  checkoutSessionMinutes: number;
+  operatingHours?: {
+    dayOfWeek: number;
+    isOpen: boolean;
+    openTime: string;
+    closeTime: string;
+  }[];
+};
+
+export function mapPolicy(dto: VendorPolicyDto): BookingPolicy {
+  return {
+    advanceBookingDays: dto.advanceBookingDays,
+    sameDayCutoffMinutes: dto.sameDayCutoffMinutes,
+    maxPerDayPerUser: dto.maxPerDayPerUser ?? null,
+    maxPerWeekPerUser: dto.maxPerWeekPerUser ?? null,
+    pendingHoldMinutes: dto.pendingHoldMinutes,
+    checkoutSessionMinutes: dto.checkoutSessionMinutes,
+    operatingHours: (dto.operatingHours ?? []).map((day) => ({
+      dayOfWeek: day.dayOfWeek,
+      isOpen: day.isOpen,
+      openTime: day.openTime,
+      closeTime: day.closeTime,
+    })),
+  };
+}
+
+/**
+ * A reservation over a contiguous range (booking.md §4 deltas). Time strings
+ * pass through verbatim like slot strings; the itemized cents are the server's
+ * answer and are never recomputed here.
+ */
+export type VendorReservationDto = {
+  id: string;
+  roomId: string;
+  roomName?: string | null;
+  startsAt: string;
+  endsAt: string;
+  partySize: number;
+  status: string;
+  subtotalCents: number;
+  gstCents: number;
+  pstCents: number;
+  totalCents: number;
+  currency: string;
+  expiresAt?: string | null;
+  code?: string | null;
+  confirmationCode?: string | null;
+};
+
+const RESERVATION_STATUSES: BookingReservationStatus[] = [
+  "pending",
+  "confirmed",
+  "cancelled",
+  "no_show",
+  "completed",
+];
+
+/** An unknown status reads as `pending`: never invent a confirmation (§12.6). */
+function reservationStatus(value: string): BookingReservationStatus {
+  return RESERVATION_STATUSES.find((status) => status === value) ?? "pending";
+}
+
+export function mapReservation(dto: VendorReservationDto): BookingReservation {
+  return {
+    id: dto.id,
+    roomId: dto.roomId,
+    roomName: dto.roomName ?? null,
+    startsAt: dto.startsAt,
+    endsAt: dto.endsAt,
+    partySize: dto.partySize,
+    status: reservationStatus(dto.status),
+    subtotalCents: dto.subtotalCents,
+    gstCents: dto.gstCents,
+    pstCents: dto.pstCents,
+    totalCents: dto.totalCents,
+    currency: dto.currency,
+    expiresAt: dto.expiresAt ?? null,
+    code: dto.code ?? dto.confirmationCode ?? null,
+  };
+}
+
+/**
+ * `POST .../checkout/session` (vendor update §8.1). `checkoutUrl` is where the
+ * browser is sent to pay. The vendor's documented response carries the ticket
+ * and `environment` but no URL, so it is optional on the wire and the caller
+ * fails loudly when it is missing: a Moneris host is never guessed here
+ * (booking.md §6, open).
+ */
+export type VendorCheckoutSessionDto = {
+  paymentId: string;
+  ticket: string;
+  expiresAt: string;
+  environment?: string;
+  checkoutUrl?: string | null;
+};
+
+export function mapCheckoutSession(
+  dto: VendorCheckoutSessionDto,
+): CheckoutSession | null {
+  if (!dto.checkoutUrl) return null;
+  return {
+    paymentId: dto.paymentId,
+    ticket: dto.ticket,
+    expiresAt: dto.expiresAt,
+    checkoutUrl: dto.checkoutUrl,
+  };
+}
+
+const CHECKOUT_STATUSES: CheckoutStatus[] = [
+  "succeeded",
+  "declined",
+  "processing",
+  "review_required",
+  "failed",
+];
+
+/**
+ * An unrecognized payment status reads as `processing` (booking.md §12.6):
+ * the safe direction is to keep watching, never to render success or to invite
+ * a second purchase.
+ */
+export function mapCheckoutStatus(value: string): CheckoutStatus {
+  return CHECKOUT_STATUSES.find((status) => status === value) ?? "processing";
+}
+
+/** `POST .../checkout/complete` (vendor update §8.2). */
+export type VendorCheckoutCompleteDto = { status: string };
+
+/** `GET .../checkout` (vendor update §8.3). */
+export type VendorCheckoutStateDto = {
+  paymentId?: string | null;
+  status: string;
+  amountCents?: number | null;
+  currency?: string | null;
+  expiresAt?: string | null;
+  failureMessage?: string | null;
+};
+
+export function mapCheckoutState(dto: VendorCheckoutStateDto): CheckoutState {
+  return {
+    paymentId: dto.paymentId ?? null,
+    status: mapCheckoutStatus(dto.status),
+    amountCents: dto.amountCents ?? null,
+    currency: dto.currency ?? null,
+    expiresAt: dto.expiresAt ?? null,
+  };
+}
 
 export function mapAvailability(dto: VendorAvailabilityDto): Availability {
   return {

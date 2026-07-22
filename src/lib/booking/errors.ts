@@ -25,3 +25,29 @@ export class BookingApiError extends Error {
     this.code = code;
   }
 }
+
+/**
+ * A vendor `409 CONFLICT` (booking.md §4 deltas, §12.6): a slot taken while we
+ * were deciding, a checkout already processing, or the same idempotency key
+ * still in flight. The UI refetches availability or re-reads checkout status;
+ * it never blindly retries, and never opens a second checkout.
+ */
+export class BookingConflictError extends BookingApiError {
+  constructor(message: string) {
+    super(409, "conflict", message);
+    this.name = "BookingConflictError";
+  }
+}
+
+/**
+ * A vendor `422 VALIDATION_FAILED` (booking.md §4 deltas): a business rule, an
+ * idempotency violation, or a key reused with a different body. Distinct from
+ * the `400` bad-input mapping so the UI can answer a rule with the §12.8 copy
+ * instead of the generic error state.
+ */
+export class BookingRuleError extends BookingApiError {
+  constructor(message: string) {
+    super(422, "rule_violation", message);
+    this.name = "BookingRuleError";
+  }
+}

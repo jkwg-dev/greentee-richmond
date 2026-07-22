@@ -11,6 +11,26 @@
 export const bookingCreateEnabled: boolean = false;
 
 /**
+ * The reserve flow gate (booking.md §5.5, §8, §12). The committed constant
+ * stays `false` through B3c and B3d; `BOOKING_CREATE_ENABLED` is the inline QA
+ * override (`BOOKING_CREATE_ENABLED=1 pnpm dev`), never written to a file or
+ * set on Vercel, so the committed default can never ship enabled by accident.
+ *
+ * Live mode is also required, because reservations exist only behind the
+ * middleware: the fixture provider is a read-only browse stand-in with no
+ * reservation store, so an enabled Reserve button in fixture mode could only
+ * lead to an error. QA therefore runs the stub and points at it:
+ * `BOOKING_CREATE_ENABLED=1 BOOKING_API_BASE_URL=http://127.0.0.1:4141 pnpm dev`.
+ * Server-side truth only; the flag reaches the browser as a prop.
+ */
+export function isBookingCreateEnabled(): boolean {
+  const override = process.env.BOOKING_CREATE_ENABLED;
+  const enabled =
+    bookingCreateEnabled || override === "1" || override === "true";
+  return enabled && isBookingLive();
+}
+
+/**
  * Live mode is the presence of BOOKING_API_BASE_URL (booking.md §8, §10.1):
  * one variable arms the middleware provider, the route handler auth
  * requirement, and the /book gate together. Server-side truth only; the
