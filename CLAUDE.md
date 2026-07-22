@@ -102,6 +102,21 @@ profile forms (user metadata only)
 - Storing a name any way other than the app's own shape: first_name and last_name as entered,
 plus a derived display_name of first + a single space + last. Forms read the parts and write
 all three keys; display_name is never an independent input and is never the prefill source
+- Two vendor documents are normative for wire shapes: the v0.1 spec and the 2026-07-17
+  middleware update, both under `docs/vendor/`. Where they conflict, the middleware update
+  wins; booking.md §4 records the deltas.
+- Every booking mutation (create, checkout session, checkout complete, cancel) carries a
+  distinct client `Idempotency-Key`, 8 to 255 chars, generated server side, one per operation.
+  A timed-out mutation retries only with the identical key and body, and only after reading
+  status first. Keys are never logged.
+- Payment is the only path to `confirmed`; the browser callback is never proof of payment.
+  Success renders only after server-verified `succeeded`. While `processing` or
+  `review_required`, never open a second checkout session or purchase.
+- A cancel never claims a refund until `refundStatus` is `succeeded`; `review_required` and
+  `processing` are shown as in-progress, not done. The refund adapter is fail-closed until
+  Moneris QA, so `review_required` is the expected pre-QA outcome.
+- Moneris Hosted Checkout is a full-page redirect, not an iframe. The only origin the browser
+  reaches outside our own handlers is the Moneris Hosted page.
 
 ## Responsive rules (summary of docs §10)
 - Verify every UI task at 1440 and 390. Reference widths: 390 / 768 / 1024 / 1440. Working breakpoints: 1024 (rails to chip bars), 900 (hamburger, stacks, journey fallback), 760 (dining internals), 560 (fine grids).
@@ -213,3 +228,10 @@ Done: matches spec on all six routes, 1440 + 390 verified, lint/typecheck pass.
   other than these two env values. The Create Account entry point is verified by link
   destination only; a live sign-up is permitted solely against a development Supabase
   project, never the shared pool.
+- Logging or echoing an access token, checkout ticket, idempotency key, Moneris parameter, or
+  any payment credential, in code, reports, or error messages
+- Rendering a payment as successful before the server returns `succeeded`, or a refund as done
+  before `refundStatus` is `succeeded`
+- Embedding Moneris Hosted Checkout in an iframe, or calling any checkout endpoint from the
+  browser instead of our route handlers
+- Issuing a new idempotency key to retry a timed-out mutation (reuse the same key and body)

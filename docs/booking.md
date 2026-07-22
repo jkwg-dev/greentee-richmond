@@ -50,8 +50,11 @@ The booking track runs beside roadmap Phases 7 and 8 and carries its own numberi
 | B2 · Auth | Supabase sign in and sign up in the site's design language, session handling, gate placement per the vendor's guest access answer | Vendor: project URL and publishable key |
 | B3a | Live reads: middleware provider behind the seam, per-user JWT relay, the /book gate, header and FullMenu sign-in entry points, housekeeping (PageHead extraction, bookingUrl removal, seed CTA fix) | verified against the local stub (§10.6); the vendor base URL only flips the env value |
 | B3b | Range selection on /book (multi-slot, contiguous, same room), the master-detail browse layout, and sign-up and profile metadata (full name, optional phone, profile editing on /account) | vendor answers received 2026-07; no external gate |
-| B3c | Reserve flow (create, 409 and timeout handling), confirmation screen, my reservations list, detail, and cancel | staging base URL for live; the stub can be extended for build if the URL is late |
-| B4 · Payment | Payment step inserted between summary and confirmation | Vendor: payment proxy |
+| B3c | Reserve and pay: policy read, pending create (range payload), Moneris Hosted Checkout via redirect, server-verified complete and polling, confirmation, and a read-only reservation detail (`/account/reservations/[id]`) the confirmation links to. Stub-backed; `bookingCreateEnabled` stays false | vendor middleware update (received); Moneris QA credentials and base URL flip it live |
+| B3d | My reservations on /account: the list, and cancel with refund-status display added onto the B3c detail | B3c |
+
+The old B4 (a payment step inserted later) is dissolved: the middleware update makes payment
+the path to `confirmed`, so it is part of B3c, not a successor phase.
 
 ---
 
@@ -77,6 +80,66 @@ Read endpoints (the B1 surface, faked by fixtures until B3):
 | `GET /api/v1/simulator/availability?date&partySize[&roomId]` | `{ date, slots[], reasons[] }`. Slot: `roomId`, `startsAt`, `endsAt`, `priceCents`, `currency`. Empty `slots` with empty `reasons` means fully booked. `reasons` enum: `closed_today`, `no_rooms`, `no_pricing_configured`, `pricing_gaps`. |
 
 Reservation endpoints (B3 scope, listed for planning): create (`roomId`, `startsAt`, `endsAt`, `partySize`, optional `customerNotes`, echoing slot values verbatim), list with cursor pagination, detail, cancel with refund fields. Statuses: `pending`, `confirmed`, `cancelled`, `no_show`, `completed`. A `pending` reservation carries `expiresAt`; its exact semantics are pending (§6). There is no payment endpoint and no client idempotency key yet; on a create timeout, check the reservation list before retrying.
+
+### Middleware update deltas (normative; supersedes v0.1 where they conflict)
+
+Source: `docs/vendor/middleware-checkout-update-2026-07-17.md`. When it and the v0.1 spec
+disagree on a wire shape, this document wins. The material deltas:
+
+- **Reservation shape.** One reservation per contiguous range: `startsAt` and `endsAt` span the
+  whole booking, the server sums the 30 minute prices, and it is one reservation and one
+  payment. This is the shape B3b's range selection already targets.
+- **Idempotency-Key is mandatory** on create, checkout session, checkout complete, and cancel.
+  8 to 255 characters, a distinct key per operation. Same key plus same body replays the prior
+  result; same key plus a different body is `422`; the same key mid-flight is `409`. The
+  middleware derives an internal key from `userId | method | path | clientKey`, so a client key
+  colliding across users does not collide internally.
+- **Confirmation is payment.** There is no admin or on-site path in scope. A reservation reaches
+  `confirmed` only after `screen_golf_web` verifies the Moneris receipt server to server. The
+  browser callback is explicitly not proof of success.
+- **Hold and session windows.** `pendingHoldMinutes` (10) is how long a pending reservation
+  holds inventory; `checkoutSessionMinutes` (15) is the Hosted Checkout ticket lifetime. Both
+  come from the policy endpoint, not hardcoded.
+- **Refund is fail-closed pre-QA.** Until Moneris merchant QA credentials are confirmed, the
+  refund adapter deliberately fails closed: a cancel sets the reservation to `cancelled` but the
+  `refundStatus` becomes `review_required`, never `succeeded`. Cancel UI must not claim a refund
+  until `refundStatus` is `succeeded`.
+- **Endpoints on unmerged branches.** Per the update's §2, the new endpoints live on feature
+  branches not yet merged or deployed, so staging may not answer them yet. The stub (§12.7) is
+  the build surface until they do.
+
+New and changed endpoints (customer-facing camelCase; all mutations require `Idempotency-Key`):
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/simulator/policies/booking` | window, cutoff, per-day and per-week caps, hold and session minutes, operating hours |
+| POST | `/api/v1/simulator/reservations` | create one reservation over a contiguous range |
+| POST | `/api/v1/simulator/reservations/{id}/checkout/session` | create a Hosted Checkout ticket |
+| POST | `/api/v1/simulator/reservations/{id}/checkout/complete` | server-verify the Moneris receipt |
+| GET | `/api/v1/simulator/reservations/{id}/checkout` | payment status |
+| POST | `/api/v1/simulator/reservations/{id}/cancel` | cancel and start refund |
+| GET | `/api/v1/openapi.json` | customer OpenAPI 3.1, no auth |
+
+Policy response fields consumed: `advanceBookingDays`, `sameDayCutoffMinutes`,
+`maxPerDayPerUser`, `maxPerWeekPerUser`, `pendingHoldMinutes`, `checkoutSessionMinutes`,
+`operatingHours[]`. The policy values override the §4 hardcoded window and cutoff in live mode;
+fixture mode keeps its constants.
+
+Checkout status values (from `checkout/complete` and the status endpoint): `succeeded`,
+`declined`, `processing`, `review_required`, `failed`. Poll every 2 to 5 seconds while
+`processing`; stop on any terminal value. Never open a new session or purchase while
+`processing` or `review_required`.
+
+Cancel response: `{ reservation: { id, status }, refundCents, refundAmountCents, refundPercent,
+refundStatus }`. `refundCents` and `refundAmountCents` are compatibility twins (same value).
+`refundStatus`: `null` (nothing to refund or 0 percent), `pending`, `processing`, `succeeded`,
+`failed`, `review_required`.
+
+Error codes gain `409 CONFLICT` (slot conflict, checkout already processing, same key
+mid-flight) and `422 VALIDATION_FAILED` (idempotency or business-rule violation, including a
+key-reuse-with-different-body). The core API timeout is 10 seconds; on a mutation timeout, retry
+only with the same key and body, and check reservation or checkout status before ever issuing a
+new key.
 
 ---
 
@@ -115,7 +178,7 @@ The grid presentation and the single-slot rule that stood in B1 are superseded b
 4. Tap on an interior slot of the range: the selection resets to that slot.
 5. Tap beyond an edge in the same room: if every slot between the range and the tapped slot is present and available, the range extends to include the tapped slot; if the run is broken, the selection resets to the tapped slot (the vendor rule: a range may never span an unavailable slot).
 
-Adjacency is exact string equality: `next.startsAt === previous.endsAt`. No date arithmetic on slot strings, ever; the mapper guarantees per-room chronological order so the equality walk is sufficient. All selected cells render the active treatment; the aria-live region announces the full range ("6:00 to 7:30 PM, 90 minutes, $96").
+Adjacency is exact string equality: `next.startsAt === previous.endsAt`. No date arithmetic on slot strings, ever; the mapper guarantees per-room chronological order so the equality walk is sufficient. All selected cells render the active treatment; the aria-live region announces the full range ("6:00 to 7:30 PM, 1 hour 30 minutes, $96").
 
 ### 5.5 Summary
 - `FactRows`: Date, Time (the range rendered from the first slot's `startsAt` and the last slot's `endsAt` strings), Space, Party, Price (formatted CAD with `detail` "Before GST and PST").
@@ -158,7 +221,7 @@ Cutoff rule (vendor answer 5): for today, slots starting within 60 minutes of ve
 | 1 | Guest access to rooms, pricing, availability without login | Declined; the gate sits at the browse step in live mode | §10.4 |
 | 2 | One reservation per slot versus a spanning range | Closed: ranges allowed and recommended (see Answered below) | §2, §5.4 |
 | 3 | Slot `priceCents` is pre tax | Show the price with the "Before GST and PST" detail | Two strings (summary detail, notes band); trivially removable |
-| 4 | `expiresAt` semantics, what triggers `confirmed`, payment plans | Out of B1 to B3b scope | B3c, B4 |
+| 4 | `expiresAt`, what triggers `confirmed`, payment | Closed by the middleware update: confirmed = server-verified Moneris payment; pending hold is 10 minutes; the flow is §12 | §12 |
 | 5 | Booking window and same day cutoff | Closed: 14 days, 60 minute cutoff, server enforced (see Answered below) | §4, §5.7 |
 | 6 | A room type field (bay versus VIP versus VVIP) | Category derived by name heuristic in the mapper | §11.3 |
 | 7 | Sign-up metadata the vendor app expects | Closed: email and password only; display_name optional (see Answered below) | §9.4 |
@@ -169,6 +232,13 @@ Cutoff rule (vendor answer 5): for today, slots starting within 60 minutes of ve
 
 Answered (attachment of 2026-07-21, replies received): 1 slot model, ranges allowed and recommended (recorded in §2 and §5.4) · 3 sign-up metadata, email and password are the only requirements; `display_name`, `phone`, `preferred_locale` are optional metadata and a profile is auto-created with the email local part as the fallback display name (recorded in §9) · 4 identity key is the (provider, externalUserId) pair, the provider stays `green_tee_flutter` for web, no `green_tee_web` is planned, and any future provider addition will ship with an explicit linking step on the vendor side (hedge 10 closed) · 5 window 14 days, cutoff 60 minutes, server enforced (recorded in §4).
 Open: the staging schedule itself (base URL, test data, customer OpenAPI arrive together); the date has been asked and remains the single external gate, for B3c live only.
+Middleware update (2026-07-17): confirmation is server-verified payment, not an admin action;
+pending hold is 10 minutes and the checkout ticket 15; idempotency keys are mandatory on all
+mutations; a customer OpenAPI document is served at `/api/v1/openapi.json`; the policy endpoint
+replaces our hardcoded window and cutoff. New external gates for B3c live: Moneris merchant QA
+credentials, and the feature branches merging to staging. Neither blocks the stub-backed build.
+Safety-net question still open (blocking nothing): whether the app reads any name key beyond
+first_name, last_name, display_name.
 
 ---
 
@@ -201,6 +271,17 @@ B1 introduces no environment variables, no external calls, and no secrets. The v
 B2 adds `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (dev project values until the vendor's arrive; §9.2). The publishable key is public by design; no secret or service key exists in this repo in any form.
 
 `BOOKING_API_BASE_URL` (B3a): its presence is live mode. One variable arms both the middleware provider and the /book gate, so real data and the sign-in wall appear together; absent, the site runs fixture mode with the open browse experience (local dev and preview deployments). No trailing slash; validated on first use with a clear error when malformed.
+
+B3c adds no browser-exposed variables. Moneris credentials and the `sgsk_` key live only in the
+vendor middleware, never here. The Moneris return URL we register with the vendor is derived
+from the deployment origin (§12.3); it is a public route, not a secret. `bookingCreateEnabled`
+stays `false` through B3c and B3d and flips only when Moneris QA and the live base URL are both
+in place.
+
+QA toggle: config.ts also reads a BOOKING_CREATE_ENABLED env override, so the reserve flow is
+exercised locally with `BOOKING_CREATE_ENABLED=1 pnpm dev` while the committed constant stays
+false. The env var is never set in .env.local or on Vercel; it exists only as an inline QA
+override, so the committed default can never ship enabled by accident.
 
 ---
 
@@ -328,7 +409,7 @@ Supersedes the §5.3 space chip row and the §5.4 grid presentation. The five §
 
 ### 11.1 Layout
 
-Desktop (1024 and up), beneath the head: the date strip and party picker keep their current full-width row. Below them, two panes. Left, a column of about 340px: a type filter chip row (`All Spaces` plus only the categories present in the data), then the space cards stacked vertically. Right, the detail pane for the selected space: a header (name, capacity line, category microlabel), the timeline, the helper line, then the selection summary (FactRows with the §5.5 Duration and summed Price, the disabled Reserve button, and its note, unchanged in role). At 1280 and up the timeline (with its helper line) and the summary sit side by side beneath the pane header, the timeline column about 420px wide; below 1280 they stack with the summary beneath. The first space is auto selected on desktop so the detail pane is never empty.
+Desktop (1024 and up), beneath the head: the date strip and party picker keep their current full-width row. Below them, two panes. Left, a column of about 340px: a type filter chip row (`All Spaces` plus only the categories present in the data), then the space cards stacked vertically. Right, the detail pane for the selected space: the header (name, capacity line, category microlabel), the helper line, the timeline, then the selection summary (FactRows with the §5.5 Duration and summed Price, the disabled Reserve button, and its note, unchanged in role). At 1280 and up the timeline (with its helper line) and the summary sit side by side beneath the pane header, the timeline column about 420px wide; below 1280 they stack with the summary beneath. The first space is auto selected on desktop so the detail pane is never empty.
 
 Below 1024: cards stack full width; tapping a card expands its timeline beneath it as an accordion, one open at a time, nothing expanded until a tap; the summary remains the existing fixed bottom bar, now carrying the condensed range.
 
@@ -355,3 +436,155 @@ Helper line: `Tap a start time, then an end time. Times in between must be open.
 ### 11.6 Done additions
 
 The §5.8 bar and the range criteria, plus: the filter shows only present categories; a gap-blocked reset demonstrated on the visible timeline; the timeline auto-scrolls to the first available cell and scrolls internally while the summary stays in view (side by side at 1280 and up, stacked below); divider spans match their neighboring slots' verbatim strings; auto select on desktop and the accordion on mobile verified at 1440 and 390; card dimming for a no-times space verified; the detail pane summary and the mobile bottom bar both carry the range, duration, and sum; the gate (§10.4) verified still in front of it all in live mode.
+
+---
+
+## 12. B3c · Reserve and pay
+
+The reserve flow turns a B3b range selection into a confirmed, paid reservation. It is built
+end to end against the stub (§12.7) with `bookingCreateEnabled` false, so nothing is exposed to
+real users until Moneris QA credentials and the live base URL arrive. Everything here obeys the
+established rules: the browser talks only to our `/api/booking/*` handlers (except the Moneris
+Hosted page itself), slot strings echo verbatim, money is integer cents, no jade, no member
+language, existing primitives only.
+
+### 12.1 Shape of the flow
+```
+review (from the B3b selection) -> POST create (range payload, idempotency key) pending, 10 min hold -> POST checkout/session Hosted Checkout ticket, 15 min -> full-page redirect to Moneris Hosted Checkout -> Moneris redirects back to our callback route -> POST checkout/complete (server verifies receipt) -> processing? poll status every 2 to 5s -> succeeded -> confirmation screen (reservation confirmed)
+```
+Every POST above goes through one of our route handlers, which attaches the user JWT and a
+per-operation idempotency key. The browser never calls the middleware; it only leaves for the
+Moneris Hosted page and returns.
+
+### 12.2 Route handlers (`/api/booking/*`, server only)
+
+- `POST /api/booking/reservations` -> middleware create. Body: `{ roomId, startsAt, endsAt,
+  partySize, customerNotes? }` from the selection (first slot `startsAt`, last slot `endsAt`,
+  verbatim). Generates `reservation-<uuid>` as the idempotency key and returns it to the client
+  so a retry reuses it.
+- `POST /api/booking/reservations/{id}/checkout` -> middleware checkout/session. Key
+  `checkout-session-<uuid>`. Returns `{ paymentId, ticket, expiresAt }`; the ticket is a public
+  handoff value, not proof of anything.
+- `POST /api/booking/reservations/{id}/complete` -> middleware checkout/complete with the
+  returned ticket. Key `checkout-complete-<uuid>`. Returns the checkout status.
+- `GET /api/booking/reservations/{id}/checkout` -> middleware status (no key; it is a GET).
+- All handlers require a session (§10.3) and map the middleware error envelope. `409` and `422`
+  surface as typed errors the UI handles per §12.6, not as the generic error state.
+
+Idempotency keys are generated server side, one per operation, and echoed to the client only so
+a timed-out retry can resend the identical key with the identical body. Keys are never logged.
+
+### 12.3 The Moneris callback route
+
+`src/app/(site)/book/checkout/callback/page.tsx` (or `/account/reservations/[id]/return`; pick one
+and record it). It is the redirect target we register in the vendor's `CUSTOMER_WEB_ORIGINS`
+context. Server-side: require a session (redirect to sign-in with `next` back to this URL if
+absent), read the reservation id and the Moneris parameters from the query, then hand off to the
+client island that calls complete and polls. This route is `noindex`, absent from the sitemap.
+
+Because the browser callback is not proof of payment, this page opens in a neutral "confirming
+your payment" state, never a success state. Success is rendered only after `complete` (and any
+polling) returns `succeeded`.
+
+### 12.4 Screens
+
+- **Review** (the B3b detail pane summary, now actionable): with `bookingCreateEnabled` true,
+  "Reserve This Time" becomes the entry point. Before it, a quiet line stating the one-per-day
+  limit when `maxPerDayPerUser` is 1 (§12.8 copy), so the cap is never a surprise at submit.
+  Pressing it calls create, then checkout/session, then redirects. A full-screen calm "taking
+  you to secure checkout" interstitial covers the two POSTs so the redirect does not feel abrupt.
+- **Return / confirming**: the §12.3 route. A calm "confirming your payment" state with a quiet
+  progress affordance (no spinner theatrics), driven by complete then polling. It resolves to
+  one of: confirmed, declined, needs-review, or timed-out (§12.6).
+- **Confirmation**: on `succeeded`, a settled screen: the reservation's space, date, time range,
+  party, and paid total (from the reservation, itemized GST and PST now real, not "before tax"),
+  a reservation code if present, and a solid 'View Reservation' button linking to the read-only detail at /account/reservations/[id] (§12.10). This screen
+  is the one success surface; it never shows before server verification.
+
+### 12.5 Expiry and the caps
+
+- No countdown is drawn. If create returns that the hold lapsed, or checkout/session says the
+  ticket expired, or the Moneris page is returned from after 15 minutes, the callback route
+  resolves to the timed-out state: a gentle line and a button back to the space's availability,
+  the selection cleared. The vendor is the clock; we react to its answer, we do not race it.
+- `maxPerDayPerUser` and `maxPerWeekPerUser` come from the policy endpoint. The one-per-day
+  line renders on review when the cap is 1. If the server rejects create for the cap (a `422`),
+  the UI shows the §12.8 cap-reached copy and routes to My Reservations rather than looping.
+
+### 12.6 Status handling (exact)
+
+From complete and the status poll:
+
+- `succeeded`: the confirmation screen.
+- `declined`: a calm decline line, a button back to review to try again (a new reservation and
+  a new key; the old pending will lapse on its own).
+- `processing`: keep polling every 2 to 5 seconds; never open a second session or purchase.
+- `review_required`: a "we are confirming this with our team" line, no retry, a pointer to My
+  Reservations and the phone; do not present it as either success or failure.
+- `failed` or a timed-out return: the timed-out state (§12.5).
+
+409 during create or checkout means slot conflict or an in-flight duplicate: refetch
+availability (create) or re-read checkout status (payment) rather than blindly retrying. A
+mutation timeout retries only with the same key and body, and only after a status read.
+
+### 12.7 The stub, extended
+
+Extend `scripts/booking-middleware-stub.mjs` to cover the new endpoints so the whole flow runs
+offline: the policy endpoint (returning the update's example shape, one-per-day cap included),
+create (returning a pending reservation with a 10 minute `expiresAt`), checkout/session
+(returning a fake ticket and a 15 minute expiry), checkout/complete and status (a switch to
+walk through `processing` then each terminal status: `succeeded`, `declined`,
+`review_required`, `failed`), and cancel (returning each `refundStatus`, `review_required` as
+the default to mirror the pre-QA fail-closed reality). The stub also serves an idempotency
+check: the same key with a different body returns `422`; the same key mid-flight returns `409`.
+It stays dev-only, never deployed, never imported by app code. The Moneris Hosted page itself is
+stubbed as a local dev page that immediately "returns" to our route with a mode parameter, so
+the redirect leg is exercised without a real Moneris environment.
+
+### 12.8 B3c copy (exact strings)
+
+- Reserve entry (unchanged label): `Reserve This Time`
+- One-per-day note on review: `One reservation per day. Booking a second time replaces today's.`
+  (only when `maxPerDayPerUser` is 1)
+- Interstitial: `Taking you to secure checkout.`
+- Return, confirming: `Confirming your payment. This only takes a moment.`
+- Confirmed heading: `You are booked.`
+- Confirmed subline: `A confirmation is on its way.` + button `View Reservation`
+- Declined: `That payment did not go through. You can try again.` · button `Back to Review`
+- Review required: `We are confirming this payment with our team. Check your reservations for
+  the final status, or call us at {phone}.`
+- Timed out: `That session timed out before payment finished. Please choose your time again.` ·
+  button `Back to Availability`
+- Cap reached: `You already have a reservation for that day. See your reservations to change it.`
+  · button `My Reservations`
+
+### 12.9 Done criteria
+
+Against the extended stub, `bookingCreateEnabled` toggled true locally for QA only: the happy
+path runs review -> create -> session -> redirect -> return -> complete -> `succeeded` ->
+confirmation, with the paid total itemizing real GST and PST. Each non-happy status
+(`declined`, `processing` then a terminal, `review_required`, `failed`, timed-out) reaches its
+§12.6 screen. A create `422` for the per-day cap shows the cap copy and routes to My
+Reservations. Idempotency: a resend with the same key and body replays; a different body is
+rejected. the callback route requires a session and never shows success before verification. No
+key, ticket, or token is logged. `bookingCreateEnabled` is committed `false`. Lint, typecheck,
+dash check pass, verified at 1440 and 390.
+
+### 12.10 Read-only reservation detail
+
+`src/app/(site)/account/reservations/[id]/page.tsx`, the target of the confirmation's "View
+Reservation" button. B3c builds it read-only; B3d adds the list around it and the cancel action
+onto it. Server-side: require a session (sign-in redirect with `next` back), fetch the single
+reservation through our handler wrapping `GET /api/v1/simulator/reservations/{id}`. Because the
+middleware checks ownership and answers `404 NOT_FOUND` for a reservation the JWT does not own,
+someone guessing an id sees the standard not-found, not another person's booking. The route is
+`noindex`, absent from the sitemap, inside `(site)`.
+
+Content: a head, then FactRows for Space, Date, Time range, Party, and the itemized total
+(subtotal, GST, PST, total, all real now), plus a status badge from the reservation `status`
+(`pending`, `confirmed`, `cancelled`, `no_show`, `completed`) in the established quiet type, and
+the reservation code when present. No actions in B3c: no cancel, no pay-again, no edit. A
+reservation still `pending` (arrived here without completing payment) shows its status honestly
+with a quiet line that payment did not finish; it does not fabricate a resume-payment flow in
+this phase. Copy: status labels title-cased from the enum; pending line `Payment was not
+completed for this reservation.`; not-found handled by the route's own 404.
