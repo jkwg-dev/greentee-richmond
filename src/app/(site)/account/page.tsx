@@ -3,10 +3,14 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Reveal } from "@/components/motion/Reveal";
 import { ProfileForm } from "@/components/sections/account/ProfileForm";
-import { PageHead } from "@/components/ui/PageHead";
+import { ReservationsList } from "@/components/sections/account/ReservationsList";
 import { Button } from "@/components/ui/Button";
 import { FactRows, type Fact } from "@/components/ui/FactRows";
+import { PageHead } from "@/components/ui/PageHead";
+import { isBookingLive } from "@/lib/booking/config";
+import { listReservations } from "@/lib/booking/reservations";
 import { getUser } from "@/lib/supabase/server";
+import type { ReservationList } from "@/types/booking";
 import { signOut } from "./actions";
 
 export const metadata: Metadata = {
@@ -26,12 +30,22 @@ function metadataString(user: User, key: MetadataKey): string {
 }
 
 /**
- * The account page (booking.md §9.4): session required, signed-out visitors
- * bounce to sign in with next=/account. Email and, when stored, Name as
- * read-only rows, then the Profile section that edits the same metadata. The
- * reservations rows join in B3c. Dynamic by nature of cookies(), never forced
- * static (§9.5).
+ * The account home (booking.md §13.1): profile on the left, reservations on the
+ * right at 1024 and up, stacked below. The first page of reservations is
+ * fetched server side so the list paints populated; the island loads further
+ * pages on demand. In fixture mode there is no reservation store, so the list
+ * is an honest empty. A live-mode fetch failure hands the island `null`, which
+ * opens the list pane in its error state without touching the profile pane.
  */
+async function loadReservations(): Promise<ReservationList | null> {
+  if (!isBookingLive()) return { items: [], nextCursor: null };
+  try {
+    return await listReservations();
+  } catch {
+    return null;
+  }
+}
+
 export default async function AccountPage() {
   const user = await getUser();
   if (!user) redirect("/account/sign-in?next=/account");
@@ -49,28 +63,33 @@ export default async function AccountPage() {
     ...(shownName ? [{ label: "Name", value: shownName }] : []),
   ];
 
+  const initialReservations = await loadReservations();
+
   return (
     <>
       <PageHead eyebrow="Your Account" title="Your account." />
       <div className="mx-auto max-w-[1360px] px-[6vw] pt-[46px] pb-[110px]">
-        <Reveal as="div" delay={120} className="max-w-[420px]">
-          <FactRows facts={facts} />
-          <div className="mt-12">
-            <ProfileForm
-              firstName={firstName}
-              lastName={lastName}
-              phone={phone}
-            />
-          </div>
-          <p className="text-mist mt-12 text-[13.5px]">
-            Your reservations will appear here once online booking opens.
-          </p>
-          <form action={signOut} className="mt-9">
-            <Button type="submit" variant="ghost">
-              Sign Out
-            </Button>
-          </form>
-        </Reveal>
+        <div className="grid grid-cols-[340px_minmax(0,1fr)] items-start gap-[clamp(2rem,4vw,4rem)] max-[1023px]:grid-cols-1 max-[1023px]:gap-16">
+          <Reveal as="div" delay={120}>
+            <FactRows facts={facts} />
+            <div className="mt-12">
+              <ProfileForm
+                firstName={firstName}
+                lastName={lastName}
+                phone={phone}
+              />
+            </div>
+            <form action={signOut} className="mt-12">
+              <Button type="submit" variant="ghost">
+                Sign Out
+              </Button>
+            </form>
+          </Reveal>
+
+          <Reveal as="div" delay={200}>
+            <ReservationsList initial={initialReservations} />
+          </Reveal>
+        </div>
       </div>
     </>
   );

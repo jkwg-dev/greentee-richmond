@@ -538,6 +538,33 @@ const server = createServer(async (req, res) => {
     return json(res, 201, payload, requestId);
   }
 
+  // GET /api/v1/simulator/reservations (vendor §9.6): the caller's reservations,
+  // newest first, with cursor pagination. The page size is deliberately small
+  // (3) so Show More is exercisable without creating many reservations. The
+  // cursor is an opaque offset here; the vendor's is an ISO datetime, but the
+  // customer app never interprets it, so the format is a faithful stand-in.
+  if (path === "/api/v1/simulator/reservations" && req.method === "GET") {
+    const RESERVATIONS_PAGE = 3;
+    // Map insertion order is oldest first; reverse for newest first.
+    const owned = [...reservations.values()]
+      .filter((entry) => entry.owner === owner)
+      .reverse();
+    const rawCursor = url.searchParams.get("cursor");
+    const offset =
+      rawCursor && /^\d+$/.test(rawCursor) ? Number(rawCursor) : 0;
+    const page = owned.slice(offset, offset + RESERVATIONS_PAGE);
+    const nextOffset = offset + RESERVATIONS_PAGE;
+    return json(
+      res,
+      200,
+      {
+        reservations: page.map(publicReservation),
+        nextCursor: nextOffset < owned.length ? String(nextOffset) : null,
+      },
+      requestId,
+    );
+  }
+
   const reservationRoute = path.match(
     /^\/api\/v1\/simulator\/reservations\/([^/]+)(\/checkout\/session|\/checkout\/complete|\/checkout|\/cancel)?$/,
   );

@@ -121,6 +121,18 @@ export type BookingReservation = {
 };
 
 /**
+ * One page of the signed-in user's reservations (booking.md §13.2). The order
+ * is the vendor's, newest first by their default, never re-sorted here.
+ * `nextCursor` is an opaque handle for the next page (the vendor's is an ISO
+ * datetime; we pass it back verbatim and never interpret it), null on the last
+ * page.
+ */
+export type ReservationList = {
+  items: BookingReservation[];
+  nextCursor: string | null;
+};
+
+/**
  * Payment state (booking.md §4 deltas, §12.6). `succeeded` is the only value
  * that may render as success, and only after the server verified the receipt;
  * the browser callback proves nothing.

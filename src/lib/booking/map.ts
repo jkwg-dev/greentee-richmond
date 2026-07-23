@@ -12,6 +12,7 @@ import type {
   CheckoutSession,
   CheckoutState,
   CheckoutStatus,
+  ReservationList,
 } from "@/types/booking";
 
 /**
@@ -138,6 +139,7 @@ export type VendorReservationDto = {
   currency: string;
   expiresAt?: string | null;
   code?: string | null;
+  reservationCode?: string | null;
   confirmationCode?: string | null;
 };
 
@@ -169,7 +171,28 @@ export function mapReservation(dto: VendorReservationDto): BookingReservation {
     totalCents: dto.totalCents,
     currency: dto.currency,
     expiresAt: dto.expiresAt ?? null,
-    code: dto.code ?? dto.confirmationCode ?? null,
+    // The v0.1 list and detail name it `reservationCode`; the middleware update
+    // examples use `code`. Accept either, plus the older `confirmationCode`.
+    code: dto.code ?? dto.reservationCode ?? dto.confirmationCode ?? null,
+  };
+}
+
+/**
+ * `GET /api/v1/simulator/reservations` (vendor spec §9.6): the signed-in user's
+ * reservations plus an opaque `nextCursor` (null on the last page). The order
+ * is the vendor's; it is never re-sorted here (booking.md §13.2).
+ */
+export type VendorReservationListDto = {
+  reservations: VendorReservationDto[];
+  nextCursor?: string | null;
+};
+
+export function mapReservationList(
+  dto: VendorReservationListDto,
+): ReservationList {
+  return {
+    items: (dto.reservations ?? []).map(mapReservation),
+    nextCursor: dto.nextCursor ?? null,
   };
 }
 

@@ -1,54 +1,19 @@
+import Link from "next/link";
+import { reservationFacts } from "@/components/sections/checkout/reservationFacts";
 import { FactRows } from "@/components/ui/FactRows";
 import { PageHead } from "@/components/ui/PageHead";
-import { reservationFacts } from "@/components/sections/checkout/reservationFacts";
-import { cn } from "@/lib/utils";
-import type {
-  BookingReservation,
-  BookingReservationStatus,
-} from "@/types/booking";
+import type { BookingReservation } from "@/types/booking";
+import { StatusBadge } from "./StatusBadge";
 
 /**
- * The read-only reservation detail (booking.md §12.10), the target of the
- * confirmation's View Reservation button. Presentational only: the itemized
- * total is the server's, echoed verbatim, and there are no actions in B3c. A
- * pending reservation (reached without completing payment) states its status
- * honestly rather than fabricating a resume-payment flow. The list and the
- * cancel action arrive in B3d.
+ * The read-only reservation detail (booking.md §12.10), reachable from the
+ * confirmation's View Reservation button and, since B3d-1, from the
+ * reservations list. Presentational only: the itemized total is the server's,
+ * echoed verbatim, and there are no actions in this phase. A pending
+ * reservation (reached without completing payment) states its status honestly
+ * rather than fabricating a resume-payment flow. The cancel action arrives in
+ * B3d-2.
  */
-
-/** Enum to a title-cased label (booking.md §12.10). */
-const STATUS_LABEL: Record<BookingReservationStatus, string> = {
-  pending: "Pending",
-  confirmed: "Confirmed",
-  cancelled: "Cancelled",
-  no_show: "No Show",
-  completed: "Completed",
-};
-
-/** Confirmed reads in champagne; the rest stay in the quiet mist type. */
-const STATUS_ACCENT: Record<BookingReservationStatus, boolean> = {
-  pending: false,
-  confirmed: true,
-  cancelled: false,
-  no_show: false,
-  completed: true,
-};
-
-function StatusBadge({ status }: { status: BookingReservationStatus }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center border px-4 py-[7px] text-[11px] tracking-[0.16em]",
-        STATUS_ACCENT[status]
-          ? "border-champagne/40 text-champagne"
-          : "border-champagne/[0.14] text-mist",
-      )}
-    >
-      {STATUS_LABEL[status]}
-    </span>
-  );
-}
-
 export function ReservationDetail({
   reservation,
 }: {
@@ -71,6 +36,14 @@ export function ReservationDetail({
             facts={reservationFacts(reservation, "Total")}
             className="mt-10"
           />
+
+          {/* Back affordance to the account home (booking.md §12.10 amended). */}
+          <Link
+            href="/account"
+            className="text-mist hover:text-ivory mt-10 inline-flex min-h-[44px] items-center text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors"
+          >
+            Back to Account
+          </Link>
         </div>
       </div>
     </>

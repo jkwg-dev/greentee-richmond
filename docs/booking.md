@@ -232,6 +232,7 @@ Cutoff rule (vendor answer 5): for today, slots starting within 60 minutes of ve
 | 11 | No maximum range duration is stated by the vendor | We impose none in the UI; the server may reject at creation | If a maximum ever surfaces, it becomes a selection-rule constant beside the cutoff |
 | 12 | The Moneris Hosted Checkout URL is absent from the documented `checkout/session` response (`paymentId`, `ticket`, `expiresAt`, `environment`), and the return-leg URL shape is undocumented: does Moneris put the `ticket` in the callback query, or do we carry it ourselves. Also, does the session response carry the checkout URL or do we compose it from the ticket, and if so at what host and format | `checkoutUrl` is mapped as an optional wire field and the session call fails loudly when it is missing; a Moneris host is never guessed. The callback reads the ticket from the query but also keeps a same-tab `sessionStorage` copy, and `history.replaceState`s the ticket and mode out of the URL after reading (§12.3). The stub supplies both the URL and the return shape | **Live-payment blocker.** Blocks nothing on the stub; §12 is built and verified against it |
 | 13 | The per-day cap returns a bare `422 VALIDATION_FAILED` with no distinguishable code. Is a second same-day reservation rejected or does it replace the first, and can a specific code be returned | Interim heuristic: a create-time `422` reads as cap-reached when the policy names a `maxPerDayPerUser`, and as generic rule copy otherwise | §12.5, §12.6. A real code replaces the heuristic the moment it lands |
+| 14 | Which field name is canonical for the reservation code: v0.1 §9.6 uses `reservationCode`, the middleware update examples use `code` | The mapper accepts `code ?? reservationCode ?? confirmationCode`, so neither spelling breaks us | Blocks nothing; the fallback simplifies once the canonical name is confirmed |
 
 Answered (attachment of 2026-07-21, replies received): 1 slot model, ranges allowed and recommended (recorded in §2 and §5.4) · 3 sign-up metadata, email and password are the only requirements; `display_name`, `phone`, `preferred_locale` are optional metadata and a profile is auto-created with the email local part as the fallback display name (recorded in §9) · 4 identity key is the (provider, externalUserId) pair, the provider stays `green_tee_flutter` for web, no `green_tee_web` is planned, and any future provider addition will ship with an explicit linking step on the vendor side (hedge 10 closed) · 5 window 14 days, cutoff 60 minutes, server enforced (recorded in §4).
 Open: the staging schedule itself (base URL, test data, customer OpenAPI arrive together); the date has been asked and remains the single external gate, for B3c live only.
@@ -242,6 +243,10 @@ replaces our hardcoded window and cutoff. New external gates for B3c live: Moner
 credentials, and the feature branches merging to staging. Neither blocks the stub-backed build.
 Safety-net question still open (blocking nothing): whether the app reads any name key beyond
 first_name, last_name, display_name.
+Live-flip checklist note (B3d-1): the reservations handler sends no `limit`, so the page size is
+the vendor's default (§13.2). If that default is large, Show More may never appear in
+production even though the stub (page size 3) shows it. That is correct behavior, not a defect,
+and is worth knowing so staging and the stub reading differently is not mistaken for a bug.
 Raised by the B3c build (hedges 12 and 13, both to the vendor): the Hosted Checkout URL missing
 from the session response, which blocks live payment and nothing else, and the per-day cap
 returning no distinguishable error code, which leaves a heuristic in the create path.
@@ -676,10 +681,13 @@ statuses move.
 ### 13.3 The list
 
 Each row is a link to `/account/reservations/{id}`, in the established row rhythm (hairline
-separators, generous vertical padding, hover lifting the text from mist to ivory):
+separators, generous vertical padding). The space name is ivory at rest, because it is that
+row's identity and should read while scanning several reservations without hovering; the date
+and time line stays mist for hierarchy; hover lifts the row subtly (the hairline brightens),
+never a mist-to-ivory jump on the text:
 
-- Left: the space name (serif, about 16px), and beneath it the date and time range in mist
-  through `formatSlotDateLong` and `formatSlotRange` on the verbatim strings.
+- Left: the space name (serif, about 16px, ivory), and beneath it the date and time range in
+  mist through `formatSlotDateLong` and `formatSlotRange` on the verbatim strings.
 - Right: the status badge (the same quiet treatment as the §12.10 detail) and, beneath it, the
   total in mist through `formatCad`.
 

@@ -5,6 +5,7 @@ import type {
   CheckoutSession,
   CheckoutState,
   CheckoutStatus,
+  ReservationList,
 } from "@/types/booking";
 import { isBookingLive } from "./config";
 import { BookingApiError } from "./errors";
@@ -13,10 +14,12 @@ import {
   mapCheckoutState,
   mapCheckoutStatus,
   mapReservation,
+  mapReservationList,
   type VendorCheckoutCompleteDto,
   type VendorCheckoutSessionDto,
   type VendorCheckoutStateDto,
   type VendorReservationDto,
+  type VendorReservationListDto,
 } from "./map";
 import { vendorRequest } from "./request";
 
@@ -66,6 +69,22 @@ export async function createReservation(
     body: input,
   });
   return mapReservation(dto);
+}
+
+/**
+ * The signed-in user's reservations, one page (booking.md §13.2, vendor §9.6).
+ * The cursor is opaque and passed straight through; the order is the vendor's
+ * and is never re-sorted here. A GET, so no idempotency key.
+ */
+export async function listReservations(
+  cursor?: string,
+): Promise<ReservationList> {
+  requireLiveMode();
+  const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : "";
+  const dto = await vendorRequest<VendorReservationListDto>(
+    `${RESERVATIONS}${query}`,
+  );
+  return mapReservationList(dto);
 }
 
 /** The single reservation, ownership-checked upstream: a foreign id is a 404 (§12.10). */
