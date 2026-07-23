@@ -51,7 +51,8 @@ The booking track runs beside roadmap Phases 7 and 8 and carries its own numberi
 | B3a | Live reads: middleware provider behind the seam, per-user JWT relay, the /book gate, header and FullMenu sign-in entry points, housekeeping (PageHead extraction, bookingUrl removal, seed CTA fix) | verified against the local stub (§10.6); the vendor base URL only flips the env value |
 | B3b | Range selection on /book (multi-slot, contiguous, same room), the master-detail browse layout, and sign-up and profile metadata (full name, optional phone, profile editing on /account) | vendor answers received 2026-07; no external gate |
 | B3c | Reserve and pay: policy read, pending create (range payload), Moneris Hosted Checkout via redirect, server-verified complete and polling, confirmation, and a read-only reservation detail (`/account/reservations/[id]`) the confirmation links to. Stub-backed; `bookingCreateEnabled` stays false | vendor middleware update (received); Moneris QA credentials and base URL flip it live |
-| B3d | My reservations on /account: the list, and cancel with refund-status display added onto the B3c detail | B3c |
+| B3d-1 | Reservations list on /account and the two-pane account layout; the list links to the B3c read-only detail | none; `GET /reservations` is already specified |
+| B3d-2 | Cancel from the detail, with refund-status display | vendor: refund brackets, policy copy, and the review_required procedure |
 
 The old B4 (a payment step inserted later) is dissolved: the middleware update makes payment
 the path to `confirmed`, so it is part of B3c, not a successor phase.
@@ -328,7 +329,7 @@ First Name and Last Name render as two columns on one row at the form's full wid
 
 - `/account/sign-in`: Eyebrow, H1, support line, Email and Password fields, solid submit, cross link to sign up. Honors `?next=` (internal paths only: must start with a single `/`, reject `//` and anything with a scheme). Visited while signed in: redirect to `next`, else `/account`.
 - `/account/sign-up`: same shell; the fields below, solid submit, cross link to sign in. Same `next` behavior, same signed-in redirect.
-- `/account`: requires a session; signed out visitors redirect to `/account/sign-in?next=/account`. Head plus `FactRows` (Email, and Name when present), the Profile section below, the §9.7 reservations note line, and a ghost Sign Out button. B3c adds the reservations rows here.
+- `/account`: requires a session; signed out visitors redirect to `/account/sign-in?next=/account`. Head plus `FactRows` (Email, and Name when present), the Profile section below, and a ghost Sign Out button. The §9.7 reservations note is retired in B3d-1: the list itself now occupies that space, with the §13.5 empty state when there is nothing to show.
 - Cross links between sign in and sign up preserve `?next=` (URL encoded), so switching forms mid-flow never strands the return path.
 
 Sign up collects, in order: First Name, Last Name, Email, Password (amended 2026-07-21, superseding the single Full Name field above this date). Both name parts are required (a reservation reaches the front desk under this name); phone is not collected at sign up. Each part is trimmed with internal whitespace collapsed, and `options.data` carries all three name keys in the app's own shape: `first_name`, `last_name`, and `display_name` derived as first + a single space + last.
@@ -633,3 +634,87 @@ reservation still `pending` (arrived here without completing payment) shows its 
 with a quiet line that payment did not finish; it does not fabricate a resume-payment flow in
 this phase. Copy: status labels title-cased from the enum; pending line `Payment was not
 completed for this reservation.`; not-found handled by the route's own 404.
+
+B3d-1 makes this detail reachable from the reservations list as well as from the confirmation
+screen; the back affordance returns to `/account`.
+
+---
+
+## 13. B3d-1 · The reservations list
+
+`/account` becomes the account home: identity and profile on one side, reservations on the
+other. The list is read-only and links into the §12.10 detail; cancelling belongs to B3d-2.
+Existing primitives only, established language, no jade, no member wording.
+
+### 13.1 Layout
+
+At 1024 and up, two panes beneath the head. Left, about 340px (matching the /book space-card
+column, so the two pages share a rhythm): the Email FactRow and the Profile section, unchanged
+from §9.4. Right, flexible: the reservations list. Below 1024, the panes stack in that order,
+profile first, list beneath.
+
+The head keeps §9.7's H1 and eyebrow. The §9.4 reservations note line is retired: it said
+reservations would appear once booking opens, and now they do. It is replaced by the §13.5
+empty state when the list is empty.
+
+### 13.2 Data
+
+`GET /api/booking/reservations` wraps the middleware list endpoint: session required, JWT
+relayed, `no-store`, no idempotency key (it is a GET). Cursor pagination passes through: the
+handler accepts an optional cursor and returns the items plus the next cursor. Mapping stays in
+`map.ts` and the domain type is the `BookingReservation` B3c already defines.
+
+The page fetches the first page server side and passes it to the island as initial data, so
+first paint is populated; further pages load on demand (§13.3).
+
+Order is whatever the vendor returns, newest first by their default. We do not re-sort, split
+into upcoming and past, or compute whether a reservation has elapsed: that would mean date
+arithmetic on slot strings, which the rules forbid, and the vendor owns the `completed`
+transition. A future upcoming/past split is a B-later decision once real data shows how and when
+statuses move.
+
+### 13.3 The list
+
+Each row is a link to `/account/reservations/{id}`, in the established row rhythm (hairline
+separators, generous vertical padding, hover lifting the text from mist to ivory):
+
+- Left: the space name (serif, about 16px), and beneath it the date and time range in mist
+  through `formatSlotDateLong` and `formatSlotRange` on the verbatim strings.
+- Right: the status badge (the same quiet treatment as the §12.10 detail) and, beneath it, the
+  total in mist through `formatCad`.
+
+Rows are keyboard reachable in DOM order with the global focus treatment, 44px minimum height.
+If the vendor returns a next cursor, a ghost "Show More" Button appends the next page in place;
+it never replaces the list or scrolls the page. While loading a page, the button shows its
+pending treatment and the existing rows stay put.
+
+Below 1024 the row keeps the same content with the status badge moving beneath the total, both
+right-aligned, so nothing truncates at 390.
+
+### 13.4 States
+
+- **Loading** (initial, server-rendered so rarely seen): three pulse placeholder rows at the
+  row height, matching the §5.6 loading convention.
+- **Error**: the §5.6 pattern, one line plus a ghost "Try Again", inside the list pane only; the
+  profile pane stays usable.
+- **Empty**: the §13.5 line, quiet in mist, with a solid "Book a Bay" Button linking to `/book`.
+  This is the one place the account page points back into the booking flow.
+
+### 13.5 B3d-1 copy
+
+- List section microlabel: `Reservations`
+- Empty state: `No reservations yet.` · button `Book a Bay`
+- Pagination button: `Show More`
+- Error line: `Something went wrong while loading your reservations.` · button `Try Again`
+- Status labels: title-cased from the enum, as in §12.10 (`Pending`, `Confirmed`, `Cancelled`,
+  `No Show`, `Completed`)
+
+### 13.6 Done criteria
+
+The CLAUDE.md definition of done, plus: the two panes at 1440 with the profile column at about
+340px and the list filling the rest, stacked below 1024, no truncation at 390; a row links to
+its detail and back; the status badge matches the detail's treatment for the same reservation;
+"Show More" appends rather than replaces and disappears when no cursor remains; the empty state
+renders with a working Book a Bay link; the error state is confined to the list pane; times and
+totals come from the verbatim strings and integer cents; keyboard reachable end to end; lint,
+typecheck, and the dash check pass.
