@@ -117,8 +117,9 @@ export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
       </nav>
 
       {/* Utility area: the CTA (switching to the tenant action on /dining,
-          docs §3.4, §8.2) plus the session-unaware Sign In link mirroring the
-          desktop header (booking.md §10.5). */}
+          docs §3.4, §8.2) plus the session-unaware Account link mirroring the
+          desktop header (booking.md §10.5, §10.7). A text link here, not the
+          header's icon: the menu has room and a lone glyph is harder to find. */}
       <div className="flex flex-wrap items-center gap-7">
         <Button
           href={isDining ? BOOK_A_TABLE_HREF : BOOK_A_BAY_HREF}
@@ -133,7 +134,7 @@ export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
           tabIndex={open ? 0 : -1}
           className="text-mist hover:text-ivory px-1 py-3 text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors"
         >
-          Sign In
+          Account
         </Link>
       </div>
     </div>

@@ -401,7 +401,15 @@ Hardening (B3a finding, ruled into B3b, implemented with the 2026-07-20 amendmen
 
 ### 10.5 Sign-in entry points
 
-Desktop header: a "Sign In" text link left of the Book a Bay CTA, nav-item type at reduced emphasis (mist, ivory on hover), static href `/account/sign-in`. The header never becomes session aware; B2's signed-in redirect makes the static destination correct in both states. FullMenu mirrors the same link in its utility area without touching the primary nav hierarchy. This section is the docs ruling that permits editing the header surface.
+Desktop header: an account icon left of the Book a Bay CTA. A person glyph (18 to 20px, 1px
+stroke, currentColor) in the nav-item treatment at reduced emphasis: mist at rest, ivory on
+hover, with a 44px touch target from padding. The href is the static /account/sign-in; it never
+changes, because B2's signed-in redirect sends an authenticated visitor to /account and an
+anonymous one to the form, so one destination is correct in both states and the header never
+reads the session. The icon carries aria-label="Account" and a title of the same, since a glyph
+alone is invisible to assistive technology. FullMenu mirrors the entry point as a text link
+labeled "Account" in its utility area, not an icon, because the menu has room and a lone glyph
+there would be harder to find.
 
 ### 10.6 The local middleware stub
 
@@ -409,7 +417,7 @@ Desktop header: a "Sign In" text link left of the Book a Bay CTA, nav-item type 
 
 ### 10.7 B3a copy
 
-Gate line: `Sign in to see open times and reserve your bay.` Buttons: `Sign In` and `Create Account`. Header and FullMenu link label: `Sign In`.
+Gate line: `Sign in to see open times and reserve your bay.` Buttons: `Sign In` and `Create Account`. Header: account icon, aria-label and title "Account". FullMenu: text link "Account".
 
 ### 10.8 Done criteria
 

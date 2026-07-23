@@ -78,14 +78,30 @@ export function SiteHeader({
           </nav>
 
           <div className="flex items-center gap-1.5">
-            {/* Static href by design: the header stays session unaware, and
-                B2's signed-in redirect makes the destination correct in both
-                states (booking.md §10.5, the ruling permitting this edit). */}
+            {/* Account icon (booking.md §10.5, §10.7): a person glyph in the
+                nav-item treatment, mist to ivory on hover, 44px hit area from
+                padding. Static href by design; the header stays session
+                unaware, and B2's signed-in redirect makes the destination
+                correct in both states. aria-label and title because a lone
+                glyph is invisible to assistive technology. */}
             <Link
               href="/account/sign-in"
-              className="text-mist hover:text-ivory mr-5 px-1 py-3 text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors max-[900px]:hidden"
+              aria-label="Account"
+              title="Account"
+              className="text-mist hover:text-ivory mr-3 flex items-center p-3 transition-colors max-[900px]:hidden"
             >
-              Sign In
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                fill="none"
+                strokeWidth={1.2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5 stroke-current"
+              >
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
             </Link>
             <Button href={BOOK_A_BAY_HREF} size="sm">
               Book a Bay
