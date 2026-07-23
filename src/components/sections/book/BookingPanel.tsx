@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Reveal } from "@/components/motion/Reveal";
-import { dateStripDays, defaultPartySize } from "@/lib/booking/config";
+import { defaultPartySize } from "@/lib/booking/config";
 import { addDaysIso } from "@/lib/booking/dates";
 import {
   formatCad,
@@ -64,7 +64,12 @@ export function BookingPanel({
   const initialQuery = useRef(query);
   const router = useRouter();
 
-  const dates = Array.from({ length: dateStripDays }, (_, index) =>
+  // The booking window is the server's to state (booking.md §4 deltas): live
+  // mode gets the vendor's advanceBookingDays, fixture mode keeps its constant
+  // (FIXTURE_POLICY carries dateStripDays). Floored at 1 so a zero or bad
+  // policy value can never render an empty strip.
+  const stripDays = Math.max(1, policy.advanceBookingDays);
+  const dates = Array.from({ length: stripDays }, (_, index) =>
     addDaysIso(initialDate, index),
   );
   const maxPartySize = Math.max(...rooms.map((room) => room.maxCapacity));
