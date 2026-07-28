@@ -1,4 +1,5 @@
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
+import { SanityImage } from "@/components/ui/SanityImage";
 import type { Room } from "@/types";
 
 /**
@@ -12,14 +13,27 @@ export function RoomCard({ room }: { room: Room }) {
     <article>
       <PhotoFrame
         tint={room.tint ?? "champagne"}
-        showMark={room.showMark}
+        showMark={room.image ? false : room.showMark}
         label={
-          room.pending
-            ? { kicker: room.pendingLabel ?? "Render pending" }
-            : undefined
+          room.image
+            ? undefined
+            : room.pending
+              ? { kicker: room.pendingLabel ?? "Render pending" }
+              : undefined
         }
         className="mb-3.5 aspect-[16/10]"
-      />
+      >
+        {room.image && (
+          <SanityImage
+            image={room.image}
+            alt=""
+            fill
+            sizes="(max-width: 560px) 88vw, (max-width: 900px) 44vw, 30vw"
+            lqip={room.image.lqip}
+            className="z-[1] object-cover"
+          />
+        )}
+      </PhotoFrame>
       {room.motif && <p className="r-meta">{room.motif}</p>}
       <h3 className="r-name">{room.name}</h3>
       {room.line && <p className="r-line">{room.line}</p>}

@@ -344,7 +344,7 @@ const ZONES_QUERY = `
   cta { label, href, variant },
   "heroImage": heroImage ${IMAGE_PROJECTION},
   diningPanel { eyebrow, title, copy },
-  rooms[] { name, motif, line, pending }
+  rooms[] { name, motif, line, pending, "image": image ${IMAGE_PROJECTION} }
 }`;
 
 type RawZone = {
@@ -368,6 +368,7 @@ type RawZone = {
         motif: RoomMotif | null;
         line: string | null;
         pending: boolean | null;
+        image: RawImage;
       }[]
     | null;
 };
@@ -417,6 +418,7 @@ export async function getZones(): Promise<Zone[]> {
         motif: clean(room.motif) ?? undefined,
         line: room.line ?? undefined,
         pending: room.pending ?? undefined,
+        image: toImage(room.image),
         ...roomUiFor(slug, clean(room.name)),
       })),
       ...zoneUiFor(slug),
@@ -429,13 +431,14 @@ export async function getZones(): Promise<Zone[]> {
 const RESTAURANT_QUERY = `
 *[_id == "restaurant"][0] {
   name, tagline, lede,
+  "heroMedia": heroMedia ${IMAGE_PROJECTION},
   intro { lede, support },
   credentials[] { label, value, detail },
   story {
     heritage, footprint, footprintNow, richmond,
     philosophy[] { title, line }
   },
-  chef { intro, awards[] { title, detail, years }, bio, moments, quote },
+  chef { intro, awards[] { title, detail, years }, bio, moments, quote, "portrait": portrait ${IMAGE_PROJECTION} },
   privateDining { copy, facts[] { label, value, detail } },
   banquet {
     copy,
@@ -454,6 +457,7 @@ type RawRestaurant = {
   name: string;
   tagline: string;
   lede: string;
+  heroMedia: RawImage;
   intro: { lede: string; support: string };
   credentials: RawFact[] | null;
   story: {
@@ -469,6 +473,7 @@ type RawRestaurant = {
     bio: string;
     moments: string[] | null;
     quote: string;
+    portrait: RawImage;
   };
   privateDining: { copy: string; facts: RawFact[] | null };
   banquet: {
@@ -509,6 +514,7 @@ export async function getRestaurant(): Promise<Restaurant> {
     name: raw.name,
     tagline: raw.tagline,
     lede: raw.lede,
+    heroMedia: toImage(raw.heroMedia),
     intro: raw.intro,
     credentials: mapFacts(raw.credentials),
     privateDining: {
@@ -532,6 +538,7 @@ export async function getRestaurant(): Promise<Restaurant> {
       bio: raw.chef.bio,
       moments: raw.chef.moments ?? [],
       quote: raw.chef.quote,
+      portrait: toImage(raw.chef.portrait),
     },
     banquet: {
       copy: raw.banquet.copy,
@@ -572,7 +579,8 @@ export async function getRestaurantPreview(): Promise<RestaurantPreview> {
 
 const DISHES_QUERY = `
 *[_type == "dish" && available != false] | order(order asc) {
-  _id, name, zhName, line, category, seasonal, available, order
+  _id, name, zhName, line, category, seasonal, available, order,
+  "image": image ${IMAGE_PROJECTION}
 }`;
 
 type RawDish = {
@@ -584,6 +592,7 @@ type RawDish = {
   seasonal: boolean | null;
   available: boolean | null;
   order: number;
+  image: RawImage;
 };
 
 /** Available dishes in menu order (docs §4.1); frame tints from the UI layer. */
@@ -601,6 +610,7 @@ export async function getDishes(): Promise<Dish[]> {
       order: doc.order,
       seasonal: doc.seasonal ?? undefined,
       available: doc.available ?? undefined,
+      image: toImage(doc.image),
       frame: { tint: dishTintFor(key, index) },
     };
   });

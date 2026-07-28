@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/motion/Reveal";
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
+import { SanityImage } from "@/components/ui/SanityImage";
 import type { RestaurantChef } from "@/types";
 import { ChefQuote } from "./ChefQuote";
 import { CredBars } from "./CredBars";
@@ -20,14 +21,29 @@ export function ChefIntro({ chef }: { chef: RestaurantChef }) {
         <Reveal as="div" className="sticky top-[150px] max-[1024px]:static">
           <PhotoFrame
             tint="champagne"
-            showMark
-            label={{
-              kicker: "Portrait placeholder",
-              name: "Chef Portrait · Kitchen Setting",
-            }}
-            tag="Kitchen setting, not a studio headshot"
+            showMark={!chef.portrait}
+            label={
+              chef.portrait
+                ? undefined
+                : {
+                    kicker: "Portrait placeholder",
+                    name: "Chef Portrait · Kitchen Setting",
+                  }
+            }
+            tag={chef.portrait ? undefined : "Kitchen setting, not a studio headshot"}
             className="aspect-[4/5]"
-          />
+          >
+            {chef.portrait && (
+              <SanityImage
+                image={chef.portrait}
+                alt=""
+                fill
+                sizes="(max-width: 900px) 100vw, 42vw"
+                lqip={chef.portrait.lqip}
+                className="z-[1] object-cover"
+              />
+            )}
+          </PhotoFrame>
         </Reveal>
 
         <div>

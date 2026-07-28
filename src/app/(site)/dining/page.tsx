@@ -28,7 +28,11 @@ export default async function DiningPage() {
     .filter((dish) => dish !== undefined);
   return (
     <>
-      <DiningHero title={restaurant.name} tagline={restaurant.tagline} />
+      <DiningHero
+        title={restaurant.name}
+        tagline={restaurant.tagline}
+        media={restaurant.heroMedia}
+      />
 
       <section id="intro" className="dine-sec text-center">
         <div className="mx-auto max-w-[820px]">

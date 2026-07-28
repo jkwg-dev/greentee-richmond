@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/motion/Reveal";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { SanityImage } from "@/components/ui/SanityImage";
 import { PHOTO_TINT_CLASS } from "@/lib/tints";
 import { cn } from "@/lib/utils";
 import type { Zone } from "@/types";
@@ -14,28 +15,40 @@ import type { Zone } from "@/types";
 export function ZoneHero({ zone }: { zone: Zone }) {
   return (
     <div className="zhero grain-overlay">
-      <div
-        className={cn(
-          "absolute inset-0 z-[1]",
-          PHOTO_TINT_CLASS[zone.heroTint ?? "champagne"],
-        )}
-      />
+      {zone.heroImage ? (
+        <SanityImage
+          image={zone.heroImage}
+          alt=""
+          fill
+          sizes="100vw"
+          lqip={zone.heroImage.lqip}
+          className="z-[1] object-cover"
+        />
+      ) : (
+        <div
+          className={cn(
+            "absolute inset-0 z-[1]",
+            PHOTO_TINT_CLASS[zone.heroTint ?? "champagne"],
+          )}
+        />
+      )}
       <div className="zshade" />
 
-      {zone.heroPending ? (
-        <div className="pointer-events-none absolute inset-0 z-[4] flex flex-col items-center justify-center gap-3">
-          <span className="pf-mark" />
-          <span className="text-ivory/40 text-[8.5px] font-medium tracking-[0.4em] uppercase">
-            {zone.heroPendingLabel}
-          </span>
-        </div>
-      ) : (
-        zone.heroTag && (
-          <span className="text-mist/75 absolute bottom-3 left-4 z-[5] text-[8.5px] leading-[1.5] font-medium tracking-[0.26em] uppercase">
-            {zone.heroTag}
-          </span>
-        )
-      )}
+      {!zone.heroImage &&
+        (zone.heroPending ? (
+          <div className="pointer-events-none absolute inset-0 z-[4] flex flex-col items-center justify-center gap-3">
+            <span className="pf-mark" />
+            <span className="text-ivory/40 text-[8.5px] font-medium tracking-[0.4em] uppercase">
+              {zone.heroPendingLabel}
+            </span>
+          </div>
+        ) : (
+          zone.heroTag && (
+            <span className="text-mist/75 absolute bottom-3 left-4 z-[5] text-[8.5px] leading-[1.5] font-medium tracking-[0.26em] uppercase">
+              {zone.heroTag}
+            </span>
+          )
+        ))}
 
       <Reveal as="div" threshold={0.12} className="zhero-inner">
         <Eyebrow className="mb-[22px]">

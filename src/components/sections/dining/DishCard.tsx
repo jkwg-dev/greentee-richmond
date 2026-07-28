@@ -1,4 +1,5 @@
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
+import { SanityImage } from "@/components/ui/SanityImage";
 import { DISH_CATEGORY_LABEL, type Dish } from "@/types";
 
 /**
@@ -11,9 +12,20 @@ export function DishCard({ dish }: { dish: Dish }) {
     <>
       <PhotoFrame
         tint={dish.frame.tint}
-        label={{ kicker: "Large-format photo", name: dish.name }}
+        label={dish.image ? undefined : { kicker: "Large-format photo", name: dish.name }}
         className="mb-5 aspect-[16/10]"
-      />
+      >
+        {dish.image && (
+          <SanityImage
+            image={dish.image}
+            alt=""
+            fill
+            sizes="(max-width: 760px) 88vw, 45vw"
+            lqip={dish.image.lqip}
+            className="z-[1] object-cover"
+          />
+        )}
+      </PhotoFrame>
       <p className="text-jade-text mb-2.5 text-[8.5px] leading-none font-medium tracking-[0.3em] uppercase">
         {DISH_CATEGORY_LABEL[dish.category]}
       </p>
