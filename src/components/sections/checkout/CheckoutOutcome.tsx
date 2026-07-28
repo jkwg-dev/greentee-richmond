@@ -16,7 +16,9 @@ export type Outcome =
   | { kind: "confirmed"; reservation: BookingReservation | null }
   | { kind: "declined" }
   | { kind: "review"; phone: string }
-  | { kind: "timedOut" };
+  | { kind: "timedOut" }
+  /** An unexpected payment status: never confirmed, the safe catch-all (§12.6). */
+  | { kind: "error" };
 
 export function CheckoutOutcome({ outcome }: { outcome: Outcome }) {
   if (outcome.kind === "confirming") {
@@ -97,6 +99,27 @@ export function CheckoutOutcome({ outcome }: { outcome: Outcome }) {
         <div className="mt-10">
           <Button variant="ghost" href="/account">
             My Reservations
+          </Button>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (outcome.kind === "error") {
+    return (
+      <Shell
+        eyebrow="Something went wrong"
+        heading="We could not confirm this payment."
+      >
+        <p className="text-mist mt-5 max-w-[460px] text-[14.5px] leading-[1.8]">
+          Check your reservations for the final status, or start again.
+        </p>
+        <div className="mt-10 flex flex-wrap gap-3.5">
+          <Button variant="ghost" href="/account">
+            My Reservations
+          </Button>
+          <Button variant="solid" href="/book">
+            Back to Availability
           </Button>
         </div>
       </Shell>

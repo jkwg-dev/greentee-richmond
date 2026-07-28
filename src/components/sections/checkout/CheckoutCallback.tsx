@@ -70,10 +70,8 @@ export function CheckoutCallback({
 
   const settle = useCallback(
     async (status: CheckoutStatus): Promise<Outcome | null> => {
-      // Pre-settlement states keep polling; never confirm before the server
-      // says succeeded. `pending` and `not_started` join `processing` here
-      // because extending the status enum (staging OpenAPI) removed the old
-      // coercion that used to fold unknown values into `processing`.
+      // Still settling: keep polling, never confirm early. `pending` and
+      // `not_started` join `processing` (staging OpenAPI enum).
       if (
         status === "processing" ||
         status === "pending" ||
@@ -84,22 +82,29 @@ export function CheckoutCallback({
       if (status === "review_required") return { kind: "review", phone };
       if (status === "failed") return { kind: "timedOut" };
 
-      // Only here, on succeeded, and only after the server said so.
-      if (!reservationId) return { kind: "confirmed", reservation: null };
-      forgetTicket(reservationId);
-      try {
-        const response = await fetch(
-          `/api/booking/reservations/${encodeURIComponent(reservationId)}`,
-        );
-        if (!response.ok) return { kind: "confirmed", reservation: null };
-        return {
-          kind: "confirmed",
-          reservation: (await response.json()) as BookingReservation,
-        };
-      } catch {
-        // The payment is verified either way; the detail is what is missing.
-        return { kind: "confirmed", reservation: null };
+      // Confirm ONLY on an explicit succeeded, and only after the server said
+      // so. Every other value routes below, never to confirmed.
+      if (status === "succeeded") {
+        if (!reservationId) return { kind: "confirmed", reservation: null };
+        forgetTicket(reservationId);
+        try {
+          const response = await fetch(
+            `/api/booking/reservations/${encodeURIComponent(reservationId)}`,
+          );
+          if (!response.ok) return { kind: "confirmed", reservation: null };
+          return {
+            kind: "confirmed",
+            reservation: (await response.json()) as BookingReservation,
+          };
+        } catch {
+          // The payment is verified either way; the detail is what is missing.
+          return { kind: "confirmed", reservation: null };
+        }
       }
+
+      // Any other value (a future enum member) is the error surface, never
+      // confirmed: the hard rule is structural, not a negative match (§12.6).
+      return { kind: "error" };
     },
     [phone, reservationId],
   );
