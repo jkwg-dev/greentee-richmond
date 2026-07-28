@@ -115,8 +115,24 @@ all three keys; display_name is never an independent input and is never the pref
 - A cancel never claims a refund until `refundStatus` is `succeeded`; `review_required` and
   `processing` are shown as in-progress, not done. The refund adapter is fail-closed until
   Moneris QA, so `review_required` is the expected pre-QA outcome.
-- Moneris Hosted Checkout is a full-page redirect, not an iframe. The only origin the browser
-  reaches outside our own handlers is the Moneris Hosted page.
+- Moneris Checkout renders through the Moneris JavaScript SDK inside our own payment page
+  at /book/checkout. There is no vendor-supplied checkoutUrl and no redirect to a Moneris
+  origin. The SDK script is the only third-party script a booking route may load. The SDK
+  host and setMode value derive only from the session's environment field as mapped server
+  side; a Moneris host or mode is never hardcoded in a component and never guessed for an
+  unrecognized environment value. An unrecognized environment fails loudly.
+- The Moneris browser callbacks (page_loaded, cancel_transaction, error_event,
+  payment_receipt, payment_complete) are navigation signals only. The payment_complete
+  payload and its response_code are never treated as payment proof and never branched on
+  for outcome. The only path to a confirmed state remains the server-verified checkout
+  complete call.
+- Cap and window numbers in booking copy are never hardcoded; they render from the policy
+  endpoint. Exceeding a cap rejects the new request; it never replaces an existing
+  reservation, and copy never says it does. Until the vendor confirms consistent server
+  side enforcement, policy caps are client side UX guidance only. Vendor error message
+  strings are never parsed to classify a violation.
+- No site origin is ever registered on the vendor CORS allowlist, for any environment.
+  All vendor traffic is server to server through our route handlers.
 
 ## Responsive rules (summary of docs §10)
 - Verify every UI task at 1440 and 390. Reference widths: 390 / 768 / 1024 / 1440. Working breakpoints: 1024 (rails to chip bars), 900 (hamburger, stacks, journey fallback), 760 (dining internals), 560 (fine grids).
@@ -232,6 +248,15 @@ Done: matches spec on all six routes, 1440 + 390 verified, lint/typecheck pass.
   any payment credential, in code, reports, or error messages
 - Rendering a payment as successful before the server returns `succeeded`, or a refund as done
   before `refundStatus` is `succeeded`
-- Embedding Moneris Hosted Checkout in an iframe, or calling any checkout endpoint from the
-  browser instead of our route handlers
+- Wrapping the checkout flow in an iframe of our own construction, or loading any Moneris page
+  URL directly in a frame we create. The only permitted embed is whatever the official Moneris
+  SDK renders inside the container element we hand it.
 - Issuing a new idempotency key to retry a timed-out mutation (reuse the same key and body)
+- Treating a Moneris browser callback, its response_code, or any client side signal as
+  payment success, or rendering a success state from one
+- Hardcoding a cap count, a refund bracket, or any policy number in booking copy or logic
+  when the policy endpoint supplies it
+- Rendering the mock checkout completion surface outside mock mode, or shipping
+  BOOKING_MOCK_CHECKOUT enabled in a production environment
+- Constructing or guessing a Moneris URL, host, or mode from anything other than the
+  vendor-documented constants selected by the session's environment field

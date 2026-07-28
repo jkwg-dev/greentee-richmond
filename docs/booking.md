@@ -50,7 +50,7 @@ The booking track runs beside roadmap Phases 7 and 8 and carries its own numberi
 | B2 · Auth | Supabase sign in and sign up in the site's design language, session handling, gate placement per the vendor's guest access answer | Vendor: project URL and publishable key |
 | B3a | Live reads: middleware provider behind the seam, per-user JWT relay, the /book gate, header and FullMenu sign-in entry points, housekeeping (PageHead extraction, bookingUrl removal, seed CTA fix) | verified against the local stub (§10.6); the vendor base URL only flips the env value |
 | B3b | Range selection on /book (multi-slot, contiguous, same room), the master-detail browse layout, and sign-up and profile metadata (full name, optional phone, profile editing on /account) | vendor answers received 2026-07; no external gate |
-| B3c | Reserve and pay: policy read, pending create (range payload), Moneris Hosted Checkout via redirect, server-verified complete and polling, confirmation, and a read-only reservation detail (`/account/reservations/[id]`) the confirmation links to. Stub-backed; `bookingCreateEnabled` stays false | vendor middleware update (received); Moneris QA credentials and base URL flip it live |
+| B3c | Reserve and pay: policy read, pending create (range payload), Moneris Checkout via the embedded JS SDK on our payment page, server-verified complete and polling, confirmation, and a read-only reservation detail (`/account/reservations/[id]`) the confirmation links to. Stub-backed; `bookingCreateEnabled` stays false | vendor middleware update (received); Moneris QA credentials and base URL flip it live |
 | B3d-1 | Reservations list on /account and the two-pane account layout; the list links to the B3c read-only detail | none; `GET /reservations` is already specified |
 | B3d-2 | Cancel from the detail, with refund-status display | vendor: refund brackets, policy copy, and the review_required procedure |
 
@@ -142,6 +142,60 @@ key-reuse-with-different-body). The core API timeout is 10 seconds; on a mutatio
 only with the same key and body, and check reservation or checkout status before ever issuing a
 new key.
 
+### 2026-07-28 vendor reply deltas (normative; supersedes the 2026-07-17 middleware update where they conflict)
+
+- Checkout session response (supersedes update section 8.1): carries paymentId, ticket,
+  expiresAt, and environment. There is no checkoutUrl field and none will be added; the
+  ticket is not a URL component. environment is "qa" or "production" for Moneris; the
+  value returned by the staging mock provider is unconfirmed (open question Q2). The mock
+  provider issues tickets prefixed mock_ticket_; the prefix is a vendor detail and is
+  never inspected by our client code. Mode detection is the server mapper's job, from
+  environment alone.
+- Moneris integration shape: the Moneris JS SDK is embedded in our payment page.
+  Vendor-documented SDK hosts, recorded here as spec constants, not guesses:
+  QA: https://gatewayt.moneris.com/chkt/js/chkt_v1.00.js
+  Production: https://gateway.moneris.com/chkt/js/chkt_v1.00.js
+  setMode("qa") when environment is "qa"; setMode("prod") when environment is
+  "production". Launch via monerisCheckout.startCheckout(ticket). Five callbacks must be
+  registered: page_loaded, cancel_transaction, error_event, payment_receipt,
+  payment_complete. payment_complete delivers a JSON string containing handler, ticket,
+  and response_code. It is not payment proof. After payment_complete, the callback ticket
+  goes to POST /checkout/complete for server side receipt verification, exactly as
+  already built. Reference: the vendor points to the Moneris official Checkout
+  documentation for SDK details.
+- Per-day cap: the documented maxPerDayPerUser of 1 was a response example. The current
+  staging value is 2. The policy endpoint response is authoritative; copy and logic
+  render from it. Exceeding the cap rejects the new request and never replaces an
+  existing reservation. Cancelled reservations are excluded from the count; pending,
+  confirmed, completed, and no_show are included. Caveat: the vendor reports that server
+  side enforcement of daily and weekly limits is currently inconsistent and a fix is
+  pending deployment. Until then the cap is client side guidance only, and QA runs may
+  create reservations past the cap without that being our defect. No structured error
+  identifier distinguishes a cap violation; every business rule arrives as 422
+  VALIDATION_FAILED, message string parsing is vendor-discouraged, and hedge 13
+  (a create-time rule_violation while the policy names a cap reads as the cap) stands
+  until the vendor ships an identifier (open question Q5).
+- Refund policy (vendor-owned values, recorded as constants pending open question Q3),
+  keyed off the reservation start time:
+  cancel 24 hours or more before start: 100 percent refund
+  cancel 12 to under 24 hours before start: 50 percent refund
+  cancel under 12 hours before start: no refund
+  In staging mock mode a refundable amount refunds successfully. review_required means
+  the reservation is cancelled but the refund is not automatically settled; it is never
+  rendered as complete, and an operator settles it manually against Moneris transaction
+  records. The vendor's admin tooling and final ops procedure for review_required are
+  not yet defined (open question Q4, an operations item for JK World Group).
+- display_name: confirmed and closed. The app displays public.profiles.display_name only
+  and never recomposes first and last on screen. App sign-up records first_name,
+  last_name, and display_name as first plus a single space plus last. Our existing
+  three-key write is correct. full_name is a server trigger fallback the app never
+  reads directly.
+- Staging: base URL https://web-server-ten-mu.vercel.app with the OpenAPI document at
+  /api/v1/openapi.json. Eight active rooms, sixteen rate rules, and seven-day operating
+  hours are configured. No origin registration is needed for server to server calls,
+  which is our only traffic pattern; the CORS question is closed on our side and no
+  origin is ever submitted for registration.
+
 ---
 
 ## 5. `/book` page spec
@@ -215,7 +269,40 @@ Cutoff rule (vendor answer 5): for today, slots starting within 60 minutes of ve
 
 ---
 
-## 6. Open questions and hedges
+## 6. Checkout handoff (resolved 2026-07-28)
+
+The open checkoutUrl question is closed: there is no URL. The flow is three legs.
+
+Leg 1, reserve. The reserve action on /book creates the pending reservation only, then
+navigates to /book/checkout?reservationId={id}. No checkout session is opened at this
+point. The pending hold clock (expiresAt) is already running.
+
+Leg 2, pay. /book/checkout is a session-required, noindex, force-dynamic route. On load
+it first reads GET /api/booking/reservations/{id}/checkout. If the status is processing
+or review_required it navigates straight to the callback route for verification and
+never opens a session. Otherwise it POSTs the session through our handler, receives
+{ paymentId, ticket, expiresAt, mode }, and branches on mode:
+
+- mode "moneris": inject the environment-matched SDK script, call setMode, register the
+  five callbacks, then startCheckout(ticket). cancel_transaction returns to /book.
+  error_event renders the error state with a retry that re-reads status first.
+  payment_receipt is informational and drives no state.
+- mode "mock": render the QA completion surface, gated by BOOKING_MOCK_CHECKOUT, which
+  simulates payment_complete with the mock ticket. Nothing Moneris loads in this mode.
+
+The domain CheckoutSession type replaces checkoutUrl with mode: "moneris" | "mock",
+derived server side from the vendor environment field. An unrecognized environment value
+is a loud 502 from the mapper, never a guess.
+
+Leg 3, verify. On payment_complete (real or mock), the handler stores the callback
+ticket via rememberTicket and performs a client side navigation to
+/book/checkout/callback?reservationId={id}. The ticket rides sessionStorage as the
+primary carrier; it is appended to the query only if the storage write fails. The
+callback island's existing verification machine (server complete, status polling, five
+outcome surfaces) is unchanged. The address bar scrub remains for the query-fallback
+path.
+
+### 6.1 Open questions and hedges
 
 | # | Question (with the vendor) | Working assumption in code | Hedge location |
 |---|---|---|---|
@@ -230,26 +317,50 @@ Cutoff rule (vendor answer 5): for today, slots starting within 60 minutes of ve
 | 9 | The vendor will enable email confirmation in their production environment; when it flips, signUp stops returning an immediate session and our §9.2 config error becomes wrong | Advance notice requested; parity holds today | A confirmation wait screen and redirect coordination land as their production launch approaches; tracked as B-later |
 | 10 | Identity mapping key: the (provider, externalUserId) pair | Closed: provider stays green_tee_flutter for web, no green_tee_web planned, vendor commits to explicit linking if a provider is ever added | Closed; the remedy, if it ever recurs, is a vendor policy request, not code |
 | 11 | No maximum range duration is stated by the vendor | We impose none in the UI; the server may reject at creation | If a maximum ever surfaces, it becomes a selection-rule constant beside the cutoff |
-| 12 | The Moneris Hosted Checkout URL is absent from the documented `checkout/session` response (`paymentId`, `ticket`, `expiresAt`, `environment`), and the return-leg URL shape is undocumented: does Moneris put the `ticket` in the callback query, or do we carry it ourselves. Also, does the session response carry the checkout URL or do we compose it from the ticket, and if so at what host and format | `checkoutUrl` is mapped as an optional wire field and the session call fails loudly when it is missing; a Moneris host is never guessed. The callback reads the ticket from the query but also keeps a same-tab `sessionStorage` copy, and `history.replaceState`s the ticket and mode out of the URL after reading (§12.3). The stub supplies both the URL and the return shape | **Live-payment blocker.** Blocks nothing on the stub; §12 is built and verified against it |
-| 13 | The per-day cap returns a bare `422 VALIDATION_FAILED` with no distinguishable code. Is a second same-day reservation rejected or does it replace the first, and can a specific code be returned | Interim heuristic: a create-time `422` reads as cap-reached when the policy names a `maxPerDayPerUser`, and as generic rule copy otherwise | §12.5, §12.6. A real code replaces the heuristic the moment it lands |
+| 12 | Moneris checkout handoff and the return-leg URL shape | Closed 2026-07-28: there is no checkoutUrl and no redirect. The Moneris JS SDK is embedded in our payment page; the session response carries `mode` in place of a URL, and we construct the callback navigation ourselves, carrying the ticket in `sessionStorage` with a query fallback that is then scrubbed (§6, §12.3) | Closed; §6, §12.3 |
+| 13 | A create-time cap violation returns a bare `422 VALIDATION_FAILED` with no distinguishable code | Behavior closed 2026-07-28: a cap exceedance is rejected, never a replacement. The distinguishable-code question stays open (Q5), so the interim heuristic stands: a create-time `422` reads as cap-reached when the policy names a `maxPerDayPerUser`, and as generic rule copy otherwise | §12.5, §12.6, Q5. A real code replaces the heuristic the moment it lands |
 | 14 | Which field name is canonical for the reservation code: v0.1 §9.6 uses `reservationCode`, the middleware update examples use `code` | The mapper accepts `code ?? reservationCode ?? confirmationCode`, so neither spelling breaks us | Blocks nothing; the fallback simplifies once the canonical name is confirmed |
 
 Answered (attachment of 2026-07-21, replies received): 1 slot model, ranges allowed and recommended (recorded in §2 and §5.4) · 3 sign-up metadata, email and password are the only requirements; `display_name`, `phone`, `preferred_locale` are optional metadata and a profile is auto-created with the email local part as the fallback display name (recorded in §9) · 4 identity key is the (provider, externalUserId) pair, the provider stays `green_tee_flutter` for web, no `green_tee_web` is planned, and any future provider addition will ship with an explicit linking step on the vendor side (hedge 10 closed) · 5 window 14 days, cutoff 60 minutes, server enforced (recorded in §4).
-Open: the staging schedule itself (base URL, test data, customer OpenAPI arrive together); the date has been asked and remains the single external gate, for B3c live only.
+Closed (2026-07-28): the staging schedule arrived. Base URL https://web-server-ten-mu.vercel.app, the customer OpenAPI at /api/v1/openapi.json, and eight active rooms, sixteen rate rules, and seven-day operating hours configured (§4).
 Middleware update (2026-07-17): confirmation is server-verified payment, not an admin action;
 pending hold is 10 minutes and the checkout ticket 15; idempotency keys are mandatory on all
 mutations; a customer OpenAPI document is served at `/api/v1/openapi.json`; the policy endpoint
 replaces our hardcoded window and cutoff. New external gates for B3c live: Moneris merchant QA
 credentials, and the feature branches merging to staging. Neither blocks the stub-backed build.
-Safety-net question still open (blocking nothing): whether the app reads any name key beyond
-first_name, last_name, display_name.
+Safety-net question closed (2026-07-28): the app displays `public.profiles.display_name` only
+and never recomposes first and last on screen; `full_name` is a server trigger fallback the app
+never reads directly. Our existing three-key write (first_name, last_name, display_name) is
+correct (§4, §9).
 Live-flip checklist note (B3d-1): the reservations handler sends no `limit`, so the page size is
 the vendor's default (§13.2). If that default is large, Show More may never appear in
 production even though the stub (page size 3) shows it. That is correct behavior, not a defect,
 and is worth knowing so staging and the stub reading differently is not mistaken for a bug.
-Raised by the B3c build (hedges 12 and 13, both to the vendor): the Hosted Checkout URL missing
-from the session response, which blocks live payment and nothing else, and the per-day cap
-returning no distinguishable error code, which leaves a heuristic in the create path.
+Raised by the B3c build (hedges 12 and 13): hedge 12 (the checkout handoff) is closed by the
+2026-07-28 reply, the Moneris JS SDK is embedded and there is no checkoutUrl (§6); hedge 13's
+distinguishable error code for a cap violation remains open and is tracked as Q5, so the
+create-path heuristic stands.
+
+Resolved by the 2026-07-28 reply (kept here with the resolution date, per the ledger
+convention): the staging base URL (received); the checkout handoff and return-leg shape (SDK
+embed, no checkoutUrl, §6); per-day cap behavior (reject, never replace; count semantics in §4);
+the refund brackets as values (§4, delivery mechanism still open as Q3); the app display-name
+source (display_name confirmed); and CORS origin registration (not applicable to our
+server-to-server pattern, no origin ever submitted).
+
+Open (2026-07-28), tracked as Q1 to Q5:
+- Q1: Moneris merchant QA credentials and Checkout ID, pending the contract signature. Blocks
+  real Moneris SDK verification (B3c-2b) and nothing else.
+- Q2: the environment value the staging mock provider returns. Blocks nothing; the first smoke
+  test against staging answers it empirically, and the mapper ruling (an unrecognized value
+  fails loudly) covers the interim.
+- Q3: whether the refund brackets are exposed by the policy endpoint. Until answered, the §4
+  constants stand, marked vendor-owned.
+- Q4: the review_required operations procedure and admin tooling, a vendor item plus an internal
+  JK World Group item (who checks Moneris records and settles manual refunds). Must be resolved
+  before public launch.
+- Q5: a structured error identifier for cap violations. The vendor has promised a spec
+  amendment; hedge 13 stands until then.
 
 ---
 
@@ -283,9 +394,17 @@ B2 adds `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (d
 
 `BOOKING_API_BASE_URL` (B3a): its presence is live mode. One variable arms both the middleware provider and the /book gate, so real data and the sign-in wall appear together; absent, the site runs fixture mode with the open browse experience (local dev and preview deployments). No trailing slash; validated on first use with a clear error when malformed.
 
+- `BOOKING_API_BASE_URL`: the staging value is `https://web-server-ten-mu.vercel.app`, set in
+  the environment and never committed. Its presence continues to arm live mode.
+- `BOOKING_MOCK_CHECKOUT`: `"1"` enables the mock completion surface on `/book/checkout` when
+  the session mode is mock. Dev and staging only. Never set in production, and the surface never
+  renders when the mode is moneris regardless of the flag.
+
 B3c adds no browser-exposed variables. Moneris credentials and the `sgsk_` key live only in the
-vendor middleware, never here. The Moneris return URL we register with the vendor is derived
-from the deployment origin (§12.3); it is a public route, not a secret. `bookingCreateEnabled`
+vendor middleware, never here. The `/book/checkout/callback` route (§12.3) is a public route on
+our own origin that our own `payment_complete` handler constructs and navigates to; no URL of
+ours, whether a return URL or a webhook, is registered with Moneris or the vendor in any
+environment, and no site origin is ever submitted for registration (§4). `bookingCreateEnabled`
 stays `false` through B3c and B3d and flips only when Moneris QA and the live base URL are both
 in place.
 
@@ -472,17 +591,20 @@ The §5.8 bar and the range criteria, plus: the filter shows only present catego
 The reserve flow turns a B3b range selection into a confirmed, paid reservation. It is built
 end to end against the stub (§12.7) with `bookingCreateEnabled` false, so nothing is exposed to
 real users until Moneris QA credentials and the live base URL arrive. Everything here obeys the
-established rules: the browser talks only to our `/api/booking/*` handlers (except the Moneris
-Hosted page itself), slot strings echo verbatim, money is integer cents, no jade, no member
-language, existing primitives only.
+established rules: the browser talks only to our `/api/booking/*` handlers (the sole third-party
+code it loads is the Moneris JS SDK on our own `/book/checkout` page), slot strings echo
+verbatim, money is integer cents, no jade, no member language, existing primitives only.
 
 ### 12.1 Shape of the flow
 ```
-review (from the B3b selection) -> POST create (range payload, idempotency key) pending, 10 min hold -> POST checkout/session Hosted Checkout ticket, 15 min -> full-page redirect to Moneris Hosted Checkout -> Moneris redirects back to our callback route -> POST checkout/complete (server verifies receipt) -> processing? poll status every 2 to 5s -> succeeded -> confirmation screen (reservation confirmed)
+review (from the B3b selection) -> POST create (range payload, idempotency key) pending, 10 min hold -> navigate to /book/checkout?reservationId={id}
+/book/checkout: GET checkout status first -> POST checkout/session { paymentId, ticket, expiresAt, mode }, 15 min -> mode "moneris": embed the Moneris JS SDK and startCheckout(ticket); mode "mock": the gated QA completion surface -> payment_complete callback (a navigation signal, not payment proof) -> client side navigation to /book/checkout/callback?reservationId={id} -> POST checkout/complete (server verifies receipt) -> processing? poll status every 2 to 5s -> succeeded -> confirmation screen (reservation confirmed)
 ```
-Every POST above goes through one of our route handlers, which attaches the user JWT and a
-per-operation idempotency key. The browser never calls the middleware; it only leaves for the
-Moneris Hosted page and returns.
+The client leg on /book performs one POST (create), then navigates to /book/checkout; the
+checkout session POST moves to that payment page (§6 leg 2). Every POST goes through one of our
+route handlers, which attaches the user JWT and a per-operation idempotency key. The browser
+never calls the middleware and never leaves our origin for a Moneris page; the only third-party
+code it loads is the Moneris JS SDK on /book/checkout.
 
 ### 12.2 Route handlers (`/api/booking/*`, server only)
 
@@ -491,8 +613,9 @@ Moneris Hosted page and returns.
   verbatim). Generates `reservation-<uuid>` as the idempotency key and returns it to the client
   so a retry reuses it.
 - `POST /api/booking/reservations/{id}/checkout` -> middleware checkout/session. Key
-  `checkout-session-<uuid>`. Returns `{ paymentId, ticket, expiresAt }`; the ticket is a public
-  handoff value, not proof of anything.
+  `checkout-session-<uuid>`. Returns `{ paymentId, ticket, expiresAt, mode }`, where `mode`
+  (`"moneris" | "mock"`) is derived server side from the vendor `environment` field (§6); the
+  ticket is a public handoff value, not proof of anything.
 - `POST /api/booking/reservations/{id}/complete` -> middleware checkout/complete with the
   returned ticket. Key `checkout-complete-<uuid>`. Returns the checkout status.
 - `GET /api/booking/reservations/{id}/checkout` -> middleware status (no key; it is a GET).
@@ -502,32 +625,46 @@ Moneris Hosted page and returns.
 Idempotency keys are generated server side, one per operation, and echoed to the client only so
 a timed-out retry can resend the identical key with the identical body. Keys are never logged.
 
-### 12.3 The Moneris callback route
+The handlers are unchanged in shape. Two notes from the §6 handoff: the checkout session
+handler's response type replaces `checkoutUrl` with `mode` (§6), and the `GET .../checkout`
+status read is now also the payment page's first call on load, before any session POST.
 
-`src/app/(site)/book/checkout/callback/page.tsx` (or `/account/reservations/[id]/return`; pick one
-and record it). It is the redirect target we register in the vendor's `CUSTOMER_WEB_ORIGINS`
-context. Server-side: require a session (redirect to sign-in with `next` back to this URL if
-absent), read the reservation id and the Moneris parameters from the query, then hand off to the
-client island that calls complete and polls. This route is `noindex`, absent from the sitemap.
+### 12.3 The return leg (the callback route)
 
-Because the browser callback is not proof of payment, this page opens in a neutral "confirming
-your payment" state, never a success state. Success is rendered only after `complete` (and any
+`src/app/(site)/book/checkout/callback/page.tsx` is the route the payment page navigates to
+after `payment_complete`. There is no Moneris redirect and no origin we register with the
+vendor; we construct this navigation ourselves from the callback. Server-side: require a session
+(redirect to sign-in with `next` back to this URL if absent), read the reservation id and, if
+present, the ticket from the query, then hand off to the client island that calls complete and
+polls. This route is `noindex`, absent from the sitemap.
+
+Because the callback is not proof of payment, this page opens in a neutral "confirming your
+payment" state, never a success state. Success is rendered only after `complete` (and any
 polling) returns `succeeded`.
 
-URL scrub: once the island has read the query, it `history.replaceState`s the ticket and the
-mode out of the address bar, keeping only `reservationId` so a refresh still resolves. The
-ticket is a public handoff value, not a secret (the vendor calls it exactly that), but our Never
-list names it, and the full URL otherwise reaches the request logger, deployment access logs,
-browser history, and the referrer. The scrub is correct whether or not real Moneris returns the
-ticket in the URL (hedge 12).
+Ticket carriers and scrub:
+- Primary carrier: `sessionStorage` via `rememberTicket`, written in the `payment_complete`
+  handler before the navigation.
+- Fallback carrier: the `ticket` query parameter, appended only when the storage write throws
+  (private mode, full quota).
+- The callback route's contract is unchanged, so the existing island needs no contract change:
+  `reservationId` is required, `ticket` is optional in the query.
+- The address bar scrub stays: once the island has read the query, it `history.replaceState`s
+  the ticket out of the address bar, keeping only `reservationId` so a refresh still resolves.
+  The ticket is a public handoff value, not a secret (the vendor calls it exactly that), but our
+  Never list names it, and the full URL otherwise reaches the request logger, deployment access
+  logs, browser history, and the referrer. The scrub covers the query-fallback path.
+- The sign-in round trip note stands: `next` carries the reservation id only, and the tab's
+  `sessionStorage` copy of the ticket survives the round trip.
 
 ### 12.4 Screens
 
 - **Review** (the B3b detail pane summary, now actionable): with `bookingCreateEnabled` true,
-  "Reserve This Time" becomes the entry point. Before it, a quiet line stating the one-per-day
-  limit when `maxPerDayPerUser` is 1 (§12.8 copy), so the cap is never a surprise at submit.
-  Pressing it calls create, then checkout/session, then redirects. A full-screen calm "taking
-  you to secure checkout" interstitial covers the two POSTs so the redirect does not feel abrupt.
+  "Reserve This Time" becomes the entry point. Before it, a quiet line stating the per-day cap
+  when `maxPerDayPerUser` is not null (§12.8 copy, rendered from the policy value), so the cap is
+  never a surprise at submit. Pressing it calls create, then navigates to /book/checkout, where
+  the session POST and payment happen (§6). A full-screen calm "taking you to secure checkout"
+  interstitial covers the create call and the navigation so it does not feel abrupt.
 - **Return / confirming**: the §12.3 route. A calm "confirming your payment" state with a quiet
   progress affordance (no spinner theatrics), driven by complete then polling. It resolves to
   one of: confirmed, declined, needs-review, or timed-out (§12.6).
@@ -539,12 +676,19 @@ ticket in the URL (hedge 12).
 ### 12.5 Expiry and the caps
 
 - No countdown is drawn. If create returns that the hold lapsed, or checkout/session says the
-  ticket expired, or the Moneris page is returned from after 15 minutes, the callback route
-  resolves to the timed-out state: a gentle line and a button back to the space's availability,
-  the selection cleared. The vendor is the clock; we react to its answer, we do not race it.
-- `maxPerDayPerUser` and `maxPerWeekPerUser` come from the policy endpoint. The one-per-day
-  line renders on review when the cap is 1. If the server rejects create for the cap (a `422`),
-  the UI shows the §12.8 cap-reached copy and routes to My Reservations rather than looping.
+  ticket expired, or the checkout session's 15 minute life lapses before payment finishes, the
+  callback route resolves to the timed-out state: a gentle line and a button back to the space's
+  availability, the selection cleared. The vendor is the clock; we react to its answer, we do
+  not race it.
+- `maxPerDayPerUser` and `maxPerWeekPerUser` come from the policy endpoint. The per-day cap line
+  renders on review whenever `maxPerDayPerUser` is not null (§12.8). If the server rejects create
+  for the cap (a `422`), the UI shows the §12.8 cap-reached copy and routes to My Reservations
+  rather than looping.
+- The staging `maxPerDayPerUser` is currently 2; the documented 1 was an example. The policy
+  value drives both the review copy and the hedge 13 heuristic. Caveat: the vendor reports that
+  server side enforcement of daily and weekly limits is inconsistent until a pending fix deploys,
+  so the caps are UX guidance, not a server guarantee, and QA runs may create past the cap
+  without that being our defect. Hedge 13 is retained unchanged and points to open question Q5.
 
 ### 12.6 Status handling (exact)
 
@@ -567,20 +711,23 @@ mutation timeout retries only with the same key and body, and only after a statu
 Extend `scripts/booking-middleware-stub.mjs` to cover the new endpoints so the whole flow runs
 offline: the policy endpoint (returning the update's example shape, one-per-day cap included),
 create (returning a pending reservation with a 10 minute `expiresAt`), checkout/session
-(returning a fake ticket and a 15 minute expiry), checkout/complete and status (a switch to
+(returning a fake ticket, a 15 minute expiry, and an `environment` the mapper resolves to mock mode), checkout/complete and status (a switch to
 walk through `processing` then each terminal status: `succeeded`, `declined`,
 `review_required`, `failed`), and cancel (returning each `refundStatus`, `review_required` as
 the default to mirror the pre-QA fail-closed reality). The stub also serves an idempotency
 check: the same key with a different body returns `422`; the same key mid-flight returns `409`.
-It stays dev-only, never deployed, never imported by app code. The Moneris Hosted page itself is
-stubbed as a local dev page that immediately "returns" to our route with a mode parameter, so
-the redirect leg is exercised without a real Moneris environment.
+It stays dev-only, never deployed, never imported by app code. There is no Moneris Hosted page
+to stub: in mock mode the payment page renders the gated QA completion surface
+(`BOOKING_MOCK_CHECKOUT`, §6 leg 2 and §12.11) that simulates `payment_complete` with the mock
+ticket, so the return leg is exercised without a real Moneris environment and nothing Moneris
+loads.
 
 ### 12.8 B3c copy (exact strings)
 
 - Reserve entry (unchanged label): `Reserve This Time`
-- One-per-day note on review: `One reservation per day. Booking a second time replaces today's.`
-  (only when `maxPerDayPerUser` is 1)
+- Per-day cap note on review (rendered from the policy value, shown only when `maxPerDayPerUser`
+  is not null): when the cap is 1, `One reservation per day.`; when the cap is greater than 1,
+  `Up to {n} reservations per day.`
 - Interstitial: `Taking you to secure checkout.`
 - Return, confirming: `Confirming your payment. This only takes a moment.`
 - Confirmed heading: `You are booked.`
@@ -590,8 +737,7 @@ the redirect leg is exercised without a real Moneris environment.
   the final status, or call us at {phone}.`
 - Timed out: `That session timed out before payment finished. Please choose your time again.` ·
   button `Back to Availability`
-- Cap reached: `You already have a reservation for that day. See your reservations to change it.`
-  · button `My Reservations`
+- Cap reached: `You have reached today's reservation limit.` · button `My Reservations`
 - Slot conflict (a 409 on the create leg): `That time was just taken. Choose another time.` ·
   button `Back to Availability`
 - Unexpected failure (any other create-leg error): `Something went wrong. Please try again.` ·
@@ -608,8 +754,8 @@ wording is verbatim.
 ### 12.9 Done criteria
 
 Against the extended stub, `bookingCreateEnabled` toggled true locally for QA only: the happy
-path runs review -> create -> session -> redirect -> return -> complete -> `succeeded` ->
-confirmation, with the paid total itemizing real GST and PST. Each non-happy status
+path runs review -> create -> navigate to /book/checkout -> session -> pay (SDK or mock) ->
+return -> complete -> `succeeded` -> confirmation, with the paid total itemizing real GST and PST. Each non-happy status
 (`declined`, `processing` then a terminal, `review_required`, `failed`, timed-out) reaches its
 §12.6 screen. A create `422` for the per-day cap shows the cap copy and routes to My
 Reservations. Idempotency: a resend with the same key and body replays; a different body is
@@ -642,6 +788,33 @@ completed for this reservation.`; not-found handled by the route's own 404.
 
 B3d-1 makes this detail reachable from the reservations list as well as from the confirmation
 screen; the back affordance returns to `/account`.
+
+### 12.11 The payment page (/book/checkout)
+
+Session required in every mode, noindex, out of the sitemap, force-dynamic. Requires a
+reservationId query parameter; without one it redirects to /book.
+
+States, in order of appearance:
+
+- Loading: the status read and, if clear, the session POST are in flight. Quiet hairline
+  pulse, consistent with the confirming state of 12.4.
+- Payment (mode moneris): the Moneris Checkout area mounts in the content column. The
+  page shows the reservation summary (FactRows over the range, server-supplied itemized
+  total) beside or above the Checkout area per the standard two-pane responsive rules.
+  No jade anywhere; standard noir, ivory, champagne.
+- Payment (mode mock): the same reservation summary with the QA completion surface in
+  place of the Checkout area. The surface is visibly labelled as a QA tool and renders
+  only under the BOOKING_MOCK_CHECKOUT flag.
+- Already settled: a status read of processing or review_required forwards to the
+  callback route; succeeded forwards to the reservation detail.
+- Expired: a 422 on the session POST reads as an expired hold; render the timed out
+  surface of 12.6 with the return to /book.
+- Error: the generic error state with a retry that re-reads status before any new
+  session POST.
+
+Cancellation from the Moneris cancel_transaction callback returns to /book with the
+selection cleared. The pending reservation is left to expire on its own hold clock;
+no client side delete is invented.
 
 ---
 
