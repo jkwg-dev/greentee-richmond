@@ -31,6 +31,18 @@ export function isBookingCreateEnabled(): boolean {
 }
 
 /**
+ * Gates the mock checkout completion surface on /book/checkout (booking.md §6,
+ * §8, §12.11). Dev and staging only, never set in production. It gates the
+ * surface only: it never influences mode mapping, which derives from the vendor
+ * environment field alone (§6), and the surface never renders when the session
+ * mode is `moneris` regardless of this flag. Server-side truth only; not
+ * NEXT_PUBLIC, so a client bundle reads it as absent.
+ */
+export function isMockCheckoutEnabled(): boolean {
+  return process.env.BOOKING_MOCK_CHECKOUT === "1";
+}
+
+/**
  * Live mode is the presence of BOOKING_API_BASE_URL (booking.md §8, §10.1):
  * one variable arms the middleware provider, the route handler auth
  * requirement, and the /book gate together. Server-side truth only; the

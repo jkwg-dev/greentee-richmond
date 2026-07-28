@@ -2,28 +2,21 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
-import { rememberTicket } from "@/lib/booking/checkout-handoff";
 import { selectionSummary } from "@/lib/booking/selection";
-import type {
-  BookingSelection,
-  CheckoutSessionCreated,
-  ReservationCreated,
-} from "@/types/booking";
+import type { BookingSelection, ReservationCreated } from "@/types/booking";
 
 /**
- * The reserve leg of booking.md §12.1: create, then open the Hosted Checkout
- * session, then hand the browser to the payment page. Both POSTs go to our own
- * route handlers, which relay the JWT and attach the per-operation idempotency
- * key; the browser never calls the middleware and never sees a key it did not
- * receive from us.
- *
- * The redirect is a full-page navigation, never an iframe (CLAUDE.md booking
- * track rules).
+ * The reserve leg of booking.md §12.1 as amended: the client performs one POST
+ * (create the pending reservation over the contiguous range), then navigates to
+ * the payment page at /book/checkout, where the checkout session is opened
+ * (§6 leg 2). The create POST goes to our own route handler, which relays the
+ * JWT and attaches the per-operation idempotency key; the browser never calls
+ * the middleware and never sees a key it did not receive from us.
  */
 
 export type ReserveState =
   | { kind: "idle" }
-  /** Covering the two POSTs so the redirect never feels abrupt (§12.4). */
+  /** Covering the create call and the navigation to the payment page (§12.4). */
   | { kind: "working" }
   /** A create 422 while the policy names a per-day cap (§12.5, hedge 13). */
   | { kind: "cap" }
@@ -86,26 +79,11 @@ export function useReserveFlow({
         }
         const { reservation } = (await created.json()) as ReservationCreated;
 
-        // 2. The Hosted Checkout session for that reservation.
-        const opened = await fetch(
-          `/api/booking/reservations/${encodeURIComponent(reservation.id)}/checkout`,
-          { method: "POST" },
+        // 2. Leave for the payment page; the checkout session opens there
+        //    (§6 leg 2, §12.1). The pending hold clock is already running.
+        router.push(
+          `/book/checkout?reservationId=${encodeURIComponent(reservation.id)}`,
         );
-
-        if (opened.status === 401) {
-          router.push("/account/sign-in?next=/book");
-          return;
-        }
-        if (!opened.ok) {
-          const code = await errorCode(opened);
-          setState({ kind: code === "conflict" ? "conflict" : "error" });
-          return;
-        }
-        const { session } = (await opened.json()) as CheckoutSessionCreated;
-
-        // 3. Leave for the payment page, keeping a fallback copy of the ticket.
-        rememberTicket(reservation.id, session.ticket);
-        window.location.assign(session.checkoutUrl);
       } catch {
         setState({ kind: "error" });
       }

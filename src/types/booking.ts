@@ -145,16 +145,24 @@ export type CheckoutStatus =
   | "failed";
 
 /**
- * A Hosted Checkout handoff (booking.md §12.2). `ticket` is a public,
- * short-lived handoff value, not proof of payment; `checkoutUrl` is where the
- * browser is sent to pay, supplied by the middleware and never constructed
- * here. Neither is ever logged.
+ * Which checkout surface the payment page mounts (booking.md §6). Derived
+ * server side from the vendor `environment` field in the mapper; client code
+ * never inspects a Moneris host, a ticket prefix, or the raw environment value.
+ */
+export type CheckoutMode = "moneris" | "mock";
+
+/**
+ * The checkout session handoff (booking.md §6, §12.2). There is no vendor
+ * `checkoutUrl` and no redirect: the session response carries `mode` instead,
+ * derived server side from the vendor `environment` field, and the SDK (or the
+ * mock surface) mounts inside our own `/book/checkout` page. `ticket` is a
+ * public, short-lived handoff value, not proof of payment, and is never logged.
  */
 export type CheckoutSession = {
   paymentId: string;
   ticket: string;
   expiresAt: string;
-  checkoutUrl: string;
+  mode: CheckoutMode;
 };
 
 /** The payment status read (booking.md §4 deltas, §8.3 of the vendor update). */

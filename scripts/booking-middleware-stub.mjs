@@ -606,9 +606,13 @@ const server = createServer(async (req, res) => {
 
       const payment = {
         paymentId: crypto.randomUUID(),
-        ticket: `stub-ticket-${crypto.randomUUID()}`,
+        // The vendor's mock provider prefixes tickets `mock_ticket_`; emitted
+        // for realism only, never inspected by client code (booking.md §4).
+        ticket: `mock_ticket_${crypto.randomUUID()}`,
         expiresAt: minutesFromNow(POLICY.checkoutSessionMinutes),
         status: "processing",
+        // Stub bookkeeping: the payment OUTCOME switch (succeeded, declined,
+        // ...), unrelated to the domain checkout mode.
         mode: checkoutMode,
         pollsLeft: checkoutPolls,
         amountCents: reservation.totalCents,
@@ -619,10 +623,10 @@ const server = createServer(async (req, res) => {
         paymentId: payment.paymentId,
         ticket: payment.ticket,
         expiresAt: payment.expiresAt,
-        environment: "stub",
-        // Not a vendor field: the documented session response carries no URL,
-        // so the stub supplies the Hosted Checkout origin it stands in for.
-        checkoutUrl: `${SELF}/__stub/moneris?ticket=${encodeURIComponent(payment.ticket)}&reservationId=${encodeURIComponent(id)}`,
+        // The staging mock provider reports environment "mock"; our mapper
+        // resolves it to checkout mode "mock" (booking.md §6). There is no
+        // checkoutUrl and none is emitted.
+        environment: "mock",
       };
       remember(scope, idempotencyKey, {}, 201, payload);
       return json(res, 201, payload, requestId);

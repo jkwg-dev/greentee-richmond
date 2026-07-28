@@ -97,9 +97,10 @@ export async function getReservation(id: string): Promise<BookingReservation> {
 }
 
 /**
- * The Hosted Checkout handoff (vendor update §8.1). The vendor's documented
- * response carries no Moneris URL; rather than guess a Moneris host we fail
- * loudly, because a wrong payment origin is not a recoverable UI state.
+ * The checkout session handoff (booking.md §6, §12.2). The response carries
+ * `mode` (derived from the vendor `environment` field), not a URL; there is no
+ * redirect. `mapCheckoutSession` owns the loud failure when the environment is
+ * unrecognized, so a wrong payment surface is never guessed into a UI state.
  */
 export async function createCheckoutSession(
   reservationId: string,
@@ -110,18 +111,7 @@ export async function createCheckoutSession(
     `${RESERVATIONS}/${encodeURIComponent(reservationId)}/checkout/session`,
     { method: "POST", idempotencyKey },
   );
-  const session = mapCheckoutSession(dto);
-  if (!session) {
-    console.error(
-      "Booking middleware: checkout session carried no checkoutUrl; the Hosted Checkout origin is not ours to construct (booking.md §6).",
-    );
-    throw new BookingApiError(
-      502,
-      "upstream_error",
-      "The booking service is unavailable.",
-    );
-  }
-  return session;
+  return mapCheckoutSession(dto);
 }
 
 /**

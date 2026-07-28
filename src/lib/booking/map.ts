@@ -9,11 +9,13 @@ import type {
   BookingRoom,
   BookingRoomCategory,
   BookingSlot,
+  CheckoutMode,
   CheckoutSession,
   CheckoutState,
   CheckoutStatus,
   ReservationList,
 } from "@/types/booking";
+import { BookingApiError } from "./errors";
 
 /**
  * Vendor wire shapes and their domain mapping (booking.md §4, §10.2): the
@@ -197,29 +199,50 @@ export function mapReservationList(
 }
 
 /**
- * `POST .../checkout/session` (vendor update §8.1). `checkoutUrl` is where the
- * browser is sent to pay. The vendor's documented response carries the ticket
- * and `environment` but no URL, so it is optional on the wire and the caller
- * fails loudly when it is missing: a Moneris host is never guessed here
- * (booking.md §6, open).
+ * `POST .../checkout/session` (booking.md §6, vendor 2026-07-28 reply). The
+ * response carries `paymentId`, `ticket`, `expiresAt`, and `environment`; there
+ * is no `checkoutUrl` and none will be added. `mode` is derived from
+ * `environment` alone, in `environmentToMode` below.
  */
 export type VendorCheckoutSessionDto = {
   paymentId: string;
   ticket: string;
   expiresAt: string;
   environment?: string;
-  checkoutUrl?: string | null;
 };
+
+/**
+ * The one place the vendor `environment` field becomes our checkout `mode`
+ * (booking.md §6). Interim ruling pending open question Q2 (the value the
+ * staging mock provider returns): `"qa"` and `"production"` are Moneris,
+ * `"mock"` is the mock surface, and anything else, including a missing value,
+ * fails loudly as the documented 502. Never guessed, never defaulted; the Q2
+ * answer is absorbed by a single line here.
+ */
+function environmentToMode(environment: string | undefined): CheckoutMode {
+  switch (environment) {
+    case "qa":
+    case "production":
+      return "moneris";
+    case "mock":
+      return "mock";
+    default:
+      throw new BookingApiError(
+        502,
+        "upstream_error",
+        "The booking service is unavailable.",
+      );
+  }
+}
 
 export function mapCheckoutSession(
   dto: VendorCheckoutSessionDto,
-): CheckoutSession | null {
-  if (!dto.checkoutUrl) return null;
+): CheckoutSession {
   return {
     paymentId: dto.paymentId,
     ticket: dto.ticket,
     expiresAt: dto.expiresAt,
-    checkoutUrl: dto.checkoutUrl,
+    mode: environmentToMode(dto.environment),
   };
 }
 

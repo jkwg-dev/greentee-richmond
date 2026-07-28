@@ -13,9 +13,11 @@ export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ id: string }> };
 
 /**
- * POST /api/booking/reservations/{id}/checkout (booking.md §12.2): opens the
- * Hosted Checkout session and answers with the handoff the browser needs. The
- * ticket is a public, short-lived value, not proof of payment; it is never
+ * POST /api/booking/reservations/{id}/checkout (booking.md §6, §12.2): opens the
+ * checkout session and answers with `{ session, idempotencyKey }`, where the
+ * session carries `mode` (moneris or mock) instead of a URL. There is no
+ * redirect; the payment page at /book/checkout mounts the surface `mode` names.
+ * The ticket is a public, short-lived value, not proof of payment; it is never
  * logged, here or upstream.
  */
 export async function POST(request: Request, { params }: Context) {
