@@ -9,10 +9,12 @@ import type {
   BookingRoom,
   BookingRoomCategory,
   BookingSlot,
+  CancelReservationResult,
   CheckoutMode,
   CheckoutSession,
   CheckoutState,
   CheckoutStatus,
+  RefundStatus,
   ReservationList,
 } from "@/types/booking";
 import { assumeQaIsMock } from "./config";
@@ -151,6 +153,8 @@ export type VendorReservationDto = {
   code?: string | null;
   reservationCode?: string | null;
   confirmationCode?: string | null;
+  createdAt: string;
+  cancelledAt?: string | null;
 };
 
 const RESERVATION_STATUSES: BookingReservationStatus[] = [
@@ -184,6 +188,9 @@ export function mapReservation(dto: VendorReservationDto): BookingReservation {
     // The v0.1 list and detail name it `reservationCode`; the middleware update
     // examples use `code`. Accept either, plus the older `confirmationCode`.
     code: dto.code ?? dto.reservationCode ?? dto.confirmationCode ?? null,
+    // Verbatim time strings (booking.md §14.5); parsed only for the §13.2 sort.
+    createdAt: dto.createdAt,
+    cancelledAt: dto.cancelledAt ?? null,
   };
 }
 
@@ -203,6 +210,55 @@ export function mapReservationList(
   return {
     items: (dto.reservations ?? []).map(mapReservation),
     nextCursor: dto.nextCursor ?? null,
+  };
+}
+
+const REFUND_STATUSES: Exclude<RefundStatus, null>[] = [
+  "pending",
+  "processing",
+  "succeeded",
+  "failed",
+  "cancelled",
+  "review_required",
+];
+
+/**
+ * Maps the vendor `refundStatus` (booking.md §4, §14; OpenAPI). `null` is a
+ * valid value (nothing to refund, or a zero-percent bracket). An unrecognized
+ * non-null value fails loudly, consistent with the environment and checkout
+ * status mappers: a refund state we do not model is never guessed.
+ */
+export function mapRefundStatus(value: string | null | undefined): RefundStatus {
+  if (value == null) return null;
+  const status = REFUND_STATUSES.find((s) => s === value);
+  if (!status) {
+    throw new BookingApiError(
+      502,
+      "upstream_error",
+      "The booking service is unavailable.",
+    );
+  }
+  return status;
+}
+
+/** `POST .../cancel` (booking.md §14.1, OpenAPI `CancelReservationResponse`). */
+export type VendorCancelResponseDto = {
+  reservation: VendorReservationDto;
+  refundCents: number;
+  refundAmountCents: number;
+  refundPercent: number;
+  refundStatus?: string | null;
+};
+
+export function mapCancelResult(
+  dto: VendorCancelResponseDto,
+): CancelReservationResult {
+  return {
+    reservation: mapReservation(dto.reservation),
+    refundCents: dto.refundCents,
+    refundAmountCents: dto.refundAmountCents,
+    refundPercent: dto.refundPercent,
+    refundStatus: mapRefundStatus(dto.refundStatus),
   };
 }
 

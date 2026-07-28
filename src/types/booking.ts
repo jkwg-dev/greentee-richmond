@@ -102,6 +102,9 @@ export type BookingReservationStatus =
  * and `endsAt` span the whole booking and echo the slot strings verbatim. The
  * server owns the money; the itemized cents here are its answer, never our
  * arithmetic. `expiresAt` is the pending hold's own clock, rendered as given.
+ * `createdAt` and `cancelledAt` are verbatim ISO strings too (booking.md §14.5);
+ * they are compared as parsed instants where needed (§13.2) but rendered only
+ * through Intl at the render boundary, never recomputed.
  */
 export type BookingReservation = {
   id: string;
@@ -118,6 +121,8 @@ export type BookingReservation = {
   currency: string;
   expiresAt: string | null;
   code: string | null;
+  createdAt: string;
+  cancelledAt: string | null;
 };
 
 /**
@@ -198,5 +203,41 @@ export type CheckoutSessionCreated = {
 /** What `POST /api/booking/reservations/{id}/complete` answers (booking.md §12.2). */
 export type CheckoutCompleted = {
   status: CheckoutStatus;
+  idempotencyKey: string;
+};
+
+/**
+ * Refund state on a cancellation (booking.md §4, §14; OpenAPI
+ * CancelReservationResponse.refundStatus). `null` means nothing to refund or a
+ * zero-percent bracket. A refund is only ever rendered complete on `succeeded`;
+ * `processing`, `pending`, and `review_required` are shown as in progress, and
+ * `failed` and a positive-amount `cancelled` as a refund issue (§14.4).
+ */
+export type RefundStatus =
+  | null
+  | "pending"
+  | "processing"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "review_required";
+
+/**
+ * The cancel result (booking.md §14.1): the updated reservation and the refund
+ * figures. `refundAmountCents` from the server is the authoritative refunded
+ * amount; the client's bracket preview is advisory only and is never rendered
+ * as the result.
+ */
+export type CancelReservationResult = {
+  reservation: BookingReservation;
+  refundCents: number;
+  refundAmountCents: number;
+  refundPercent: number;
+  refundStatus: RefundStatus;
+};
+
+/** What `POST /api/booking/reservations/{id}/cancel` answers (booking.md §14.1). */
+export type ReservationCancelled = {
+  result: CancelReservationResult;
   idempotencyKey: string;
 };

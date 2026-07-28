@@ -2,6 +2,7 @@ import "server-only";
 
 import type {
   BookingReservation,
+  CancelReservationResult,
   CheckoutSession,
   CheckoutState,
   CheckoutStatus,
@@ -10,11 +11,13 @@ import type {
 import { isBookingLive } from "./config";
 import { BookingApiError } from "./errors";
 import {
+  mapCancelResult,
   mapCheckoutSession,
   mapCheckoutState,
   mapCheckoutStatus,
   mapReservation,
   mapReservationList,
+  type VendorCancelResponseDto,
   type VendorCheckoutCompleteDto,
   type VendorCheckoutSessionDto,
   type VendorCheckoutStateDto,
@@ -140,4 +143,22 @@ export async function getCheckoutState(
     `${RESERVATIONS}/${encodeURIComponent(reservationId)}/checkout`,
   );
   return mapCheckoutState(dto);
+}
+
+/**
+ * Cancel and start the refund (booking.md §14.1). The vendor description is
+ * binding: a refund is never rendered complete until `refundStatus` is
+ * `succeeded`, and a positive refund may remain `processing` or
+ * `review_required` until its provider outcome is verified.
+ */
+export async function cancelReservation(
+  reservationId: string,
+  idempotencyKey: string,
+): Promise<CancelReservationResult> {
+  requireLiveMode();
+  const dto = await vendorRequest<VendorCancelResponseDto>(
+    `${RESERVATIONS}/${encodeURIComponent(reservationId)}/cancel`,
+    { method: "POST", idempotencyKey },
+  );
+  return mapCancelResult(dto);
 }

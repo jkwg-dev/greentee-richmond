@@ -221,6 +221,11 @@ function buildReservation(owner, body) {
       currency: "CAD",
       expiresAt: minutesFromNow(POLICY.pendingHoldMinutes),
       code: null,
+      // Server timestamp in UTC (Z); startsAt/endsAt keep the venue offset, so
+      // createdAt and startsAt mix offsets on purpose, exercising the §13.2
+      // epoch-comparison sort. cancelledAt is set on cancel.
+      createdAt: new Date().toISOString(),
+      cancelledAt: null,
     },
   };
 }
@@ -663,17 +668,31 @@ const server = createServer(async (req, res) => {
         );
       }
 
+      // The vendor-owned refund bracket, keyed off the start time (booking.md
+      // §4): 100 percent at 24 hours or more before start, 50 percent from 12
+      // to under 24 hours, none under 12 hours. Only a paid (confirmed)
+      // reservation refunds; an unpaid pending cancel is the zero-refund case.
+      const paid = reservation.status === "confirmed";
+      const hoursBefore =
+        (new Date(reservation.startsAt).getTime() - Date.now()) / 3_600_000;
+      const bracketPercent = hoursBefore >= 24 ? 100 : hoursBefore >= 12 ? 50 : 0;
+      const refundPercent = paid ? bracketPercent : 0;
+      const refundAmountCents = paid
+        ? Math.round((reservation.totalCents * bracketPercent) / 100)
+        : 0;
+
       reservation.status = "cancelled";
-      const refundCents =
-        payment?.status === "succeeded" ? Math.round(reservation.totalCents / 2) : 0;
+      reservation.cancelledAt = new Date().toISOString();
+
       const payload = {
-        reservation: { id: reservation.id, status: "cancelled" },
-        refundCents,
-        refundAmountCents: refundCents,
-        refundPercent: refundCents ? 50 : 0,
-        // Pre-QA the refund adapter fails closed (vendor update §15), so the
-        // default here is review_required, never succeeded.
-        refundStatus: refundCents ? refundStatus : null,
+        reservation: publicReservation(reservation),
+        refundCents: refundAmountCents,
+        refundAmountCents,
+        refundPercent,
+        // A positive refund carries the scripted status (default
+        // review_required, the pre-QA fail-closed reality); a zero refund is
+        // null (nothing to refund or a zero-percent bracket).
+        refundStatus: refundAmountCents > 0 ? refundStatus : null,
       };
       remember(scope, idempotencyKey, {}, 200, payload);
       return json(res, 200, payload, requestId);
@@ -702,7 +721,12 @@ function settle(id, payment, reservation) {
   payment.status = payment.mode === "expired" ? "failed" : payment.mode;
   if (payment.status === "succeeded") {
     reservation.status = "confirmed";
-    reservation.code = `GT-${id.slice(0, 8).toUpperCase()}`;
+    // Staging issues codes shaped SG-2026-NNNNNN (booking.md §4); the stub
+    // mirrors the format, deriving six digits from the reservation id.
+    const digits = (parseInt(id.slice(0, 8), 16) % 1_000_000)
+      .toString()
+      .padStart(6, "0");
+    reservation.code = `SG-2026-${digits}`;
   }
   return payment.status;
 }
