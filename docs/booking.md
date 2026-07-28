@@ -196,6 +196,83 @@ new key.
   which is our only traffic pattern; the CORS question is closed on our side and no
   origin is ever submitted for registration.
 
+### 2026-07-28 staging QA findings (B3c-2a close)
+
+- Environment and ticket contradiction, Q2 resolved as evidence: the staging
+  checkout session returns environment "qa" together with a ticket prefixed
+  mock_ticket_ (observed pair: environment "qa", ticket
+  mock_ticket_SG258e5f917a494639a49b6732cd6b6297A01, reservation
+  258e5f91-7a49-4639-a49b-6732cd6b6297). The two fields indicate different
+  providers in the same response. Our mapper correctly maps "qa" to mode
+  moneris, so against staging the payment page mounts the Moneris slot and
+  the mock completion surface is structurally unreachable. Consequence: the
+  completion leg cannot be exercised against staging until the vendor ships
+  a structured provider signal or Moneris merchant credentials arrive. The
+  mapper is not changed to guess; mode derives from environment alone, and
+  the vendor has been asked for a structured signal (vendor follow-up of
+  2026-07-28, item 1). The pending reservations created during QA are left
+  to expire on their hold clocks.
+- Checkout status of a session-less reservation: GET returns 200 with
+  status "pending", not 404 and not "not_started". The payment page's
+  fall-through (pending proceeds to the session POST) is live-verified;
+  not_started remains unobserved. Under the retired coercing mapper this
+  response would have misrouted to the callback, confirming the value of
+  the fc63795 fix.
+- Daily cap enforcement leak, live-confirmed: four same-day pending
+  reservations exist under a staging cap of 2. This matches the vendor's
+  stated caveat that server side enforcement is inconsistent pending their
+  fix. Recorded, not a defect of ours; the cap remains client side UX
+  guidance only until the vendor confirms the fix deployed.
+- Overlap conflict enforcement, live-confirmed: a pending reservation holds
+  its slot inventory and an overlapping create for the same room and time
+  is rejected. The conflict surface behaves as specified.
+- Reservation.roomName absence, live-confirmed twice: the confirmation
+  facts and the account reservations list both render the room UUID. The
+  vendor has been asked to add roomName to Reservation (follow-up item 3).
+  Interim fix queued for B3c-2b: resolve the display name client side from
+  the rooms list with a UUID fallback; the vendor field remains the proper
+  fix.
+- Rate rules, live-verified: identical clock times on a weekday and a
+  weekend price differently, and every displayed total echoes the server
+  itemization (observed example: 96.00 subtotal, 4.80 GST, 6.72 PST,
+  107.52 total). No client side price arithmetic exists beyond rendering.
+- Reservation code format, live: staging issues codes shaped
+  SG-2026-NNNNNN. The local stub emits a GT- prefix; this is a cosmetic
+  stub divergence, noted here, with the stub alignment queued as a minor
+  B3c-2b item. No client code parses the code format.
+
+Interim ruling (2026-07-28): mock mode is presumed temporary pending the
+vendor's answer to follow-up item 1. To unlock the vendor's documented
+mock verification flow (their reply item 3: create, session, complete
+with the same ticket, confirm, cancel with mock refund), a dev and
+staging only environment override BOOKING_ASSUME_QA_IS_MOCK=1 makes the
+server mapper reinterpret environment "qa" as mode "mock". The override
+is never set in production, is removed the moment the vendor either
+ships a structured provider signal or confirms the temporary-mock plan
+and flips staging to the real Moneris QA gateway, and its worst failure
+mode is contained: a mock completion attempt against a real ticket
+fails server receipt verification and can never render confirmed.
+
+### 2026-07-28 OpenAPI diff absorption (Checkpoint 3 findings 5 to 11)
+
+- reservationCode is the canonical code field; the code and confirmationCode
+  fallbacks in our mapper are retained as tolerance but the contract is
+  reservationCode (hedge 14 closed).
+- Room carries required ratePlanId and minCapacity, which we ignore, and
+  types description as an object rather than a string; the intended shape is
+  a vendor question (follow-up item 4). Our string typing is cosmetically
+  wrong and untouched until the vendor answers.
+- AvailabilitySlot carries a required roomName which we currently ignore;
+  noted alongside the Reservation.roomName asymmetry.
+- BookingPolicy.maxPerDayPerUser and maxPerWeekPerUser are required non-null
+  integers on staging; our nullable typing stays as defensive tolerance.
+- CheckoutCompletion's enum is the subset succeeded, declined, processing,
+  review_required; our mapper being a superset is acceptable.
+- POST /checkout/confirm-test exists as a staging test helper; we do not
+  consume it and nothing may come to depend on it.
+- CancelReservationResponse.refundStatus includes "cancelled"; queued for
+  the B3d-2 kickoff so the cancel mapper covers it from day one.
+
 ---
 
 ## 5. `/book` page spec
@@ -319,7 +396,7 @@ path.
 | 11 | No maximum range duration is stated by the vendor | We impose none in the UI; the server may reject at creation | If a maximum ever surfaces, it becomes a selection-rule constant beside the cutoff |
 | 12 | Moneris checkout handoff and the return-leg URL shape | Closed 2026-07-28: there is no checkoutUrl and no redirect. The Moneris JS SDK is embedded in our payment page; the session response carries `mode` in place of a URL, and we construct the callback navigation ourselves, carrying the ticket in `sessionStorage` with a query fallback that is then scrubbed (§6, §12.3) | Closed; §6, §12.3 |
 | 13 | A create-time cap violation returns a bare `422 VALIDATION_FAILED` with no distinguishable code | Behavior closed 2026-07-28: a cap exceedance is rejected, never a replacement. The distinguishable-code question stays open (Q5), so the interim heuristic stands: a create-time `422` reads as cap-reached when the policy names a `maxPerDayPerUser`, and as generic rule copy otherwise | §12.5, §12.6, Q5. A real code replaces the heuristic the moment it lands |
-| 14 | Which field name is canonical for the reservation code: v0.1 §9.6 uses `reservationCode`, the middleware update examples use `code` | The mapper accepts `code ?? reservationCode ?? confirmationCode`, so neither spelling breaks us | Blocks nothing; the fallback simplifies once the canonical name is confirmed |
+| 14 | Which field name is canonical for the reservation code | Closed 2026-07-28: `reservationCode` is canonical (OpenAPI; staging issues codes shaped `SG-2026-NNNNNN`). The mapper keeps `code ?? reservationCode ?? confirmationCode` as tolerance | Closed; §4 OpenAPI absorption |
 
 Answered (attachment of 2026-07-21, replies received): 1 slot model, ranges allowed and recommended (recorded in §2 and §5.4) · 3 sign-up metadata, email and password are the only requirements; `display_name`, `phone`, `preferred_locale` are optional metadata and a profile is auto-created with the email local part as the fallback display name (recorded in §9) · 4 identity key is the (provider, externalUserId) pair, the provider stays `green_tee_flutter` for web, no `green_tee_web` is planned, and any future provider addition will ship with an explicit linking step on the vendor side (hedge 10 closed) · 5 window 14 days, cutoff 60 minutes, server enforced (recorded in §4).
 Closed (2026-07-28): the staging schedule arrived. Base URL https://web-server-ten-mu.vercel.app, the customer OpenAPI at /api/v1/openapi.json, and eight active rooms, sixteen rate rules, and seven-day operating hours configured (§4).
@@ -351,16 +428,33 @@ server-to-server pattern, no origin ever submitted).
 Open (2026-07-28), tracked as Q1 to Q5:
 - Q1: Moneris merchant QA credentials and Checkout ID, pending the contract signature. Blocks
   real Moneris SDK verification (B3c-2b) and nothing else.
-- Q2: the environment value the staging mock provider returns. Blocks nothing; the first smoke
-  test against staging answers it empirically, and the mapper ruling (an unrecognized value
-  fails loudly) covers the interim.
+- Q2: resolved as evidence, converted to a vendor follow-up (see the 2026-07-28 staging QA
+  findings block in §4). Staging returns environment "qa" paired with a `mock_ticket_` ticket,
+  two providers in one response; our mapper maps "qa" to mode moneris, so the mock completion
+  surface is structurally unreachable against staging and the completion leg is not verifiable
+  there until the vendor ships a structured provider signal (extend the environment enum with
+  "mock" or add an explicit provider field). The mapper is not changed to guess.
 - Q3: whether the refund brackets are exposed by the policy endpoint. Until answered, the §4
-  constants stand, marked vendor-owned.
+  constants stand, marked vendor-owned. Restated in the 2026-07-28 vendor follow-up.
 - Q4: the review_required operations procedure and admin tooling, a vendor item plus an internal
   JK World Group item (who checks Moneris records and settles manual refunds). Must be resolved
   before public launch.
 - Q5: a structured error identifier for cap violations. The vendor has promised a spec
-  amendment; hedge 13 stands until then.
+  amendment; hedge 13 stands until then. The 2026-07-28 staging QA enforcement leak (§4) only
+  strengthens the need for a distinguishable code.
+
+Queued items (from the 2026-07-28 B3c-2a close), with target phases:
+- B3c-2b: pending resume entry points. The account list rows and the reservation detail gain a
+  Complete payment action for pending reservations, targeting /book/checkout?reservationId={id};
+  the cap dialog gains a pointer to unpaid pending reservations. The payment page is already
+  re-entrant by design, so only the entry points are missing; their absence pushes users toward
+  re-creation, which burns the daily cap once enforcement ships.
+- B3c-2b: client side room name resolution with a UUID fallback, interim for the missing
+  Reservation.roomName (§4 OpenAPI absorption; vendor follow-up item 3).
+- B3c-2b: stub reservation code format alignment to SG-2026-NNNNNN (cosmetic; no client code
+  parses the format).
+- B3d-2: cancel from pending and confirmed states, with the refundStatus mapper covering
+  "cancelled" from the start (§4 OpenAPI absorption).
 
 ---
 
@@ -399,6 +493,8 @@ B2 adds `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (d
 - `BOOKING_MOCK_CHECKOUT`: `"1"` enables the mock completion surface on `/book/checkout` when
   the session mode is mock. Dev and staging only. Never set in production, and the surface never
   renders when the mode is moneris regardless of the flag.
+- `BOOKING_ASSUME_QA_IS_MOCK`: `"1"` maps environment "qa" to mode "mock" in the server mapper,
+  per the §4 interim ruling. Dev and staging only. Never set in production.
 
 B3c adds no browser-exposed variables. Moneris credentials and the `sgsk_` key live only in the
 vendor middleware, never here. The `/book/checkout/callback` route (§12.3) is a public route on
@@ -871,6 +967,11 @@ pending treatment and the existing rows stay put.
 
 Below 1024 the row keeps the same content with the status badge moving beneath the total, both
 right-aligned, so nothing truncates at 390.
+
+Note (2026-07-28 staging QA): a `pending` row currently renders the room UUID as its name (the
+Reservation carries no `roomName`) and carries no action. Both are addressed by the queued
+B3c-2b items in §6.1: client side room name resolution with a UUID fallback, and a Complete
+payment entry point targeting /book/checkout?reservationId={id}.
 
 ### 13.4 States
 

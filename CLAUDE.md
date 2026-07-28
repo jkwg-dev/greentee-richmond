@@ -120,7 +120,9 @@ all three keys; display_name is never an independent input and is never the pref
   origin. The SDK script is the only third-party script a booking route may load. The SDK
   host and setMode value derive only from the session's environment field as mapped server
   side; a Moneris host or mode is never hardcoded in a component and never guessed for an
-  unrecognized environment value. An unrecognized environment fails loudly.
+  unrecognized environment value. An unrecognized environment fails loudly. A single documented
+  interim exception exists: the env-gated BOOKING_ASSUME_QA_IS_MOCK override defined in
+  booking.md sections 4 and 8, which is staging-only and scheduled for removal.
 - The Moneris browser callbacks (page_loaded, cancel_transaction, error_event,
   payment_receipt, payment_complete) are navigation signals only. The payment_complete
   payload and its response_code are never treated as payment proof and never branched on
