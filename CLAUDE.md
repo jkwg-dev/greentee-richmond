@@ -41,7 +41,7 @@ Cross-links between mockup files stand in for real routes; anchors carry over (`
 - News & Offers entries (home teaser and `/news` grid) are sample content. Production is CMS-driven; the home teaser renders nothing when empty (docs §4.2). `/news` card links are stubs until detail routes ship.
 - The announcement bar is not in the mockups; build it from docs §4.2.
 - All pricing in Rates & Hours, the address, phone, reservation windows, Crystal Jade hours, WeChat handle, and the "eight private rooms" count are placeholders.
-- VIP Rooms 14 and 15, the four VVIP suites, the chef portrait, dish and interior photography, and award emblems are placeholder slots by design. Ship the styled pending states; never fill them with stock imagery.
+- VIP Rooms 14 and 15, the four VVIP suites, the chef portrait, dish and interior photography, and award emblems are placeholder slots by design. Their Sanity image fields may be wired and editable; while a field is empty the slot renders the styled pending state, never a stand-in image. Stock imagery stays banned regardless of who uploads it.
 - The EN / 中文 toggle on `/dining` is a static indicator (Chinese pending human translation), not a working control.
 - On `/dining` pages the FullMenu appends the Crystal Jade entries (Crystal Jade Palace · Menu & Reserve).
 
