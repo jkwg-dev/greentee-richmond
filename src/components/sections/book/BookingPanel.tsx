@@ -178,7 +178,9 @@ export function BookingPanel({
   );
   const reserve: ReserveAffordance = {
     createEnabled,
-    showDailyCapNote: createEnabled && policy.maxPerDayPerUser === 1,
+    // The note renders from the policy value whenever the vendor sets a cap;
+    // the number is never hardcoded (booking.md §12.5, §12.8).
+    dailyCap: createEnabled ? policy.maxPerDayPerUser : null,
     onReserve: () => {
       if (selection) void startReserve(selection);
     },

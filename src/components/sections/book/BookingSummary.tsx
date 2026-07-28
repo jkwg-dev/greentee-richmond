@@ -14,12 +14,13 @@ import type { BookingRoom, BookingSelection } from "@/types/booking";
 
 /**
  * The reserve affordance, travelling as one prop because its three parts are
- * one decision made once on the server: whether the flow is open (§5.5),
- * whether the policy caps a user at one a day (§12.4), and what to run.
+ * one decision made once on the server: whether the flow is open (§5.5), the
+ * per-day cap the policy sets if any (§12.4), and what to run.
  */
 export type ReserveAffordance = {
   createEnabled: boolean;
-  showDailyCapNote: boolean;
+  /** The policy's `maxPerDayPerUser` when the note should show, else null. */
+  dailyCap: number | null;
   onReserve: () => void;
 };
 
@@ -32,11 +33,17 @@ function CallNote({ className }: { className?: string }) {
   );
 }
 
-/** The §12.8 line, so the cap is never a surprise at submit (booking.md §12.4). */
-function DailyCapNote({ className }: { className?: string }) {
+/**
+ * The §12.8 line, rendered from the policy cap so it is never a surprise at
+ * submit (booking.md §12.4). Cap of 1 reads as one a day; a larger cap reads
+ * as the count. The number is never hardcoded.
+ */
+function DailyCapNote({ cap, className }: { cap: number; className?: string }) {
   return (
     <p className={cn("text-mist text-[12px] leading-[1.8]", className)}>
-      One reservation per day. Booking a second time replaces today&apos;s.
+      {cap === 1
+        ? "One reservation per day."
+        : `Up to ${cap} reservations per day.`}
     </p>
   );
 }
@@ -90,7 +97,7 @@ export function BookingSummary({
   variant: "panel" | "bar";
   reserve: ReserveAffordance;
 }) {
-  const { createEnabled, showDailyCapNote, onReserve } = reserve;
+  const { createEnabled, dailyCap, onReserve } = reserve;
   // Nothing to reserve without a selection, whatever the flag says.
   const canReserve = createEnabled && selection !== null;
   const summary = selection ? selectionSummary(selection) : null;
@@ -106,7 +113,7 @@ export function BookingSummary({
     // wrapped beneath the button where the bar's edge would clip them.
     return (
       <div className="flex flex-col gap-3">
-        {showDailyCapNote && <DailyCapNote />}
+        {dailyCap !== null && <DailyCapNote cap={dailyCap} />}
         {!createEnabled && <CallNote />}
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="min-w-0">
@@ -150,11 +157,11 @@ export function BookingSummary({
           Select a time to see the details here.
         </p>
       )}
-      {showDailyCapNote && <DailyCapNote className="mt-8" />}
+      {dailyCap !== null && <DailyCapNote cap={dailyCap} className="mt-8" />}
       <ReserveButton
         enabled={canReserve}
         onReserve={onReserve}
-        className={cn("w-full", showDailyCapNote ? "mt-4" : "mt-8")}
+        className={cn("w-full", dailyCap !== null ? "mt-4" : "mt-8")}
       />
       {!createEnabled && <CallNote className="mt-4" />}
     </div>

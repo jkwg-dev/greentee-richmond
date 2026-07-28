@@ -18,8 +18,8 @@ const COPY = {
     line: "Taking you to secure checkout.",
   },
   cap: {
-    eyebrow: "Already booked",
-    line: "You already have a reservation for that day. See your reservations to change it.",
+    eyebrow: "Daily limit",
+    line: "You have reached today's reservation limit.",
   },
   conflict: {
     eyebrow: "Just taken",
