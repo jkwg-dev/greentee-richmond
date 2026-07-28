@@ -15,6 +15,7 @@ import type {
   CheckoutStatus,
   ReservationList,
 } from "@/types/booking";
+import { assumeQaIsMock } from "./config";
 import { BookingApiError } from "./errors";
 
 /**
@@ -229,6 +230,10 @@ export type VendorCheckoutSessionDto = {
 function environmentToMode(environment: string | undefined): CheckoutMode {
   switch (environment) {
     case "qa":
+      // §4 interim override: treat staging "qa" as mock when the env flag is
+      // set, so the vendor's mock verification flow can run. Removed when the
+      // vendor ships a structured provider signal (booking.md §4, §8).
+      return assumeQaIsMock() ? "mock" : "moneris";
     case "production":
       return "moneris";
     case "mock":

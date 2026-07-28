@@ -43,6 +43,18 @@ export function isMockCheckoutEnabled(): boolean {
 }
 
 /**
+ * The §4 interim override (booking.md §4, §8): maps the vendor environment
+ * "qa" to checkout mode "mock" so the vendor's documented mock verification
+ * flow can be exercised against staging, pending follow-up item 1. Dev and
+ * staging only, never set in production, scheduled for removal once the vendor
+ * ships a structured provider signal or flips staging to real Moneris QA.
+ * Server-side truth only; not NEXT_PUBLIC, so a client bundle reads it as absent.
+ */
+export function assumeQaIsMock(): boolean {
+  return process.env.BOOKING_ASSUME_QA_IS_MOCK === "1";
+}
+
+/**
  * Live mode is the presence of BOOKING_API_BASE_URL (booking.md §8, §10.1):
  * one variable arms the middleware provider, the route handler auth
  * requirement, and the /book gate together. Server-side truth only; the
