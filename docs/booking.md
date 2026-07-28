@@ -253,6 +253,11 @@ and flips staging to the real Moneris QA gateway, and its worst failure
 mode is contained: a mock completion attempt against a real ticket
 fails server receipt verification and can never render confirmed.
 
+Completion leg staging-verified (2026-07-28) under the interim override: create, session, mock
+complete with the same ticket, server verify, confirmed, the SG-2026 code rendered, and the
+account list row flipped to Confirmed. The cancel leg is the next staging verification target
+and becomes possible with B3d-2, since staging mock refunds settle successfully per the vendor.
+
 ### 2026-07-28 OpenAPI diff absorption (Checkpoint 3 findings 5 to 11)
 
 - reservationCode is the canonical code field; the code and confirmationCode
@@ -284,6 +289,7 @@ This section is the spec; there is no mockup. Build entirely from existing syste
 - `BOOK_A_BAY_HREF` in `src/lib/site.ts` becomes `"/book"`. Every existing consumer (header, FullMenu, outro, zone CTAs) follows automatically.
 - Feature flag: `src/lib/booking/config.ts` exports `bookingCreateEnabled = false`. B1 renders the hold by phone CTA in the summary; B3 flips the flag and replaces it with the reserve flow.
 - Gate behavior in live mode is defined in §10.4; the route remains indexable in every mode (the gate is an inline panel, never a redirect).
+- Loading UI (B3d-2): an App Router `loading.tsx` for /book renders a full-page quiet loader during the live server fetch, so the Book a Bay navigation shows a page-level loader instead of a frozen previous page. Same visual language as the checkout loading state (§12.11): eyebrow `One moment`, a single quiet loading line, a hairline pulse. No spinners with motion character; the loader reads as the rest of the system. /account keeps its instant shell; only its list region loads (§13.4).
 
 ### 5.2 Layout
 1. **Head** (server): mirrors the `/news` index head proportions. `Eyebrow` "Book a Bay", serif H1 "Choose your *time*." through `RichHeading` (champagne italic em), support line per §7. Standard reveals.
@@ -444,17 +450,25 @@ Open (2026-07-28), tracked as Q1 to Q5:
   strengthens the need for a distinguishable code.
 
 Queued items (from the 2026-07-28 B3c-2a close), with target phases:
-- B3c-2b: pending resume entry points. The account list rows and the reservation detail gain a
+- B3c-2b, credential-blocked (Q1: Moneris merchant QA credentials and Checkout ID): the Moneris
+  Checkout SDK mount in the payment page's moneris slot. This is the only queued item that
+  cannot proceed without vendor credentials; everything else moved to B3d-2 below.
+- B3d-2: cancel from pending and confirmed states, with the refundStatus mapper covering
+  "cancelled" from the start (§4 OpenAPI absorption; the cancel and refund spec in §14).
+- B3d-2: pending resume entry points. The account list rows and the reservation detail gain a
   Complete payment action for pending reservations, targeting /book/checkout?reservationId={id};
   the cap dialog gains a pointer to unpaid pending reservations. The payment page is already
   re-entrant by design, so only the entry points are missing; their absence pushes users toward
   re-creation, which burns the daily cap once enforcement ships.
-- B3c-2b: client side room name resolution with a UUID fallback, interim for the missing
+- B3d-2: client side room name resolution with a UUID fallback, interim for the missing
   Reservation.roomName (§4 OpenAPI absorption; vendor follow-up item 3).
-- B3c-2b: stub reservation code format alignment to SG-2026-NNNNNN (cosmetic; no client code
+- B3d-2: stub reservation code format alignment to SG-2026-NNNNNN (cosmetic; no client code
   parses the format).
-- B3d-2: cancel from pending and confirmed states, with the refundStatus mapper covering
-  "cancelled" from the start (§4 OpenAPI absorption).
+- B3d-2: Reservation createdAt and cancelledAt mapping and display; both are required or
+  nullable on the vendor Reservation schema, so no vendor ask is needed (§14).
+- B3d-2: account list ordering, a single flat sort by createdAt descending, no status grouping
+  (§13).
+- B3d-2: route level loading UI for /book and a list loading state for /account (§13, §12).
 
 ---
 
@@ -941,11 +955,17 @@ handler accepts an optional cursor and returns the items plus the next cursor. M
 The page fetches the first page server side and passes it to the island as initial data, so
 first paint is populated; further pages load on demand (§13.3).
 
-Order is whatever the vendor returns, newest first by their default. We do not re-sort, split
-into upcoming and past, or compute whether a reservation has elapsed: that would mean date
-arithmetic on slot strings, which the rules forbid, and the vendor owns the `completed`
-transition. A future upcoming/past split is a B-later decision once real data shows how and when
-statuses move.
+Order (B3d-2): a single flat sort by `createdAt` descending, no status grouping, so the most
+recently made reservation is first regardless of status. The sort key is the parsed instant of
+`createdAt` (epoch comparison), because the vendor guarantees an explicit UTC offset on every
+timestamp but not a uniform one; where offsets mix, lexical string order diverges from
+chronological order (a value at -07:00 can sort before a Z value that is chronologically
+earlier). Parsing for comparison mutates nothing: the stored value stays the verbatim string and
+all formatting still happens only at render, consistent with the standing time rules. The sort
+applies to the loaded page; with a `nextCursor` present the order holds within the fetched window
+and is re-applied as pages append. We still do not split into upcoming and past or compute
+whether a reservation has elapsed; the vendor owns the `completed` transition, and an
+upcoming/past split stays a B-later decision.
 
 ### 13.3 The list
 
@@ -955,10 +975,16 @@ row's identity and should read while scanning several reservations without hover
 and time line stays mist for hierarchy; hover lifts the row subtly (the hairline brightens),
 never a mist-to-ivory jump on the text:
 
-- Left: the space name (serif, about 16px, ivory), and beneath it the date and time range in
-  mist through `formatSlotDateLong` and `formatSlotRange` on the verbatim strings.
+- Left: the resolved room name (from the rooms list, with a UUID fallback for a missing
+  `roomName`) as the space line (serif, about 16px, ivory), then the date and time range in mist
+  through `formatSlotDateLong` and `formatSlotRange` on the verbatim strings, then a
+  `Booked {createdAt}` secondary line in mist (§14 display fields). A cancelled row adds a
+  `Cancelled {cancelledAt}` line when present.
 - Right: the status badge (the same quiet treatment as the §12.10 detail) and, beneath it, the
   total in mist through `formatCad`.
+- Actions (B3d-2, per status): a pending row offers Complete payment (to
+  `/book/checkout?reservationId={id}`) and Cancel; a confirmed row offers Cancel; cancelled,
+  completed, and no_show rows carry none. Cancel opens the §14 confirm dialog.
 
 Rows are keyboard reachable in DOM order with the global focus treatment, 44px minimum height.
 If the vendor returns a next cursor, a ghost "Show More" Button appends the next page in place;
@@ -968,15 +994,17 @@ pending treatment and the existing rows stay put.
 Below 1024 the row keeps the same content with the status badge moving beneath the total, both
 right-aligned, so nothing truncates at 390.
 
-Note (2026-07-28 staging QA): a `pending` row currently renders the room UUID as its name (the
-Reservation carries no `roomName`) and carries no action. Both are addressed by the queued
-B3c-2b items in §6.1: client side room name resolution with a UUID fallback, and a Complete
-payment entry point targeting /book/checkout?reservationId={id}.
+Note: B3d-1 shipped rows that render the room UUID as the name and carry no action. The resolved
+name (UUID fallback) and the per-status actions above are the B3d-2 target, queued in §6.1 and
+specified in §14.
 
 ### 13.4 States
 
-- **Loading** (initial, server-rendered so rarely seen): three pulse placeholder rows at the
-  row height, matching the §5.6 loading convention.
+- **Loading** (B3d-2): while the first reservations fetch is in flight the list region renders
+  the quiet loading treatment (three pulse placeholder rows at the row height, the §5.6 loading
+  convention), never the empty state. The empty state renders only after a settled empty
+  response, removing the flash of `No reservations yet.` during load. Server-rendered first paint
+  keeps this rarely seen.
 - **Error**: the §5.6 pattern, one line plus a ghost "Try Again", inside the list pane only; the
   profile pane stays usable.
 - **Empty**: the §13.5 line, quiet in mist, with a solid "Book a Bay" Button linking to `/book`.
@@ -1000,3 +1028,86 @@ its detail and back; the status badge matches the detail's treatment for the sam
 renders with a working Book a Bay link; the error state is confined to the list pane; times and
 totals come from the verbatim strings and integer cents; keyboard reachable end to end; lint,
 typecheck, and the dash check pass.
+
+---
+
+## 14. Cancel and refund (B3d-2)
+
+### 14.1 Contract
+
+POST /api/v1/simulator/reservations/{id}/cancel with a per-operation
+Idempotency-Key. The response is CancelReservationResponse: the updated
+reservation, refundCents, refundAmountCents, refundPercent, and
+refundStatus in the nullable enum pending, processing, succeeded, failed,
+cancelled, review_required. Our route handler at
+POST /api/booking/reservations/{id}/cancel proxies it with the standard
+JWT relay. The vendor description is binding: cancellation does not claim
+a refund succeeded early, and a positive refund may remain processing or
+review_required until its provider outcome is verified.
+
+### 14.2 Eligibility and entry points
+
+Cancel is offered on pending and confirmed reservations, from the account
+list row and the reservation detail. Cancelled, completed, and no_show
+rows carry no action. A pending row offers both Complete payment and
+Cancel. A 409 or 422 from the cancel call renders the generic error state
+with the server message context; the client never predicts eligibility
+beyond hiding the action on terminal statuses.
+
+### 14.3 Refund preview and confirm dialog
+
+The confirm dialog states the vendor-owned brackets from section 4
+(100 percent at 24 hours or more before start, 50 percent from 12 to
+under 24 hours, none under 12 hours) and shows the expected bracket for
+this reservation computed from its start time against the current clock.
+The computed preview is advisory copy; the authoritative percent and
+amount are the response's refundPercent and refundAmountCents, rendered
+after the call returns. Dialog copy:
+
+  Heading: Cancel this reservation?
+  Body: renders the bracket line matching the reservation, one of:
+    Cancelling now qualifies for a full refund.
+    Cancelling now qualifies for a 50 percent refund.
+    This reservation is no longer refundable.
+  Followed by the standing policy line:
+    Cancel up to 24 hours before your start time for a full refund, 50
+    percent from 12 to 24 hours before, and no refund within 12 hours of
+    the start time.
+  Actions: Keep Reservation (dismiss) and Cancel Reservation (destructive,
+  proceeds).
+
+A pending reservation with no captured payment skips the bracket line and
+states: This reservation has not been paid, so no refund applies.
+
+### 14.4 Post-cancel states
+
+Rendered from refundStatus, never invented:
+
+- succeeded, or null with zero refundAmountCents: the cancelled state,
+  with the refunded amount when positive. Copy: Your reservation is
+  cancelled. A refund of {amount} is on its way to your original payment
+  method. Zero-refund copy: Your reservation is cancelled.
+- pending or processing: Copy: Your cancellation is received and the
+  refund is in progress.
+- review_required: label Refund in Review. Copy: Your cancellation is
+  received and the refund is being confirmed. Please do not submit
+  additional payments or repeated refund requests. If the status does not
+  change for an extended period, contact guest services. The reservation
+  renders as cancelled; the refund is never rendered as complete in this
+  state, per the vendor's operational note.
+- failed: label Refund Issue. Copy: Your reservation is cancelled, but the
+  refund could not be completed automatically. Please contact guest
+  services. Never rendered as refunded.
+- cancelled (the refund itself was cancelled): treated as the zero-refund
+  cancelled state unless refundAmountCents is positive, in which case it
+  renders as Refund Issue.
+
+### 14.5 Display fields
+
+- Every list row and the detail show Booked {createdAt} as a secondary
+  line, formatted via Intl in America/Vancouver.
+- Cancelled rows and the detail of a cancelled reservation additionally
+  show Cancelled {cancelledAt} when present.
+- The DTO and domain Reservation gain createdAt (required) and cancelledAt
+  (nullable); the mapper passes them through as verbatim strings and all
+  formatting happens at render, consistent with the standing time rules.
