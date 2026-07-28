@@ -33,6 +33,13 @@ export type VendorRoomDto = {
   displayOrder: number;
 };
 
+/**
+ * `GET /rooms` response envelope (OpenAPI): the array is wrapped in `{ rooms }`.
+ * The vendor OpenAPI document is the contract, so the provider reads the
+ * envelope rather than a bare array; the stub emits the same envelope.
+ */
+export type VendorRoomsDto = { rooms: VendorRoomDto[] };
+
 export type VendorSlotDto = {
   roomId: string;
   startsAt: string;
@@ -247,20 +254,32 @@ export function mapCheckoutSession(
 }
 
 const CHECKOUT_STATUSES: CheckoutStatus[] = [
+  "not_started",
+  "pending",
+  "processing",
   "succeeded",
   "declined",
-  "processing",
-  "review_required",
   "failed",
+  "review_required",
 ];
 
 /**
- * An unrecognized payment status reads as `processing` (booking.md §12.6):
- * the safe direction is to keep watching, never to render success or to invite
- * a second purchase.
+ * Maps the vendor payment status to the domain enum (booking.md §4 deltas, §6;
+ * OpenAPI `CheckoutStatus`). An unrecognized value fails loudly, consistent
+ * with the environment mapper: a payment state we do not model is never
+ * silently read as `processing`, because that once let an unknown status
+ * forward the payment page past the session step.
  */
 export function mapCheckoutStatus(value: string): CheckoutStatus {
-  return CHECKOUT_STATUSES.find((status) => status === value) ?? "processing";
+  const status = CHECKOUT_STATUSES.find((s) => s === value);
+  if (!status) {
+    throw new BookingApiError(
+      502,
+      "upstream_error",
+      "The booking service is unavailable.",
+    );
+  }
+  return status;
 }
 
 /** `POST .../checkout/complete` (vendor update §8.2). */

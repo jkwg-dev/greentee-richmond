@@ -133,16 +133,20 @@ export type ReservationList = {
 };
 
 /**
- * Payment state (booking.md §4 deltas, §12.6). `succeeded` is the only value
- * that may render as success, and only after the server verified the receipt;
- * the browser callback proves nothing.
+ * Payment state (booking.md §4 deltas, §12.6; OpenAPI `CheckoutStatus`).
+ * `succeeded` is the only value that may render as success, and only after the
+ * server verified the receipt; the browser callback proves nothing.
+ * `not_started` and `pending` are pre-settlement states: the payment page opens
+ * a session on them, and the callback keeps polling, never confirming.
  */
 export type CheckoutStatus =
+  | "not_started"
+  | "pending"
+  | "processing"
   | "succeeded"
   | "declined"
-  | "processing"
-  | "review_required"
-  | "failed";
+  | "failed"
+  | "review_required";
 
 /**
  * Which checkout surface the payment page mounts (booking.md §6). Derived

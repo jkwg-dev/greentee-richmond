@@ -380,7 +380,8 @@ const server = createServer(async (req, res) => {
   const idempotencyKey = req.headers["idempotency-key"];
 
   if (path === "/api/v1/simulator/rooms") {
-    return json(res, 200, ROOMS, requestId);
+    // The OpenAPI contract wraps the array in `{ rooms }`; the stub mirrors it.
+    return json(res, 200, { rooms: ROOMS }, requestId);
   }
 
   if (path === "/api/v1/simulator/policies/booking") {

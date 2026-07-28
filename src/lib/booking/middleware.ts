@@ -5,7 +5,7 @@ import {
   mapAvailability,
   mapRooms,
   type VendorAvailabilityDto,
-  type VendorRoomDto,
+  type VendorRoomsDto,
 } from "./map";
 import type { AvailabilityQuery, BookingProvider } from "./provider";
 import { vendorRequest } from "./request";
@@ -20,11 +20,11 @@ export const middlewareProvider: BookingProvider = {
   async getRooms(): Promise<BookingRoom[]> {
     // Room data is not user specific (booking.md §10.2), so the upstream
     // fetch may revalidate on a 300 second window.
-    const dtos = await vendorRequest<VendorRoomDto[]>(
+    const { rooms } = await vendorRequest<VendorRoomsDto>(
       "/api/v1/simulator/rooms",
       { cache: { revalidate: 300 } },
     );
-    return mapRooms(dtos);
+    return mapRooms(rooms);
   },
 
   async getAvailability({

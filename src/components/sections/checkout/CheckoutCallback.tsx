@@ -70,12 +70,21 @@ export function CheckoutCallback({
 
   const settle = useCallback(
     async (status: CheckoutStatus): Promise<Outcome | null> => {
-      if (status === "processing") return null;
+      // Pre-settlement states keep polling; never confirm before the server
+      // says succeeded. `pending` and `not_started` join `processing` here
+      // because extending the status enum (staging OpenAPI) removed the old
+      // coercion that used to fold unknown values into `processing`.
+      if (
+        status === "processing" ||
+        status === "pending" ||
+        status === "not_started"
+      )
+        return null;
       if (status === "declined") return { kind: "declined" };
       if (status === "review_required") return { kind: "review", phone };
       if (status === "failed") return { kind: "timedOut" };
 
-      // Only here, and only after the server said so.
+      // Only here, on succeeded, and only after the server said so.
       if (!reservationId) return { kind: "confirmed", reservation: null };
       forgetTicket(reservationId);
       try {
