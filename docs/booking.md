@@ -955,17 +955,20 @@ handler accepts an optional cursor and returns the items plus the next cursor. M
 The page fetches the first page server side and passes it to the island as initial data, so
 first paint is populated; further pages load on demand (§13.3).
 
-Order (B3d-2): a single flat sort by `createdAt` descending, no status grouping, so the most
-recently made reservation is first regardless of status. The sort key is the parsed instant of
-`createdAt` (epoch comparison), because the vendor guarantees an explicit UTC offset on every
-timestamp but not a uniform one; where offsets mix, lexical string order diverges from
-chronological order (a value at -07:00 can sort before a Z value that is chronologically
-earlier). Parsing for comparison mutates nothing: the stored value stays the verbatim string and
-all formatting still happens only at render, consistent with the standing time rules. The sort
-applies to the loaded page; with a `nextCursor` present the order holds within the fetched window
-and is re-applied as pages append. We still do not split into upcoming and past or compute
-whether a reservation has elapsed; the vendor owns the `completed` transition, and an
-upcoming/past split stays a B-later decision.
+Views and order (B3d-2): the list has two views. The default Reservations view contains every
+reservation except cancelled ones; a second Cancelled view contains only cancelled reservations.
+Within each view a single flat sort by `createdAt` descending, no further status grouping, so the
+most recently made reservation is first. The sort key is the parsed instant of `createdAt` (epoch
+comparison), because the vendor guarantees an explicit UTC offset on every timestamp but not a
+uniform one; where offsets mix, lexical string order diverges from chronological order (a value at
+-07:00 can sort before a Z value that is chronologically earlier). Parsing for comparison mutates
+nothing: the stored value stays the verbatim string and all formatting still happens only at
+render, consistent with the standing time rules. The sort applies to the loaded page; with a
+`nextCursor` present the order holds within the fetched window and is re-applied as pages append.
+The view control is a pair of quiet text tabs labelled Reservations and Cancelled, a hairline
+underline on the active tab, in the system's type and spacing; no pill or filled tab styling. We
+still do not split into upcoming and past or compute whether a reservation has elapsed; the vendor
+owns the `completed` transition, and an upcoming/past split stays a B-later decision.
 
 ### 13.3 The list
 
@@ -1007,13 +1010,18 @@ specified in §14.
   keeps this rarely seen.
 - **Error**: the §5.6 pattern, one line plus a ghost "Try Again", inside the list pane only; the
   profile pane stays usable.
-- **Empty**: the §13.5 line, quiet in mist, with a solid "Book a Bay" Button linking to `/book`.
-  This is the one place the account page points back into the booking flow.
+- **Empty** (per view, B3d-2): the empty state applies to the active view. The default
+  Reservations view keeps the §13.5 line, quiet in mist, with a solid "Book a Bay" Button linking
+  to `/book` (the one place the account page points back into the booking flow). The Cancelled
+  view's empty state reads `No cancelled reservations.` in the same treatment, without the
+  Book a Bay button.
 
 ### 13.5 B3d-1 copy
 
 - List section microlabel: `Reservations`
-- Empty state: `No reservations yet.` · button `Book a Bay`
+- View tabs (B3d-2): `Reservations` and `Cancelled`
+- Empty state, default view: `No reservations yet.` · button `Book a Bay`
+- Empty state, Cancelled view (B3d-2): `No cancelled reservations.` · no button
 - Pagination button: `Show More`
 - Error line: `Something went wrong while loading your reservations.` · button `Try Again`
 - Status labels: title-cased from the enum, as in §12.10 (`Pending`, `Confirmed`, `Cancelled`,
@@ -1101,6 +1109,11 @@ Rendered from refundStatus, never invented:
 - cancelled (the refund itself was cancelled): treated as the zero-refund
   cancelled state unless refundAmountCents is positive, in which case it
   renders as Refund Issue.
+
+List integration (B3d-2): after a cancel completes, the post-cancel state renders in the dialog's
+result view; on dismiss the list refreshes and the row now lives under the Cancelled view (§13.2),
+no longer in the default Reservations view. The refund state stays visible on the cancelled row's
+line and on the reservation detail.
 
 ### 14.5 Display fields
 
