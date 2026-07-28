@@ -10,9 +10,6 @@
  * Run:
  *   node scripts/booking-middleware-stub.mjs        (port 4141; override with BOOKING_STUB_PORT)
  *
- * The app it redirects back to defaults to http://localhost:3000; override
- * with BOOKING_STUB_APP_ORIGIN.
- *
  * Switches (each applies until switched again):
  *   curl "http://127.0.0.1:4141/__stub/force?mode=unauthorized"   every call answers 401 UNAUTHORIZED
  *   curl "http://127.0.0.1:4141/__stub/force?mode=error"          every call answers 500 INTERNAL
@@ -33,7 +30,6 @@
 import { createServer } from "node:http";
 
 const PORT = Number(process.env.BOOKING_STUB_PORT ?? 4141);
-const APP_ORIGIN = process.env.BOOKING_STUB_APP_ORIGIN ?? "http://localhost:3000";
 const SELF = `http://127.0.0.1:${PORT}`;
 
 const ROOMS = [
@@ -102,11 +98,6 @@ function json(res, status, body, requestId) {
     ...(requestId ? { "x-request-id": requestId } : {}),
   });
   res.end(JSON.stringify(body));
-}
-
-function html(res, status, body) {
-  res.writeHead(status, { "content-type": "text/html; charset=utf-8" });
-  res.end(body);
 }
 
 function readBody(req) {
@@ -306,42 +297,12 @@ function remember(scope, key, body, status, response) {
   });
 }
 
-/** The stub's Hosted Checkout stand-in: an external origin the browser visits and returns from. */
-function monerisPage(url, res) {
-  const ticket = url.searchParams.get("ticket") ?? "";
-  const reservationId = url.searchParams.get("reservationId") ?? "";
-  const returnTo = (mode) =>
-    `${SELF}/__stub/moneris/return?reservationId=${encodeURIComponent(reservationId)}&ticket=${encodeURIComponent(ticket)}&mode=${mode}`;
-
-  const link = (mode, label) =>
-    `<li><a href="${returnTo(mode)}">${label}</a></li>`;
-
-  html(
-    res,
-    200,
-    `<!doctype html><html><head><meta charset="utf-8">
-<title>Stub Hosted Checkout</title>
-<meta http-equiv="refresh" content="0;url=${returnTo(checkoutMode)}">
-</head><body style="font:14px system-ui;padding:2rem">
-<h1>Stub Hosted Checkout</h1>
-<p>Returning with the current switch: <strong>${checkoutMode}</strong>.</p>
-<ul>
-${link("succeeded", "Return as succeeded")}
-${link("declined", "Return as declined")}
-${link("review_required", "Return as review_required")}
-${link("failed", "Return as failed")}
-${link("expired", "Return as an expired ticket")}
-</ul>
-</body></html>`,
-  );
-}
-
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, SELF);
   const requestId = req.headers["x-request-id"] ?? "";
   const path = url.pathname;
 
-  // ---- dev switches and the Hosted Checkout stand-in (no auth) ----
+  // ---- dev switches (no auth) ----
 
   if (path === "/__stub/force") {
     const mode = url.searchParams.get("mode") ?? "off";
@@ -387,20 +348,6 @@ const server = createServer(async (req, res) => {
     keys.clear();
     console.log("[stub] state cleared");
     return json(res, 200, { reset: true });
-  }
-
-  if (path === "/__stub/moneris") return monerisPage(url, res);
-
-  if (path === "/__stub/moneris/return") {
-    const reservationId = url.searchParams.get("reservationId") ?? "";
-    const ticket = url.searchParams.get("ticket") ?? "";
-    const mode = url.searchParams.get("mode") ?? checkoutMode;
-    const payment = payments.get(reservationId);
-    if (payment) payment.mode = mode;
-    const target = `${APP_ORIGIN}/book/checkout/callback?reservationId=${encodeURIComponent(reservationId)}&ticket=${encodeURIComponent(ticket)}&mode=${encodeURIComponent(mode)}`;
-    console.log(`[stub] hosted checkout returning as ${mode}`);
-    res.writeHead(302, { location: target });
-    return res.end();
   }
 
   // ---- the customer API ----
@@ -762,5 +709,4 @@ function settle(id, payment, reservation) {
 server.listen(PORT, "127.0.0.1", () => {
   console.log("[stub] Green Tee middleware stub listening.");
   console.log(`[stub] export BOOKING_API_BASE_URL=${SELF}`);
-  console.log(`[stub] returning browsers to ${APP_ORIGIN}`);
 });

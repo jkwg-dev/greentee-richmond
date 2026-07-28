@@ -31,8 +31,8 @@ export default async function CheckoutCallbackPage({
   const params = await searchParams;
   const reservationId = first(params.reservationId);
 
-  // The `next` carries the reservation only: a ticket does not belong in a
-  // redirect chain, and the tab's own copy survives the sign-in round trip.
+  // The `next` carries the reservation only: a ticket does not belong in the
+  // sign-in round trip, and the tab's own copy survives it.
   if (!(await getUser())) {
     const next = reservationId
       ? `/book/checkout/callback?reservationId=${encodeURIComponent(reservationId)}`

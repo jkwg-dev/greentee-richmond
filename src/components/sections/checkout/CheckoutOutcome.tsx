@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/Button";
-import { Eyebrow } from "@/components/ui/Eyebrow";
 import { FactRows } from "@/components/ui/FactRows";
 import type { BookingReservation } from "@/types/booking";
+import { CheckoutShell as Shell } from "./CheckoutShell";
 import { reservationFacts } from "./reservationFacts";
 
 /**
@@ -114,25 +114,5 @@ export function CheckoutOutcome({ outcome }: { outcome: Outcome }) {
         </Button>
       </div>
     </Shell>
-  );
-}
-
-function Shell({
-  eyebrow,
-  heading,
-  children,
-}: {
-  eyebrow: string;
-  heading: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="max-w-[620px]">
-      <Eyebrow className="mb-[22px]">{eyebrow}</Eyebrow>
-      <h1 className="text-ivory font-serif text-[clamp(1.9rem,4.2vw,3rem)] leading-[1.15] font-medium">
-        {heading}
-      </h1>
-      {children}
-    </div>
   );
 }

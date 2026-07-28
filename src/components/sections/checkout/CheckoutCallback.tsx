@@ -24,11 +24,12 @@ const POLL_MS = 3000;
 const MAX_POLLS = 40;
 
 /**
- * The return URL is the primary carrier of the ticket, but its shape is the
- * payment provider's, so this falls back to the copy the tab kept before it
- * left (booking.md §12.3). Async by design: storage cannot be read while
- * rendering on the server, and resolving it off the render path keeps the whole
- * verification sequence in one asynchronous flow.
+ * `sessionStorage` is the primary carrier of the ticket (booking.md §6, §12.3);
+ * the query parameter is the fallback, present only when the payment page's
+ * storage write failed. The two are mutually exclusive, so preferring the query
+ * when it is present still resolves correctly. Async by design: storage cannot
+ * be read while rendering on the server, and resolving it off the render path
+ * keeps the whole verification sequence in one asynchronous flow.
  */
 async function resolveTicket(
   urlTicket: string | null,
@@ -44,7 +45,7 @@ export function CheckoutCallback({
   phone,
 }: {
   reservationId: string | null;
-  /** The ticket the return URL carried, if the payment page sent one back. */
+  /** The ticket in the query, present only as the storage-write fallback (§12.3). */
   urlTicket: string | null;
   phone: string;
 }) {
@@ -54,11 +55,11 @@ export function CheckoutCallback({
   const polls = useRef(0);
   const router = useRouter();
 
-  // Scrub the ticket and mode from the address bar once the render has captured
-  // them (booking.md §12.3, CLAUDE.md booking rules). The ticket is a public
-  // handoff value, not a secret, but our Never list names it, and a full URL
-  // otherwise lands in the request logger, access logs, browser history, and
-  // the referrer. The reservation id stays so a refresh still resolves.
+  // Scrub the ticket from the address bar once the render has captured it
+  // (booking.md §12.3, CLAUDE.md booking rules). The ticket is a public handoff
+  // value, not a secret, but our Never list names it, and a full URL otherwise
+  // lands in the request logger, access logs, browser history, and the
+  // referrer. The reservation id stays so a refresh still resolves.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const clean = reservationId

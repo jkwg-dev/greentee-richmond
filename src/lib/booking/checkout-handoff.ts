@@ -1,20 +1,27 @@
 /**
- * The Hosted Checkout ticket's ride across the redirect (booking.md §12.3).
+ * The checkout ticket's ride to the callback route (booking.md §6, §12.3).
  *
- * The ticket is the public handoff value the vendor issues; `complete` needs it
- * back after the browser returns. The return URL is expected to carry it, but
- * that shape is the payment provider's, not ours, so the tab keeps its own copy
- * as the fallback. `sessionStorage` is same-origin and dies with the tab; the
- * value is not a credential, and it is never logged.
+ * There is no redirect: the payment page stores the ticket here in its
+ * `payment_complete` handler, then navigates to `/book/checkout/callback`, where
+ * `complete` needs it back for server-side verification. `sessionStorage` is the
+ * primary carrier; the query parameter is the fallback, appended only when the
+ * write below throws. `sessionStorage` is same-origin and dies with the tab; the
+ * value is a public handoff, not a credential, and it is never logged.
  */
 
 const key = (reservationId: string) => `greentee.checkout.${reservationId}`;
 
-export function rememberTicket(reservationId: string, ticket: string): void {
+/**
+ * Stores the ticket for the callback to recall. Returns whether the write
+ * succeeded, so the caller can fall back to the query parameter (private mode,
+ * a full quota) exactly when it did not.
+ */
+export function rememberTicket(reservationId: string, ticket: string): boolean {
   try {
     sessionStorage.setItem(key(reservationId), ticket);
+    return true;
   } catch {
-    // Private mode or a full quota: the return URL is still the primary path.
+    return false;
   }
 }
 

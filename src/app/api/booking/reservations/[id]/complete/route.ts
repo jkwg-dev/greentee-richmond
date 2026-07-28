@@ -16,10 +16,10 @@ type Context = { params: Promise<{ id: string }> };
 type CompleteBody = { ticket?: unknown; idempotencyKey?: unknown };
 
 /**
- * POST /api/booking/reservations/{id}/complete (booking.md §12.2): hands the
- * Hosted Checkout ticket back for server-to-server receipt verification. This
- * is the only thing that may turn a reservation into a confirmed one; the
- * browser callback that preceded it proves nothing (§12.3).
+ * POST /api/booking/reservations/{id}/complete (booking.md §6, §12.2): hands the
+ * checkout ticket back for server-to-server receipt verification. This is the
+ * only thing that may turn a reservation into a confirmed one; the browser
+ * callback that preceded it proves nothing (§12.3).
  */
 export async function POST(request: Request, { params }: Context) {
   const denied = await requireSession();
