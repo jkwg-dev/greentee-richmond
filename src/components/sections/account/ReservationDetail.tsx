@@ -5,6 +5,7 @@ import { FactRows } from "@/components/ui/FactRows";
 import { PageHead } from "@/components/ui/PageHead";
 import { formatStamp } from "@/lib/booking/format";
 import type { BookingReservation } from "@/types/booking";
+import { CancelReservationButton } from "./CancelReservationButton";
 import { StatusBadge } from "./StatusBadge";
 
 /**
@@ -12,9 +13,9 @@ import { StatusBadge } from "./StatusBadge";
  * the confirmation's View Reservation button and from the reservations list.
  * The itemized total is the server's, echoed verbatim. `Booked` shows always
  * and `Cancelled` on a cancelled reservation. A pending reservation states its
- * status honestly and, since B3d-2, offers Complete payment. The cancel action
- * (the §14 dialog) arrives with Step 3. `roomName` is resolved upstream from the
- * rooms read (the vendor reservation carries none).
+ * status honestly and offers Complete payment; pending and confirmed both offer
+ * Cancel (the §14 dialog). `roomName` is resolved upstream from the rooms read
+ * (the vendor reservation carries none).
  */
 export function ReservationDetail({
   reservation,
@@ -23,6 +24,8 @@ export function ReservationDetail({
   reservation: BookingReservation;
   roomName: string;
 }) {
+  const cancellable =
+    reservation.status === "pending" || reservation.status === "confirmed";
   return (
     <>
       <PageHead eyebrow="Your Reservation" title="Reservation *detail*." />
@@ -40,11 +43,14 @@ export function ReservationDetail({
           )}
 
           {reservation.status === "pending" && (
-            <>
-              <p className="text-mist mt-6 text-[13.5px] leading-[1.8]">
-                Payment was not completed for this reservation.
-              </p>
-              <div className="mt-5">
+            <p className="text-mist mt-6 text-[13.5px] leading-[1.8]">
+              Payment was not completed for this reservation.
+            </p>
+          )}
+
+          {cancellable && (
+            <div className="mt-6 flex flex-wrap gap-3">
+              {reservation.status === "pending" && (
                 <Button
                   href={`/book/checkout?reservationId=${encodeURIComponent(reservation.id)}`}
                   variant="solid"
@@ -52,8 +58,12 @@ export function ReservationDetail({
                 >
                   Complete payment
                 </Button>
-              </div>
-            </>
+              )}
+              <CancelReservationButton
+                reservation={reservation}
+                roomName={roomName}
+              />
+            </div>
           )}
 
           <FactRows

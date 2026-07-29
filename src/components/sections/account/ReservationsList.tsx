@@ -1,10 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import type { BookingReservation, ReservationList } from "@/types/booking";
+import type {
+  BookingReservation,
+  CancelReservationResult,
+  ReservationList,
+} from "@/types/booking";
+import { CancelDialog } from "./CancelDialog";
 import { ReservationRow } from "./ReservationRow";
 
 /**
@@ -44,6 +49,7 @@ export function ReservationsList({
   // which is what tells retry to reload the first page rather than the next.
   const [loaded, setLoaded] = useState(initial !== null);
   const [view, setView] = useState<View>("active");
+  const [cancelling, setCancelling] = useState<BookingReservation | null>(null);
   const router = useRouter();
 
   const fetchPage = async (
@@ -113,6 +119,17 @@ export function ReservationsList({
   const resolveName = (r: BookingReservation) =>
     roomNames[r.roomId] ?? r.roomName ?? r.roomId;
 
+  // A completed cancel hands back the updated (cancelled) reservation; swapping
+  // it into the set flips its status, so the next re-derive migrates the row out
+  // of the default view into Cancelled (booking.md §14.4). No refetch needed.
+  const handleCancelled = useCallback((result: CancelReservationResult) => {
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === result.reservation.id ? result.reservation : item,
+      ),
+    );
+  }, []);
+
   const showMore = loaded && nextCursor !== null && status !== "error";
 
   return (
@@ -137,6 +154,7 @@ export function ReservationsList({
               key={reservation.id}
               reservation={reservation}
               roomName={resolveName(reservation)}
+              onCancel={setCancelling}
             />
           ))}
         </ul>
@@ -166,6 +184,15 @@ export function ReservationsList({
             Show More
           </Button>
         </div>
+      )}
+
+      {cancelling && (
+        <CancelDialog
+          reservation={cancelling}
+          roomName={resolveName(cancelling)}
+          onCancelled={handleCancelled}
+          onClose={() => setCancelling(null)}
+        />
       )}
     </div>
   );

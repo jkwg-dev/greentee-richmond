@@ -19,16 +19,21 @@ import { StatusBadge } from "./StatusBadge";
  *
  * The Complete payment resume link (pending rows) sits outside the row link, so
  * it is a sibling anchor, never a nested one. `roomName` is resolved upstream
- * from the rooms read (the vendor reservation carries none). Cancel is the §14
- * flow and is not rendered here.
+ * from the rooms read (the vendor reservation carries none). Cancel is offered
+ * on pending and confirmed rows (booking.md §14.2) and opens the §14 dialog
+ * through `onCancel`; terminal rows carry no action.
  */
 export function ReservationRow({
   reservation,
   roomName,
+  onCancel,
 }: {
   reservation: BookingReservation;
   roomName: string;
+  onCancel: (reservation: BookingReservation) => void;
 }) {
+  const pending = reservation.status === "pending";
+  const cancellable = pending || reservation.status === "confirmed";
   return (
     <li className="group border-champagne/[0.12] hover:border-champagne/30 border-t transition-colors">
       <Link
@@ -62,14 +67,19 @@ export function ReservationRow({
         </div>
       </Link>
 
-      {reservation.status === "pending" && (
+      {cancellable && (
         <div className="flex flex-wrap gap-3 pb-5">
-          <Button
-            href={`/book/checkout?reservationId=${encodeURIComponent(reservation.id)}`}
-            variant="ghost"
-            size="sm"
-          >
-            Complete payment
+          {pending && (
+            <Button
+              href={`/book/checkout?reservationId=${encodeURIComponent(reservation.id)}`}
+              variant="ghost"
+              size="sm"
+            >
+              Complete payment
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={() => onCancel(reservation)}>
+            Cancel
           </Button>
         </div>
       )}
