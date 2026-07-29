@@ -10,6 +10,7 @@ import type {
   CheckoutSessionCreated,
   CheckoutState,
 } from "@/types/booking";
+import { CheckoutLoading } from "./CheckoutLoading";
 import { CheckoutOutcome } from "./CheckoutOutcome";
 import { CheckoutShell } from "./CheckoutShell";
 import { MockCheckoutSurface } from "./MockCheckoutSurface";
@@ -40,9 +41,11 @@ const OUTER =
 
 export function CheckoutPayment({
   reservation,
+  roomName,
   mockEnabled,
 }: {
   reservation: BookingReservation;
+  roomName: string;
   mockEnabled: boolean;
 }) {
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
@@ -152,16 +155,7 @@ export function CheckoutPayment({
   }, []);
 
   if (phase.kind === "loading") {
-    return (
-      <div className={OUTER}>
-        <CheckoutShell eyebrow="One moment" heading="Opening secure checkout.">
-          <div
-            aria-hidden="true"
-            className="bg-champagne/30 mt-10 h-px w-[120px] motion-safe:animate-pulse"
-          />
-        </CheckoutShell>
-      </div>
-    );
+    return <CheckoutLoading heading="Opening secure checkout." />;
   }
 
   if (phase.kind === "expired") {
@@ -182,7 +176,7 @@ export function CheckoutPayment({
             Your reservation
           </p>
           <FactRows
-            facts={reservationFacts(reservation, "Total")}
+            facts={reservationFacts(reservation, "Total", roomName)}
             className="mt-6"
           />
         </div>

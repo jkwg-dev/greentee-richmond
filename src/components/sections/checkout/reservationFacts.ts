@@ -16,9 +16,13 @@ import type { BookingReservation } from "@/types/booking";
 export function reservationFacts(
   reservation: BookingReservation,
   totalLabel: string,
+  roomName?: string,
 ): Fact[] {
   return [
-    { label: "Space", value: reservation.roomName ?? reservation.roomId },
+    {
+      label: "Space",
+      value: roomName ?? reservation.roomName ?? reservation.roomId,
+    },
     { label: "Date", value: formatSlotDateLong(reservation.startsAt) },
     {
       label: "Time",

@@ -73,6 +73,13 @@ export function ReserveOverlay({
           {copy.line}
         </p>
 
+        {state.kind === "cap" && (
+          <p className="text-mist mt-4 text-[13px] leading-[1.7]">
+            If you have an unpaid reservation for that day, complete its payment
+            from My Reservations.
+          </p>
+        )}
+
         {state.kind === "working" ? (
           <div
             aria-hidden="true"

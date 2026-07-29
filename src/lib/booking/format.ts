@@ -97,3 +97,22 @@ export function formatDateLong(date: string): string {
 export function formatSlotDateLong(iso: string): string {
   return longDay.format(new Date(iso));
 }
+
+const stamp = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: VENUE_TIME_ZONE,
+});
+
+/**
+ * "Aug 7, 2026, 4:36 PM" from any reservation timestamp (`createdAt`,
+ * `cancelledAt`), in venue time (booking.md §14.5). Intl on the verbatim
+ * string; the stored value is never mutated. Offsets may mix across
+ * timestamps, which Intl handles by resolving each to the venue zone.
+ */
+export function formatStamp(iso: string): string {
+  return stamp.format(new Date(iso));
+}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { CheckoutPayment } from "@/components/sections/checkout/CheckoutPayment";
 import { isMockCheckoutEnabled } from "@/lib/booking/config";
 import { BookingApiError } from "@/lib/booking/errors";
+import { activeProvider } from "@/lib/booking/provider";
 import { getReservation } from "@/lib/booking/reservations";
 import { getUser } from "@/lib/supabase/server";
 
@@ -54,9 +55,21 @@ export default async function CheckoutPage({
     throw error;
   }
 
+  // Resolve the room name from the rooms read; the vendor reservation carries
+  // none (booking.md §13.3). A rooms failure falls back to the id.
+  let roomName = reservation.roomName ?? reservation.roomId;
+  try {
+    const rooms = await activeProvider.getRooms();
+    roomName =
+      rooms.find((room) => room.id === reservation.roomId)?.name ?? roomName;
+  } catch {
+    // Names fall back to the id.
+  }
+
   return (
     <CheckoutPayment
       reservation={reservation}
+      roomName={roomName}
       mockEnabled={isMockCheckoutEnabled()}
     />
   );

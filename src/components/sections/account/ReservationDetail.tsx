@@ -1,23 +1,27 @@
 import Link from "next/link";
 import { reservationFacts } from "@/components/sections/checkout/reservationFacts";
+import { Button } from "@/components/ui/Button";
 import { FactRows } from "@/components/ui/FactRows";
 import { PageHead } from "@/components/ui/PageHead";
+import { formatStamp } from "@/lib/booking/format";
 import type { BookingReservation } from "@/types/booking";
 import { StatusBadge } from "./StatusBadge";
 
 /**
- * The read-only reservation detail (booking.md §12.10), reachable from the
- * confirmation's View Reservation button and, since B3d-1, from the
- * reservations list. Presentational only: the itemized total is the server's,
- * echoed verbatim, and there are no actions in this phase. A pending
- * reservation (reached without completing payment) states its status honestly
- * rather than fabricating a resume-payment flow. The cancel action arrives in
- * B3d-2.
+ * The read-only reservation detail (booking.md §12.10, §14.5), reachable from
+ * the confirmation's View Reservation button and from the reservations list.
+ * The itemized total is the server's, echoed verbatim. `Booked` shows always
+ * and `Cancelled` on a cancelled reservation. A pending reservation states its
+ * status honestly and, since B3d-2, offers Complete payment. The cancel action
+ * (the §14 dialog) arrives with Step 3. `roomName` is resolved upstream from the
+ * rooms read (the vendor reservation carries none).
  */
 export function ReservationDetail({
   reservation,
+  roomName,
 }: {
   reservation: BookingReservation;
+  roomName: string;
 }) {
   return (
     <>
@@ -26,14 +30,34 @@ export function ReservationDetail({
         <div className="max-w-[540px]">
           <StatusBadge status={reservation.status} />
 
-          {reservation.status === "pending" && (
-            <p className="text-mist mt-6 text-[13.5px] leading-[1.8]">
-              Payment was not completed for this reservation.
+          <p className="text-mist/70 mt-4 text-[11px]">
+            Booked {formatStamp(reservation.createdAt)}
+          </p>
+          {reservation.status === "cancelled" && reservation.cancelledAt && (
+            <p className="text-mist/70 text-[11px]">
+              Cancelled {formatStamp(reservation.cancelledAt)}
             </p>
           )}
 
+          {reservation.status === "pending" && (
+            <>
+              <p className="text-mist mt-6 text-[13.5px] leading-[1.8]">
+                Payment was not completed for this reservation.
+              </p>
+              <div className="mt-5">
+                <Button
+                  href={`/book/checkout?reservationId=${encodeURIComponent(reservation.id)}`}
+                  variant="solid"
+                  size="sm"
+                >
+                  Complete payment
+                </Button>
+              </div>
+            </>
+          )}
+
           <FactRows
-            facts={reservationFacts(reservation, "Total")}
+            facts={reservationFacts(reservation, "Total", roomName)}
             className="mt-10"
           />
 

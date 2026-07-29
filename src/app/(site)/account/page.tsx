@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { FactRows, type Fact } from "@/components/ui/FactRows";
 import { PageHead } from "@/components/ui/PageHead";
 import { isBookingLive } from "@/lib/booking/config";
+import { activeProvider } from "@/lib/booking/provider";
 import { listReservations } from "@/lib/booking/reservations";
 import { getUser } from "@/lib/supabase/server";
 import type { ReservationList } from "@/types/booking";
@@ -46,6 +47,23 @@ async function loadReservations(): Promise<ReservationList | null> {
   }
 }
 
+/**
+ * The room id to name map for client-side display resolution (booking.md §13.3,
+ * §6.1 queue): the vendor Reservation carries no `roomName`, so names come from
+ * the rooms read here, once, on the server. Passed to the island so appended
+ * pages resolve without any browser vendor call; a room that is not found falls
+ * back to its id. A rooms failure is non-fatal: names fall back to ids.
+ */
+async function loadRoomNames(): Promise<Record<string, string>> {
+  if (!isBookingLive()) return {};
+  try {
+    const rooms = await activeProvider.getRooms();
+    return Object.fromEntries(rooms.map((room) => [room.id, room.name]));
+  } catch {
+    return {};
+  }
+}
+
 export default async function AccountPage() {
   const user = await getUser();
   if (!user) redirect("/account/sign-in?next=/account");
@@ -63,7 +81,10 @@ export default async function AccountPage() {
     ...(shownName ? [{ label: "Name", value: shownName }] : []),
   ];
 
-  const initialReservations = await loadReservations();
+  const [initialReservations, roomNames] = await Promise.all([
+    loadReservations(),
+    loadRoomNames(),
+  ]);
 
   return (
     <>
@@ -87,7 +108,7 @@ export default async function AccountPage() {
           </Reveal>
 
           <Reveal as="div" delay={200}>
-            <ReservationsList initial={initialReservations} />
+            <ReservationsList initial={initialReservations} roomNames={roomNames} />
           </Reveal>
         </div>
       </div>

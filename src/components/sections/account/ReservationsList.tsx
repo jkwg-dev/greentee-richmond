@@ -1,27 +1,39 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import type { ReservationList } from "@/types/booking";
+import type { BookingReservation, ReservationList } from "@/types/booking";
 import { ReservationRow } from "./ReservationRow";
 
 /**
- * The reservations list island (booking.md §13.3, §13.4). The first page is
- * server-rendered and handed in as `initial`; further pages load on demand
- * through Show More, appending in place and never scrolling or replacing the
- * list. `initial === null` means the server-side fetch failed (live mode only),
- * so the pane opens in the error state. Read-only: no mutation lives here, and
- * cancel is B3d-2.
+ * The reservations list island (booking.md §13.2, §13.3, §13.4). Two views: the
+ * default Reservations view holds every non-cancelled reservation, the Cancelled
+ * view holds cancelled ones. Each view is a flat sort by the parsed instant of
+ * `createdAt`, descending; the key is the epoch, not the string, because offsets
+ * may mix (§13.2), and the stored value stays verbatim. The first page is
+ * server-rendered and handed in as `initial`; further pages append through Show
+ * More and both views re-derive. `initial === null` is an initial-fetch failure
+ * (live mode only), opening the pane in the error state.
+ *
+ * `roomNames` resolves a room id to a name (the vendor reservation carries none)
+ * from the server rooms read, so appended pages resolve with no browser vendor
+ * call; an unknown id falls back to itself.
  *
  * The browser talks only to our `/api/booking/reservations` handler; the cursor
- * is opaque and passed back verbatim.
+ * is opaque and passed back verbatim. Cancel is the §14 flow; this island stays
+ * read-only apart from the Complete payment resume link on pending rows.
  */
+
+type View = "active" | "cancelled";
+
 export function ReservationsList({
   initial,
+  roomNames,
 }: {
   initial: ReservationList | null;
+  roomNames: Record<string, string>;
 }) {
   const [items, setItems] = useState(initial?.items ?? []);
   const [nextCursor, setNextCursor] = useState(initial?.nextCursor ?? null);
@@ -31,6 +43,7 @@ export function ReservationsList({
   // Whether we hold a valid page yet: false only after an initial-fetch failure,
   // which is what tells retry to reload the first page rather than the next.
   const [loaded, setLoaded] = useState(initial !== null);
+  const [view, setView] = useState<View>("active");
   const router = useRouter();
 
   const fetchPage = async (
@@ -71,7 +84,7 @@ export function ReservationsList({
         router.push("/account/sign-in?next=/account");
         return;
       }
-      // Append in place; the existing rows stay put (booking.md §13.3).
+      // Append in place; both views re-derive from the fuller set (§13.2).
       setItems((prev) => [...prev, ...data.items]);
       setNextCursor(data.nextCursor);
       setStatus("ready");
@@ -84,27 +97,59 @@ export function ReservationsList({
   // rows stay and retry re-attempts that same next page.
   const retry = () => (loaded ? loadMore() : loadFirst());
 
+  // Flat sort by the parsed instant of createdAt, descending, then split by
+  // view (booking.md §13.2). Parsing for comparison mutates nothing.
+  const { active, cancelled } = useMemo(() => {
+    const sorted = [...items].sort(
+      (a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt),
+    );
+    return {
+      active: sorted.filter((r) => r.status !== "cancelled"),
+      cancelled: sorted.filter((r) => r.status === "cancelled"),
+    };
+  }, [items]);
+
+  const shown = view === "cancelled" ? cancelled : active;
+  const resolveName = (r: BookingReservation) =>
+    roomNames[r.roomId] ?? r.roomName ?? r.roomId;
+
   const showMore = loaded && nextCursor !== null && status !== "error";
 
   return (
     <div>
-      <p className="text-mist mb-6 text-[9.5px] leading-none font-medium tracking-[0.28em] uppercase">
-        Reservations
-      </p>
+      <div className="mb-6 flex gap-7">
+        <ViewTab
+          label="Reservations"
+          active={view === "active"}
+          onSelect={() => setView("active")}
+        />
+        <ViewTab
+          label="Cancelled"
+          active={view === "cancelled"}
+          onSelect={() => setView("cancelled")}
+        />
+      </div>
 
-      {items.length > 0 && (
+      {shown.length > 0 && (
         <ul>
-          {items.map((reservation) => (
-            <ReservationRow key={reservation.id} reservation={reservation} />
+          {shown.map((reservation) => (
+            <ReservationRow
+              key={reservation.id}
+              reservation={reservation}
+              roomName={resolveName(reservation)}
+            />
           ))}
         </ul>
       )}
 
-      {/* Initial load pulse (server-rendered first paint means this is only the
-          retry-from-error case; booking.md §13.4). */}
+      {/* First-fetch pulse; server-rendered first paint means this is only the
+          retry-from-error case (booking.md §13.4). Never the empty state. */}
       {!loaded && status === "loading" && <PulseRows />}
 
-      {loaded && items.length === 0 && status === "ready" && <EmptyState />}
+      {loaded &&
+        status === "ready" &&
+        shown.length === 0 &&
+        (view === "cancelled" ? <CancelledEmpty /> : <EmptyState />)}
 
       {status === "error" && <ErrorState onRetry={retry} />}
 
@@ -126,7 +171,38 @@ export function ReservationsList({
   );
 }
 
-/** The §13.4 empty state: a quiet line and the one link back into booking. */
+/** A quiet text tab (booking.md §13.2): hairline underline on the active one, no fill. */
+function ViewTab({
+  label,
+  active,
+  onSelect,
+}: {
+  label: string;
+  active: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={active}
+      className="inline-flex min-h-[44px] items-center"
+    >
+      <span
+        className={cn(
+          "border-b pb-1 text-[9.5px] font-medium tracking-[0.28em] uppercase transition-colors",
+          active
+            ? "border-champagne text-ivory"
+            : "text-mist hover:text-ivory border-transparent",
+        )}
+      >
+        {label}
+      </span>
+    </button>
+  );
+}
+
+/** The default view empty state: a quiet line and the one link back into booking. */
 function EmptyState() {
   return (
     <div className="border-champagne/[0.12] border-t pt-8">
@@ -134,6 +210,15 @@ function EmptyState() {
       <Button href="/book" variant="solid" size="sm" className="mt-6">
         Book a Bay
       </Button>
+    </div>
+  );
+}
+
+/** The Cancelled view empty state (booking.md §13.4): the same quiet treatment, no button. */
+function CancelledEmpty() {
+  return (
+    <div className="border-champagne/[0.12] border-t pt-8">
+      <p className="text-mist text-[14px]">No cancelled reservations.</p>
     </div>
   );
 }

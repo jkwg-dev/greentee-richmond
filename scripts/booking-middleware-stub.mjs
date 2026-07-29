@@ -202,14 +202,14 @@ function buildReservation(owner, body) {
   const subtotalCents = priced.subtotalCents;
   const gstCents = Math.round(subtotalCents * GST_RATE);
   const pstCents = Math.round(subtotalCents * PST_RATE);
-  const room = ROOMS.find((entry) => entry.id === body.roomId);
 
   return {
     reservation: {
       id: crypto.randomUUID(),
       owner,
       roomId: body.roomId,
-      roomName: room.name,
+      // No roomName: the vendor Reservation carries none (booking.md §4 finding
+      // 4); the client resolves the display name from the rooms read (§13.3).
       startsAt: body.startsAt,
       endsAt: body.endsAt,
       partySize: body.partySize,
