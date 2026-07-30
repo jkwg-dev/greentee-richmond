@@ -36,6 +36,10 @@ or menu data inline, and never see a CMS type.
   `NEXT_PUBLIC_SANITY_DATASET` are documented in `.env.example` and unused
   until then. When Sanity lands, only `lib/content.ts` changes; getter
   signatures hold, and no Sanity client or CMS type appears outside it.
+- Client components never import from `lib/content.ts` directly; content and
+  nav reach client leaves as props from a Server Component, so a future
+  server-only CMS client inside the accessor can never break the client
+  boundary.
 - No database. No secrets in client bundles. No env vars beyond the two
   documented placeholders without a ruling.
 
