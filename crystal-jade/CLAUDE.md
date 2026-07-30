@@ -55,12 +55,16 @@ or menu data inline, and never see a CMS type.
 
 - `ReservationCta` is the single component for every reservation action
   (header button, hero, footer, contact). No ad-hoc reservation links.
-- `lib/reservations.ts` defines a `ReservationProvider` interface; the current
-  implementation is a simple link provider (tel: or contact anchor, from
-  config). An OpenTable provider replaces it later.
+- `lib/reservations.ts` defines the `ReservationProvider` interface; the
+  active implementation is the link provider: `book()` routes to `/reserve`,
+  and the reserve page's `reserve()` goes to the configured OpenTable URL
+  (new tab) or the on-page embed anchor until one exists. An OpenTable
+  provider replaces it later.
 - No component outside `lib/reservations.ts` may know which provider is
-  active. Do not install any OpenTable SDK, embed, or script until that phase
-  is explicitly opened.
+  active. Targets are resolved in Server Components via
+  `getReservationProvider()` and reach `ReservationCta` as props, per the
+  props-over-import rule. Do not install any OpenTable SDK, embed, or script
+  until that phase is explicitly opened.
 
 ## Design rules
 
