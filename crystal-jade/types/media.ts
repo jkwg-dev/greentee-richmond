@@ -21,4 +21,10 @@ export type InterimImage = {
   position?: string;
   /** LQIP blur placeholder from the asset metadata (Sanity-later, additive). */
   lqip?: string;
+  /**
+   * Optional art-directed override for the mobile ratio, for slots where
+   * hotspot cropping of the single upload will not be enough (composed
+   * heroes, in-image text). Unused today; see CLAUDE.md, Sanity later.
+   */
+  mobileImage?: Omit<InterimImage, "alt" | "mobileImage">;
 };

@@ -25,7 +25,7 @@ export function SignatureTrio({ dishes }: { dishes: Dish[] }) {
             <PhotoFrame
               tint={DINING_SLOT_TINTS[index % DINING_SLOT_TINTS.length]}
               label={{ kicker: "Photo", name: dish.name }}
-              className="aspect-[4/5]"
+              className="aspect-[4/5] max-[760px]:aspect-[4/3]"
             />
             <figcaption className="mt-[18px] text-center font-serif text-[20px] font-medium tracking-[0.02em]">
               {dish.name}

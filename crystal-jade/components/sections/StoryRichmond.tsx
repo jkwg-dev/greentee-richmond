@@ -20,7 +20,7 @@ export function StoryRichmond({ story }: { story: RestaurantStory }) {
               name: "Richmond · The Vancouver Chapter",
             }}
             tag="Replace with final photography"
-            className="aspect-[4/5] max-h-[560px] max-[900px]:max-h-[440px]"
+            className="aspect-[4/5] max-h-[560px] max-[900px]:aspect-square max-[900px]:max-h-[440px]"
           />
         </Reveal>
         <div>

@@ -35,7 +35,7 @@ export function ChefIntro({ chef }: { chef: RestaurantChef }) {
                 ? undefined
                 : "Kitchen setting, not a studio headshot"
             }
-            className="aspect-[4/5]"
+            className="aspect-[4/5] max-[900px]:aspect-square max-[900px]:max-h-[440px]"
           >
             {chef.portrait && (
               <SiteImage
