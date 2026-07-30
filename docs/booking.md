@@ -258,6 +258,14 @@ complete with the same ticket, server verify, confirmed, the SG-2026 code render
 account list row flipped to Confirmed. The cancel leg is the next staging verification target
 and becomes possible with B3d-2, since staging mock refunds settle successfully per the vendor.
 
+- 2026-07-29 cancel leg, staging-verified (B3d-2 close): a confirmed
+  reservation cancelled inside the 100 percent bracket settled its mock
+  refund and rendered the refunded result from the response; an unpaid
+  pending cancel returned the zero-refund null refundStatus path and the
+  row migrated to the Cancelled view. The cancel flow is live-verified
+  under the BOOKING_ASSUME_QA_IS_MOCK interim override, matching the
+  vendor's statement that staging mock refunds settle successfully.
+
 ### 2026-07-28 OpenAPI diff absorption (Checkpoint 3 findings 5 to 11)
 
 - reservationCode is the canonical code field; the code and confirmationCode
@@ -469,6 +477,22 @@ Queued items (from the 2026-07-28 B3c-2a close), with target phases:
 - B3d-2: account list ordering, a single flat sort by createdAt descending, no status grouping
   (§13).
 - B3d-2: route level loading UI for /book and a list loading state for /account (§13, §12).
+
+Closed (2026-07-29), B3d-2: the cancel and refund leg is staging-verified (see the 2026-07-29
+cancel-leg entry in the §4 staging QA findings block). Every item that moved into B3d-2 closes
+with it: cancel from pending and confirmed states, pending resume entry points, client side room
+name resolution with a UUID fallback, stub reservation code format alignment, Reservation
+createdAt and cancelledAt mapping and display, account list ordering, the two-view Cancelled
+list, and the route level and list loading UI.
+
+Remaining open surface of the booking track:
+- B3c-2b, the Moneris Checkout SDK mount in the payment page's moneris slot, blocked on Q1
+  (Moneris merchant QA credentials and Checkout ID, pending the contract signature).
+- The 2026-07-28 vendor follow-up, awaiting reply: a structured provider signal (item 1), the
+  refund brackets exposed by the policy endpoint (Q3), Reservation.roomName (item 3), and the
+  Room.description shape.
+- The BOOKING_ASSUME_QA_IS_MOCK override remains in force until either the provider signal lands
+  or the vendor flips staging to the real Moneris QA gateway.
 
 ---
 
@@ -1052,6 +1076,13 @@ POST /api/booking/reservations/{id}/cancel proxies it with the standard
 JWT relay. The vendor description is binding: cancellation does not claim
 a refund succeeded early, and a positive refund may remain processing or
 review_required until its provider outcome is verified.
+
+Idempotency ruling (2026-07-29): the cancel client holds no key; the route
+handler mints one per attempt, identical to the create and checkout flows.
+A duplicated cancel after a lost response is harmless because the vendor
+rejects a cancel of an already-cancelled reservation, so no double refund
+path exists. Client-held key reuse is deliberately not implemented for
+cancel.
 
 ### 14.2 Eligibility and entry points
 
