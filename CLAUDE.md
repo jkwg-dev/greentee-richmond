@@ -1,6 +1,6 @@
 # CLAUDE.md · GreenTee Richmond Center Web
 
-Next.js (App Router) + TypeScript + Tailwind v4 + Sanity + Vercel. Premium **indoor golf club** site in the GreenTee Country Club family. English only (the Crystal Jade 中文 toggle is inert until translation lands). v1 ships `/`, `/spaces`, `/news`, and `/dining` with its five sub-pages (`story`, `chef`, `menu`, `banquet`, `reserve`).
+Next.js (App Router) + TypeScript + Tailwind v4 + Sanity + Vercel. Premium **indoor golf club** site in the GreenTee Country Club family. English only. v1 ships `/`, `/spaces`, and `/news`. Crystal Jade dining is a standalone external site; `/dining` 307-redirects to it (design.md §3.3, §15.11).
 
 ## Sources of truth, in order
 1. `docs/design.md` (architecture and page specs)
@@ -18,12 +18,8 @@ The nine files in `docs/mockups/` define the look, motion, and copy tone of thei
 | `greentee-home.html` | `/` | Homepage v22 |
 | `greentee-spaces.html` | `/spaces` | The Spaces v3 |
 | `greentee-news.html` | `/news` | News & Offers v1 |
-| `greentee-dining.html` | `/dining` | Crystal Jade Palace v6 |
-| `greentee-dining-story.html` | `/dining/story` | v6 |
-| `greentee-dining-chef.html` | `/dining/chef` | v6 |
-| `greentee-dining-menu.html` | `/dining/menu` | v6 |
-| `greentee-dining-banquet.html` | `/dining/banquet` | v6 |
-| `greentee-dining-reserve.html` | `/dining/reserve` | v6 |
+
+The six `greentee-dining*.html` mockups moved to the standalone Crystal Jade repo; the copies in `docs/mockups/` are read-only history.
 
 Cross-links between mockup files stand in for real routes; anchors carry over (`greentee-spaces.html#sauna` means `/spaces#sauna`).
 
@@ -35,20 +31,18 @@ Cross-links between mockup files stand in for real routes; anchors carry over (`
 - Base64 images inside the mockups are mockup-only. Production images go through Sanity CDN via `<SanityImage>`.
 - Never edit any file under `docs/mockups/` as a form of implementation. They are read-only reference.
 
-### Mockup notes (home v22 · spaces v3 · news v1 · dining v6)
-- **Footer**: only home v22 shows the canonical footer (mirrors the header: The Spaces · News & Offers · Dining, per docs §3.4). The spaces, news, and dining mockup footers are an older layout (Golf · Events · Careers · Contact); build the canonical footer everywhere and ignore the stale ones.
-- The home outro "Book a Table" href (`greentee-dining.html#reserve`) predates the dining sub-pages; the production target is `/dining/reserve`. All Book a Table CTAs route there.
+### Mockup notes (home v22 · spaces v3 · news v1)
+- **Footer**: only home v22 shows the canonical footer (mirrors the header: The Spaces · News & Offers · Dining, per docs §3.4). The spaces and news mockup footers are an older layout (Golf · Events · Careers · Contact); build the canonical footer everywhere and ignore the stale ones.
+- All Book a Table CTAs link out to the standalone site's `/reserve` in a new tab (`BOOK_A_TABLE_HREF`).
 - News & Offers entries (home teaser and `/news` grid) are sample content. Production is CMS-driven; the home teaser renders nothing when empty (docs §4.2). `/news` card links are stubs until detail routes ship.
 - The announcement bar is not in the mockups; build it from docs §4.2.
-- All pricing in Rates & Hours, the address, phone, reservation windows, Crystal Jade hours, WeChat handle, and the "eight private rooms" count are placeholders.
-- VIP Rooms 14 and 15, the four VVIP suites, the chef portrait, dish and interior photography, and award emblems are placeholder slots by design. Their Sanity image fields may be wired and editable; while a field is empty the slot renders the styled pending state, never a stand-in image. Stock imagery stays banned regardless of who uploads it.
-- The EN / 中文 toggle on `/dining` is a static indicator (Chinese pending human translation), not a working control.
-- On `/dining` pages the FullMenu appends the Crystal Jade entries (Crystal Jade Palace · Menu & Reserve).
+- All pricing in Rates & Hours, the address, phone, and reservation windows are placeholders.
+- VIP Rooms 14 and 15 and the four VVIP suites are placeholder slots by design. Their Sanity image fields may be wired and editable; while a field is empty the slot renders the styled pending state, never a stand-in image. Stock imagery stays banned regardless of who uploads it.
 
 ## Hard design rules
 - **Indoor golf leads.** Page copy and structure surface bays, rates, putting, and year-round play before decor storytelling.
 - Background `--color-noir`, primary text `--color-ivory`. Champagne is the only global accent.
-- Jade + jade-text belongs to Crystal Jade Palace content only: the `/dining` pages, the Dining zone on `/spaces`, the Dining journey panel, and the home dining preview. Journey panel accents are inline `--acc` values scoped to the journey (docs §5.2), never global tokens.
+- Jade + jade-text belongs to Crystal Jade Palace content only: the Dining zone on `/spaces`, the Dining journey panel, and the home dining preview. Journey panel accents are inline `--acc` values scoped to the journey (docs §5.2), never global tokens.
 - Type: Cormorant Garamond for display, Inter for body and UI. Chinese strings on `/dining` use the system `--zh` stack. No other fonts.
 - Buttons only via `<Button variant="solid" | "ghost" | "light">` plus the `sm` size. No new button styles.
 - All entrance motion via `src/components/motion` presets; the journey only via `<SpacesJourney>` per docs §9.3; generative visuals only via `src/components/canvas` (`HeroParticles` is the only canvas module). No ad-hoc keyframes or inline GSAP timelines in sections.
@@ -141,7 +135,7 @@ all three keys; display_name is never an independent input and is never the pref
 - Full-height sections use `100svh`; sticky elements respect safe-area insets; no horizontal overflow at any width.
 - Touch targets at least 44px. Hover effects gated behind `(hover: hover) and (pointer: fine)`.
 - The journey is gesture-gated on desktop and a native horizontal `scroll-snap` strip below 901px, under reduced motion, or without GSAP; it must always release at both ends and never trap vertical scrolling.
-- `/spaces` and `/dining` rails collapse into sticky chip bars below 1024px; the header collapses to hamburger + FullMenu below 900px.
+- `/spaces` rails collapse into sticky chip bars below 1024px; the header collapses to hamburger + FullMenu below 900px.
 - HeroParticles caps devicePixelRatio at 2 and reduces particle count on small screens per docs §9.4.
 
 ## Clean code principles
@@ -155,7 +149,7 @@ all three keys; display_name is never an independent input and is never the pref
 
 ### Reuse rules
 - Search `src/components` before creating anything. Extend what exists.
-- The same JSX pattern appearing twice gets extracted. The rails (`SpacesRail`, `DiningRail`), chip bars, fact rows, and news cards are shared-primitive territory; distinct layouts are still built from `PhotoFrame`, `Eyebrow`, `Chip`, `FactRows`, and hairline rules.
+- The same JSX pattern appearing twice gets extracted. The rails (`SpacesRail`), chip bars, fact rows, and news cards are shared-primitive territory; distinct layouts are still built from `PhotoFrame`, `Eyebrow`, `Chip`, `FactRows`, and hairline rules.
 - A component past roughly 150 lines, or holding three or more responsibilities, gets split.
 - Shared behavior becomes a hook: `usePrefersReducedMotion`, `useCanvasLoop` (IntersectionObserver + visibilitychange pause), `useScrollSpy` (spaces rail + chips).
 - No repeated hand-written class strings for the same pattern; tokens only, no magic hex in components (journey `--acc` values come from data, not hardcoded classes).
@@ -163,7 +157,7 @@ all three keys; display_name is never an independent input and is never the pref
 ## Conventions
 - Server Components by default. `'use client'` only at leaves that need interaction, motion, or canvas.
 - TypeScript strict, no `any`. Named exports. One component per file.
-- Data flows through `src/sanity/lib/fetch.ts` with cache tags (`home`, `zone`, `restaurant`, `dish`, `event`, `promotion`, `news`, `settings`). Never call Sanity from a client component. No secrets in client bundles.
+- Data flows through `src/sanity/lib/fetch.ts` with cache tags (`home`, `zone`, `event`, `promotion`, `news`, `settings`). Never call Sanity from a client component. No secrets in client bundles.
 - Time-boxed content (`promotion`) is filtered by `activeFrom` / `activeTo` in the query, never in the component.
 - Tailwind class order via prettier-plugin-tailwindcss.
 - Commit gate: `pnpm lint && pnpm typecheck` must pass.
@@ -172,11 +166,11 @@ all three keys; display_name is never an independent input and is never the pref
 - Matches the mockup at 1440 and 390.
 - Reduced-motion path verified; the canvas hidden; the journey on its snap fallback; counters printing final values.
 - Journey tasks additionally verify: keyboard stepping, release at both ends, wheel and touch parity, flush panel landings after resize.
-- Rail and chip tasks verify: correct active state (scroll spy on `/spaces`, route-driven on `/dining`), sticky behavior, 44px targets.
+- Rail and chip tasks verify: correct active state (scroll spy on `/spaces`), sticky behavior, 44px targets.
 - Keyboard focus visible; FullMenu focus trap works; decorative canvas and numerals `aria-hidden`.
 - No console errors or warnings; no layout shift on load; Home hero LCP unaffected.
 - Empty states handled (News & Offers teaser renders nothing when there is no content; VIP/VVIP pending cards render as designed).
-- Copy passes the dash check (no em or en dashes) and, on dining pages, the no-exclamation check.
+- Copy passes the dash check (no em or en dashes), and Crystal Jade copy (the home dining preview) the no-exclamation check.
 - Lint and typecheck pass.
 
 ## Prompting playbook
@@ -206,14 +200,6 @@ Implement <ZoneSection> per docs/design.md §6.2 and mockup greentee-spaces.html
 - Mobile: grid stacks below 900px, fact rows stack below 560px
 - Data: static from src/lib/mock/zones.ts
 Done: matches spec, 1440 + 390 verified, reduced-motion fallback, lint/typecheck pass.
-```
-```
-Implement <DiningLayout> with <DiningRail> and <DiningChips> per docs/design.md §8.2,
-mockups greentee-dining*.html .dine-shell.
-- Desktop: 220px sticky rail, jade hairline, route-driven active state with gold dash,
-  Book a Table CTA, static EN/中文 indicator
-- Below 1024px: sticky chip bar beneath the header
-Done: matches spec on all six routes, 1440 + 390 verified, lint/typecheck pass.
 ```
 
 ## Never
