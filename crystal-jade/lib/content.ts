@@ -1,29 +1,50 @@
+import type { Dish, NavLink, Restaurant } from "@/types";
+import { dishes, signatureDishes } from "./content/dishes";
+import { restaurant } from "./content/restaurant";
+
 /**
  * The single content accessor for the Crystal Jade site.
  *
- * Every piece of page content flows through the typed getters in this module.
- * Components never hold copy, nav items, hours, or menu data inline; they
- * receive it from here via props or call a getter in a Server Component.
+ * Every piece of page content flows through this module: components receive
+ * it via props or call a getter in a Server Component, and never hold copy,
+ * nav items, hours, or menu data inline.
  *
- * Today the backing store is local typed config. Later it becomes a separate
- * Sanity project (NEXT_PUBLIC_SANITY_PROJECT_ID / NEXT_PUBLIC_SANITY_DATASET,
- * documented in .env.example, unused for now). When that lands, only this
- * module changes: the getters keep their signatures and the Sanity client and
- * CMS types stay inside it, invisible to every component.
+ * Today the backing store is local typed config in `lib/content/`. Later it
+ * becomes a separate Sanity project (NEXT_PUBLIC_SANITY_PROJECT_ID /
+ * NEXT_PUBLIC_SANITY_DATASET, documented in .env.example, unused for now).
+ * The getters are async so their signatures hold when that swap happens; the
+ * Sanity client and CMS types will live inside this module, invisible to
+ * every component. If the Sanity client makes this module server-only, the
+ * nav constants split into a client-safe config module at that point; today
+ * only Server Components import from here (client leaves get nav via props).
  */
 
-export interface SiteContent {
-  /** Restaurant display name, used for the brand mark and titles. */
-  name: string;
-  /** One-line positioning statement under the brand. */
-  tagline: string;
+/** The five page links on the rail and chips, in rail order. */
+export const sitePages: NavLink[] = [
+  { label: "Our Story", href: "/story" },
+  { label: "The Chef", href: "/chef" },
+  { label: "Menu", href: "/menu" },
+  { label: "Banquet", href: "/banquet" },
+  { label: "Reserve", href: "/reserve" },
+];
+
+/**
+ * Book a Table target: the reserve page. Phase 3 centralizes every
+ * reservation action behind `ReservationCta`; this constant feeds it then.
+ */
+export const BOOK_A_TABLE_HREF = "/reserve";
+
+/** The restaurant singleton: copy, credentials, story, chef, banquet, reserve. */
+export async function getRestaurant(): Promise<Restaurant> {
+  return restaurant;
 }
 
-const site: SiteContent = {
-  name: "Crystal Jade Palace",
-  tagline: "The first Crystal Jade Palace in North America.",
-};
+/** All menu dishes, unordered; the grid sorts by `order`. */
+export async function getDishes(): Promise<Dish[]> {
+  return dishes;
+}
 
-export function getSite(): SiteContent {
-  return site;
+/** The landing Signature Dishes trio, in landing order. */
+export async function getSignatureDishes(): Promise<Dish[]> {
+  return signatureDishes;
 }
