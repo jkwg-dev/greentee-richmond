@@ -28,8 +28,6 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Hosted-Studio build output (pnpm studio:deploy).
     "dist/**",
-    // Nested standalone Crystal Jade app: own toolchain, never linted here.
-    "crystal-jade/**",
   ]),
 ]);
 
