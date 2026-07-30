@@ -1,6 +1,22 @@
 import type { NextConfig } from "next";
 import { CRYSTAL_JADE_URL } from "./src/lib/site";
 
+// A production deploy without the Crystal Jade origin would ship real users
+// links and redirects to the in-code placeholder host. Fail the build loudly
+// instead. Keyed on VERCEL_ENV because NODE_ENV is "production" for every
+// `next build`, including previews; preview and development keep the silent
+// fallback by design.
+if (
+  process.env.VERCEL_ENV === "production" &&
+  !process.env.NEXT_PUBLIC_CRYSTAL_JADE_URL
+) {
+  throw new Error(
+    "NEXT_PUBLIC_CRYSTAL_JADE_URL is not set. Production builds refuse the " +
+      "placeholder Crystal Jade host; set the variable to the standalone " +
+      "site's origin before deploying.",
+  );
+}
+
 const nextConfig: NextConfig = {
   // Sanity Studio renders with styled-components; enable the SWC transform.
   compiler: { styledComponents: true },
