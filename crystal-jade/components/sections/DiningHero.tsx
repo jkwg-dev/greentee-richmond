@@ -39,7 +39,7 @@ export function DiningHero({
             ? undefined
             : "Replace with restaurant photography or video loop"
         }
-        className="absolute inset-0"
+        className="pf-quiet absolute inset-0"
       >
         {media && (
           <SiteImage

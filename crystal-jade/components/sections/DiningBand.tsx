@@ -26,7 +26,7 @@ export function DiningBand({ eyebrow, title, line, frame }: DiningBandProps) {
         showMark
         label={{ kicker: frame.kicker, name: frame.name }}
         tag={frame.tag}
-        className="absolute inset-0"
+        className="pf-quiet absolute inset-0"
       />
       <div
         className="border-champagne/[0.28] pointer-events-none absolute inset-4 z-[4] border"

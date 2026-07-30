@@ -48,7 +48,7 @@ export function PhotoFrame({
       )}
 
       {label && (
-        <div className="pointer-events-none absolute inset-0 z-[4] flex flex-col items-center justify-center gap-3.5">
+        <div className="pf-label pointer-events-none absolute inset-0 z-[4] flex flex-col items-center justify-center gap-3.5">
           {showMark && <span className="pf-mark" />}
           <span className="text-ivory/40 text-[8.5px] font-medium tracking-[0.4em] uppercase">
             {label.kicker}
@@ -62,7 +62,7 @@ export function PhotoFrame({
       )}
 
       {tag && (
-        <figcaption className="text-mist/75 absolute bottom-3 left-4 z-[4] text-[8.5px] font-medium tracking-[0.26em] uppercase">
+        <figcaption className="pf-tag text-mist/75 absolute bottom-3 left-4 z-[4] text-[8.5px] font-medium tracking-[0.26em] uppercase">
           {tag}
         </figcaption>
       )}

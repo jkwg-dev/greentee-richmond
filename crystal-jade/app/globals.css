@@ -250,6 +250,17 @@
   }
 }
 
+/* Text-over-frame contexts (hero, title bands) hide the pending-state chrome
+   at small widths, where the overlaid copy would collide with it. Unlayered
+   so it beats the label's utility-layer display. Placeholder-only: with real
+   imagery the label and tag never render. */
+@media (max-width: 900px) {
+  .pf-quiet .pf-label,
+  .pf-quiet .pf-tag {
+    display: none;
+  }
+}
+
 /* ==========================================================================
    Top navigation: skip link, sticky header, full-screen mobile menu.
    Header register mirrors the retired rail and chips (mockup `.dr-link` /
