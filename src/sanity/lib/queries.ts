@@ -1,6 +1,5 @@
 import {
   DINING_PANEL_CTAS,
-  dishTintFor,
   newsFrameFor,
   roomUiFor,
   zoneUiFor,
@@ -8,14 +7,11 @@ import {
 import type { NavLink } from "@/lib/site";
 import type {
   Announcement,
-  Dish,
   HomeContent,
   InterimImage,
   JourneyPanel,
   NewsCategory,
   NewsEntry,
-  Restaurant,
-  RestaurantPreview,
   RoomMotif,
   SiteSettings,
   Zone,
@@ -82,18 +78,6 @@ function toImage(raw: RawImage): InterimImage | undefined {
     position: raw.hotspot ? `${pct(raw.hotspot.x)} ${pct(raw.hotspot.y)}` : undefined,
     lqip: raw.lqip ?? undefined,
   };
-}
-
-/* --------------------------------------------------------- portable text -- */
-
-type RawBlock = { _type: string; children?: { text?: string }[] | null };
-
-/** Plain paragraphs from portable text; the first is the serif lead (§8.3). */
-function toNarrative(blocks: RawBlock[] | null): { lead: string; body: string[] } {
-  const paragraphs = (blocks ?? [])
-    .filter((block) => block._type === "block")
-    .map((block) => (block.children ?? []).map((child) => child.text ?? "").join(""));
-  return { lead: paragraphs[0] ?? "", body: paragraphs.slice(1) };
 }
 
 /* ---------------------------------------------------------------- news §4 -- */
@@ -422,196 +406,6 @@ export async function getZones(): Promise<Zone[]> {
         ...roomUiFor(slug, clean(room.name)),
       })),
       ...zoneUiFor(slug),
-    };
-  });
-}
-
-/* -------------------------------------------------------- restaurant §8.4 -- */
-
-const RESTAURANT_QUERY = `
-*[_id == "restaurant"][0] {
-  name, tagline, lede,
-  "heroMedia": heroMedia ${IMAGE_PROJECTION},
-  intro { lede, support },
-  credentials[] { label, value, detail },
-  story {
-    heritage, footprint, footprintNow, richmond,
-    philosophy[] { title, line }
-  },
-  chef { intro, awards[] { title, detail, years }, bio, moments, quote, "portrait": portrait ${IMAGE_PROJECTION} },
-  privateDining { copy, facts[] { label, value, detail } },
-  banquet {
-    copy,
-    facts[] { label, value, detail },
-    occasions,
-    menus[] { label, line, detail },
-    enquiryTarget
-  },
-  reserve { openTableUrl, phone, wechat, hours, address { name, line } },
-  socials[] { label, url }
-}`;
-
-type RawFact = { label: string; value: string; detail: string | null };
-
-type RawRestaurant = {
-  name: string;
-  tagline: string;
-  lede: string;
-  heroMedia: RawImage;
-  intro: { lede: string; support: string };
-  credentials: RawFact[] | null;
-  story: {
-    heritage: RawBlock[] | null;
-    footprint: string[] | null;
-    footprintNow: string;
-    richmond: RawBlock[] | null;
-    philosophy: { title: string; line: string }[] | null;
-  };
-  chef: {
-    intro: string;
-    awards: { title: string; detail: string | null; years: string }[] | null;
-    bio: string;
-    moments: string[] | null;
-    quote: string;
-    portrait: RawImage;
-  };
-  privateDining: { copy: string; facts: RawFact[] | null };
-  banquet: {
-    copy: string;
-    facts: RawFact[] | null;
-    occasions: string[] | null;
-    menus: { label: string; line: string; detail: string | null }[] | null;
-    enquiryTarget: string;
-  };
-  reserve: {
-    openTableUrl: string | null;
-    phone: string;
-    wechat: string;
-    hours: string[] | null;
-    address: { name: string; line: string };
-  };
-  socials: { label: string; url: string }[] | null;
-} | null;
-
-const mapFacts = (facts: RawFact[] | null) =>
-  (facts ?? []).map((fact) => ({
-    label: fact.label,
-    value: fact.value,
-    detail: fact.detail ?? undefined,
-  }));
-
-/** The restaurant singleton mapped to the §8.4 domain shape. */
-export async function getRestaurant(): Promise<Restaurant> {
-  const raw = required(
-    await sanityFetch<RawRestaurant>({
-      query: RESTAURANT_QUERY,
-      tags: ["restaurant"],
-    }),
-    "the restaurant document",
-  );
-
-  return {
-    name: raw.name,
-    tagline: raw.tagline,
-    lede: raw.lede,
-    heroMedia: toImage(raw.heroMedia),
-    intro: raw.intro,
-    credentials: mapFacts(raw.credentials),
-    privateDining: {
-      copy: raw.privateDining.copy,
-      facts: mapFacts(raw.privateDining.facts),
-    },
-    story: {
-      heritage: toNarrative(raw.story.heritage),
-      footprint: raw.story.footprint ?? [],
-      footprintNow: raw.story.footprintNow,
-      richmond: toNarrative(raw.story.richmond),
-      philosophy: raw.story.philosophy ?? [],
-    },
-    chef: {
-      intro: raw.chef.intro,
-      awards: (raw.chef.awards ?? []).map((award) => ({
-        title: award.title,
-        detail: award.detail ?? undefined,
-        years: award.years,
-      })),
-      bio: raw.chef.bio,
-      moments: raw.chef.moments ?? [],
-      quote: raw.chef.quote,
-      portrait: toImage(raw.chef.portrait),
-    },
-    banquet: {
-      copy: raw.banquet.copy,
-      facts: mapFacts(raw.banquet.facts),
-      occasions: raw.banquet.occasions ?? [],
-      menus: (raw.banquet.menus ?? []).map((menu) => ({
-        label: menu.label,
-        line: menu.line,
-        detail: menu.detail ?? undefined,
-      })),
-      enquiryTarget: clean(raw.banquet.enquiryTarget),
-    },
-    reserve: {
-      openTableUrl: clean(raw.reserve.openTableUrl) ?? undefined,
-      phone: raw.reserve.phone,
-      wechat: raw.reserve.wechat,
-      hours: raw.reserve.hours ?? [],
-      address: raw.reserve.address,
-    },
-    socials: (raw.socials ?? []).map((social) => ({
-      label: social.label,
-      url: clean(social.url),
-    })),
-  };
-}
-
-/** The Home dining preview slice (docs §5.1 S5). */
-export async function getRestaurantPreview(): Promise<RestaurantPreview> {
-  const restaurant = await getRestaurant();
-  return {
-    name: restaurant.name,
-    lede: restaurant.lede,
-    credentials: restaurant.credentials,
-  };
-}
-
-/* ------------------------------------------------------------ dishes §4.1 -- */
-
-const DISHES_QUERY = `
-*[_type == "dish" && available != false] | order(order asc) {
-  _id, name, zhName, line, category, seasonal, available, order,
-  "image": image ${IMAGE_PROJECTION}
-}`;
-
-type RawDish = {
-  _id: string;
-  name: string;
-  zhName: string;
-  line: string;
-  category: Dish["category"];
-  seasonal: boolean | null;
-  available: boolean | null;
-  order: number;
-  image: RawImage;
-};
-
-/** Available dishes in menu order (docs §4.1); frame tints from the UI layer. */
-export async function getDishes(): Promise<Dish[]> {
-  const docs = await sanityFetch<RawDish[]>({ query: DISHES_QUERY, tags: ["dish"] });
-
-  return (docs ?? []).map((doc, index) => {
-    const key = doc._id.startsWith("dish-") ? doc._id.slice(5) : doc._id;
-    return {
-      id: doc._id,
-      name: doc.name,
-      zhName: doc.zhName,
-      line: doc.line,
-      category: clean(doc.category),
-      order: doc.order,
-      seasonal: doc.seasonal ?? undefined,
-      available: doc.available ?? undefined,
-      image: toImage(doc.image),
-      frame: { tint: dishTintFor(key, index) },
     };
   });
 }

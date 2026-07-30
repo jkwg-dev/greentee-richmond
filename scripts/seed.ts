@@ -16,10 +16,8 @@ import { createReadStream, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { createClient } from "next-sanity";
-import { dishes } from "../src/lib/mock/dishes";
 import { home } from "../src/lib/mock/home";
 import { sampleNewsEntries } from "../src/lib/mock/news";
-import { restaurant } from "../src/lib/mock/restaurant";
 import { zones } from "../src/lib/mock/zones";
 import {
   familyLinks,
@@ -73,17 +71,6 @@ function withKeys<T extends Record<string, unknown>>(
   prefix: string,
 ): Keyed[] {
   return items.map((item, index) => ({ _key: `${prefix}${index}`, ...item }));
-}
-
-/** A plain paragraph as portable text (heritage/richmond narratives, §8.4). */
-function toBlocks(paragraphs: string[], prefix: string) {
-  return paragraphs.map((text, index) => ({
-    _type: "block",
-    _key: `${prefix}${index}`,
-    style: "normal",
-    markDefs: [],
-    children: [{ _type: "span", _key: `${prefix}${index}s`, text, marks: [] }],
-  }));
 }
 
 function toLinks(links: NavLink[], prefix: string) {
@@ -185,62 +172,6 @@ function buildSiteSettings() {
   };
 }
 
-function buildRestaurant() {
-  return {
-    _id: "restaurant",
-    _type: "restaurant",
-    name: restaurant.name,
-    tagline: restaurant.tagline,
-    lede: restaurant.lede,
-    intro: restaurant.intro,
-    credentials: withKeys([...restaurant.credentials], "cr"),
-    story: {
-      heritage: toBlocks(
-        [restaurant.story.heritage.lead, ...restaurant.story.heritage.body],
-        "her",
-      ),
-      footprint: restaurant.story.footprint,
-      footprintNow: restaurant.story.footprintNow,
-      richmond: toBlocks(
-        [restaurant.story.richmond.lead, ...restaurant.story.richmond.body],
-        "ric",
-      ),
-      philosophy: withKeys(
-        restaurant.story.philosophy.map(({ title, line }) => ({ title, line })),
-        "ph",
-      ),
-    },
-    chef: {
-      intro: restaurant.chef.intro,
-      awards: withKeys([...restaurant.chef.awards], "aw"),
-      bio: restaurant.chef.bio,
-      moments: restaurant.chef.moments,
-      quote: restaurant.chef.quote,
-    },
-    privateDining: {
-      copy: restaurant.privateDining.copy,
-      facts: withKeys([...restaurant.privateDining.facts], "pf"),
-    },
-    banquet: {
-      copy: restaurant.banquet.copy,
-      facts: withKeys([...restaurant.banquet.facts], "bf"),
-      occasions: restaurant.banquet.occasions,
-      menus: withKeys([...restaurant.banquet.menus], "bm"),
-      enquiryTarget: restaurant.banquet.enquiryTarget,
-    },
-    reserve: {
-      phone: restaurant.reserve.phone,
-      wechat: restaurant.reserve.wechat,
-      hours: restaurant.reserve.hours,
-      address: restaurant.reserve.address,
-    },
-    socials: withKeys(
-      restaurant.socials.map(({ label, url }) => ({ label, url })),
-      "so",
-    ),
-  };
-}
-
 function buildZones() {
   return zones.map((zone) => ({
     _id: `zone-${zone.slug}`,
@@ -273,20 +204,6 @@ function buildZones() {
         })),
         "rm",
       ),
-  }));
-}
-
-function buildDishes() {
-  return dishes.map((dish) => ({
-    _id: `dish-${dish.id}`,
-    _type: "dish",
-    name: dish.name,
-    zhName: dish.zhName,
-    line: dish.line,
-    category: dish.category,
-    seasonal: dish.seasonal ?? false,
-    available: dish.available ?? true,
-    order: dish.order,
   }));
 }
 
@@ -343,9 +260,7 @@ async function main() {
   const documents: SeedDoc[] = [
     buildSiteSettings(),
     await buildHomePage(),
-    buildRestaurant(),
     ...buildZones(),
-    ...buildDishes(),
     ...buildNews(),
   ];
 

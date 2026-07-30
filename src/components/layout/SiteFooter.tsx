@@ -43,9 +43,7 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
 
       <nav aria-label="Footer" className="flex gap-[26px]">
         {primaryNav.map((link) => (
-          <Link key={link.href} href={link.href} className={columnLinkClass}>
-            {link.label}
-          </Link>
+          <FooterLink key={link.href} link={link} className={columnLinkClass} />
         ))}
       </nav>
 

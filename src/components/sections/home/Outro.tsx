@@ -8,7 +8,7 @@ import type { OutroContent } from "@/types";
 /**
  * S8 Outro (docs §5.1, mockup `#outro`). Centered closing statement over a soft
  * champagne glow; the visit line arrives from siteSettings (docs §11.4). Book a
- * Bay is a stub until booking exists, Book a Table lands on `/dining/reserve`.
+ * Table links out to the standalone Crystal Jade site's reserve page, new tab.
  */
 export function Outro({
   content,
@@ -58,7 +58,12 @@ export function Outro({
         className="flex flex-wrap justify-center gap-4"
       >
         <Button href={BOOK_A_BAY_HREF}>Book a Bay</Button>
-        <Button href={BOOK_A_TABLE_HREF} variant="ghost">
+        <Button
+          href={BOOK_A_TABLE_HREF}
+          variant="ghost"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           Book a Table
         </Button>
       </Reveal>

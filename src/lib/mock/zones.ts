@@ -1,4 +1,4 @@
-import { BOOK_A_BAY_HREF, BOOK_A_TABLE_HREF } from "@/lib/site";
+import { BOOK_A_BAY_HREF, BOOK_A_TABLE_HREF, CRYSTAL_JADE_URL } from "@/lib/site";
 import type { Zone } from "@/types";
 
 /**
@@ -145,7 +145,7 @@ export const zones: Zone[] = [
       body: "The dining room belongs to Crystal Jade Palace, the first in North America, led by a Michelin-starred kitchen. Its full story, menu, and reservations live on its own page.",
       ctaPrimary: {
         label: "Crystal Jade Palace",
-        href: "/dining",
+        href: CRYSTAL_JADE_URL,
         variant: "solid",
       },
       ctaSecondary: {

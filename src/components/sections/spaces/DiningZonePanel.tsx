@@ -21,13 +21,21 @@ export function DiningZonePanel({ panel }: { panel: DiningZonePanelData }) {
       </div>
       <div>
         <p className="text-mist text-[14px]">{panel.body}</p>
+        {/* Both CTAs are external, to the standalone Crystal Jade site. */}
         <div className="mt-7 flex flex-wrap gap-3.5">
-          <Button href={panel.ctaPrimary.href} variant={panel.ctaPrimary.variant}>
+          <Button
+            href={panel.ctaPrimary.href}
+            variant={panel.ctaPrimary.variant}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             {panel.ctaPrimary.label}
           </Button>
           <Button
             href={panel.ctaSecondary.href}
             variant={panel.ctaSecondary.variant}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             {panel.ctaSecondary.label}
           </Button>

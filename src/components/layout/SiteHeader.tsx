@@ -26,7 +26,6 @@ export function SiteHeader({
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
-  const isDining = pathname?.startsWith("/dining") ?? false;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -55,21 +54,37 @@ export function SiteHeader({
             className="flex items-center gap-8 max-[900px]:hidden"
           >
             {primaryNav.map((link) => {
+              // External links never carry the active state.
               const isActive =
+                !link.external &&
                 !!pathname &&
                 (pathname === link.href ||
                   pathname.startsWith(link.href + "/"));
+              const className = cn(
+                "after:bg-champagne relative text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors after:absolute after:-bottom-[7px] after:left-0 after:h-px after:w-full after:transition-transform after:duration-[450ms] after:ease-[cubic-bezier(0.22,1,0.36,1)]",
+                isActive
+                  ? "text-ivory after:origin-left after:scale-x-100"
+                  : "text-mist hover:text-ivory after:origin-right after:scale-x-0 hover:after:origin-left hover:after:scale-x-100",
+              );
+              if (link.external) {
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={className}
+                  >
+                    {link.label}
+                  </a>
+                );
+              }
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   aria-current={isActive ? "page" : undefined}
-                  className={cn(
-                    "after:bg-champagne relative text-[10.5px] font-medium tracking-[0.24em] uppercase transition-colors after:absolute after:-bottom-[7px] after:left-0 after:h-px after:w-full after:transition-transform after:duration-[450ms] after:ease-[cubic-bezier(0.22,1,0.36,1)]",
-                    isActive
-                      ? "text-ivory after:origin-left after:scale-x-100"
-                      : "text-mist hover:text-ivory after:origin-right after:scale-x-0 hover:after:origin-left hover:after:scale-x-100",
-                  )}
+                  className={className}
                 >
                   {link.label}
                 </Link>
@@ -122,11 +137,7 @@ export function SiteHeader({
         {announcement && <AnnouncementBar announcement={announcement} />}
       </div>
 
-      <FullMenu
-        open={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        isDining={isDining}
-      />
+      <FullMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
     </>
   );
 }

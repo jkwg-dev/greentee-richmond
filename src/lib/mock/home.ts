@@ -1,4 +1,4 @@
-import type { HomeContent } from "@/types";
+import type { DiningPreviewContent, HomeContent } from "@/types";
 
 /**
  * Static Home content (docs §5), copy ported verbatim from
@@ -291,4 +291,30 @@ export const home: HomeContent = {
     title: "The course is *always* open.",
     line: "Book a bay, gather in a private room, or stay for dinner at Crystal Jade Palace.",
   },
+};
+
+/**
+ * S5 dining preview content (docs §5.1). Owned by the home surface; the full
+ * Crystal Jade Palace story lives on the standalone site.
+ */
+export const diningPreview: DiningPreviewContent = {
+  name: "Crystal Jade Palace",
+  lede: "Cantonese fine dining on the promenade. The first Crystal Jade Palace in North America, led by a Michelin-starred kitchen.",
+  credentials: [
+    {
+      label: "Michelin",
+      value: "Vancouver Michelin Star, four consecutive years",
+      detail: "2022 to 2025",
+    },
+    {
+      label: "Accolades",
+      value: "North America's Best Chinese Cuisine Restaurant, 2025",
+      detail: "Supreme Gold, World Championship of Chinese Cuisine 2024",
+    },
+    {
+      label: "Private Dining",
+      value: "Private rooms and bespoke banquet menus",
+      detail: "Corporate dining by arrangement",
+    },
+  ],
 };

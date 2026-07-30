@@ -3,22 +3,18 @@ import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { FactRows } from "@/components/ui/FactRows";
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
-import { BOOK_A_TABLE_HREF } from "@/lib/site";
-import type { RestaurantPreview } from "@/types";
+import { BOOK_A_TABLE_HREF, CRYSTAL_JADE_URL } from "@/lib/site";
+import type { DiningPreviewContent } from "@/types";
 
 const EYEBROW = "Dining at the Center";
 
 /**
  * S5 Dining preview (docs §5.1, mockup `#dining`). Jade is scoped to this
  * section: a jade-washed band and a jade pending frame beside the Crystal Jade
- * Palace credentials. Reads a slice of the `restaurant` singleton (§8.4). Grid
- * stacks below 900px, image first.
+ * Palace credentials. Both CTAs link out to the standalone Crystal Jade site
+ * in a new tab (§3.4). Grid stacks below 900px, image first.
  */
-export function DiningPreview({
-  restaurant,
-}: {
-  restaurant: RestaurantPreview;
-}) {
+export function DiningPreview({ preview }: { preview: DiningPreviewContent }) {
   return (
     <section
       id="dining"
@@ -47,21 +43,32 @@ export function DiningPreview({
             delay={100}
             className="mt-6 font-serif text-[clamp(2.1rem,4.6vw,3.5rem)] leading-[1.1] font-medium tracking-[0.004em]"
           >
-            {restaurant.name}
+            {preview.name}
           </Reveal>
           <Reveal
             as="p"
             delay={150}
             className="text-mist mt-[18px] max-w-[480px] text-[14.5px]"
           >
-            {restaurant.lede}
+            {preview.lede}
           </Reveal>
           <Reveal as="div" delay={200}>
-            <FactRows facts={restaurant.credentials} className="mt-[38px] mb-11" />
+            <FactRows facts={preview.credentials} className="mt-[38px] mb-11" />
           </Reveal>
           <Reveal as="div" delay={410} className="flex flex-wrap gap-3.5">
-            <Button href="/dining">Discover Crystal Jade</Button>
-            <Button href={BOOK_A_TABLE_HREF} variant="ghost">
+            <Button
+              href={CRYSTAL_JADE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Discover Crystal Jade
+            </Button>
+            <Button
+              href={BOOK_A_TABLE_HREF}
+              variant="ghost"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Book a Table
             </Button>
           </Reveal>

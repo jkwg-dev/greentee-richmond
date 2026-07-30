@@ -88,6 +88,24 @@ export type OutroContent = {
   line: string;
 };
 
+/** Michelin / accolade / private-dining credential (docs §5.1 S5). */
+export type CredentialRow = {
+  label: string;
+  value: string;
+  detail?: string;
+};
+
+/**
+ * S5 dining preview content (docs §5.1). Owned by the home surface now that
+ * the restaurant document is retired; the full story lives on the standalone
+ * Crystal Jade site.
+ */
+export type DiningPreviewContent = {
+  name: string;
+  lede: string;
+  credentials: CredentialRow[];
+};
+
 /** The full static Home payload, distributed to sections by the route (docs §11.5). */
 export type HomeContent = {
   hero: HeroContent;

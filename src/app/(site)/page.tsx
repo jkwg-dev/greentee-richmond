@@ -10,10 +10,10 @@ import { PanoramaBand } from "@/components/sections/home/PanoramaBand";
 import { RatesHours } from "@/components/sections/home/RatesHours";
 import { SpacesIntro } from "@/components/sections/home/SpacesIntro";
 import { SpacesJourney } from "@/components/sections/home/SpacesJourney";
+import { diningPreview } from "@/lib/mock/home";
 import {
   getHomeContent,
   getNewsEntries,
-  getRestaurantPreview,
   getSiteSettings,
 } from "@/sanity/lib/queries";
 
@@ -23,10 +23,9 @@ import {
  * Sanity content (docs §11.5); sections stay presentational.
  */
 export default async function HomePage() {
-  const [content, newsEntries, preview, settings] = await Promise.all([
+  const [content, newsEntries, settings] = await Promise.all([
     getHomeContent(),
     getNewsEntries(),
-    getRestaurantPreview(),
     getSiteSettings(),
   ]);
 
@@ -39,7 +38,7 @@ export default async function HomePage() {
       <ConceptMarquee items={content.marqueeItems} />
       <RatesHours content={content.rates} />
       <NewsOffersTeaser head={content.newsTeaser} entries={newsEntries} />
-      <DiningPreview restaurant={preview} />
+      <DiningPreview preview={diningPreview} />
       <SpacesIntro content={content.spacesIntro} />
       <SpacesJourney panels={content.journeyPanels} />
       <Outro content={content.outro} visitLine={settings.openSummary} />

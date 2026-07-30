@@ -3,28 +3,20 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import {
-  BOOK_A_BAY_HREF,
-  BOOK_A_TABLE_HREF,
-  diningSubNav,
-  primaryNav,
-  type NavLink,
-} from "@/lib/site";
+import { BOOK_A_BAY_HREF, primaryNav, type NavLink } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export type FullMenuProps = {
   open: boolean;
   onClose: () => void;
-  /** On `/dining` the Dining item expands into two entries (docs §3.4). */
-  isDining?: boolean;
 };
 
 /**
  * Mobile navigation overlay (docs §3.4): dialog with a focus trap, Escape to
  * close, and a body scroll lock while open. Items are Home, the three primary
- * links, and the Book a Bay CTA; Dining expands to its two entries on `/dining`.
+ * links, and the Book a Bay CTA.
  */
-export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
+export function FullMenu({ open, onClose }: FullMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -64,16 +56,7 @@ export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
     };
   }, [open, onClose]);
 
-  // On `/dining` the Dining item expands into the two Crystal Jade entries,
-  // each carrying a small "Dining" kicker (docs §3.4, mockup `.fm-nav`).
-  const items: (NavLink & { kicker?: string })[] = [
-    { label: "Home", href: "/" },
-    ...primaryNav,
-  ].flatMap((item) =>
-    isDining && item.href === "/dining"
-      ? diningSubNav.map((sub) => ({ ...sub, kicker: "Dining" }))
-      : [item],
-  );
+  const items: NavLink[] = [{ label: "Home", href: "/" }, ...primaryNav];
 
   return (
     <div
@@ -98,35 +81,45 @@ export function FullMenu({ open, onClose, isDining = false }: FullMenuProps) {
       </button>
 
       <nav className="flex flex-col gap-3" aria-label="Primary">
-        {items.map((item) => (
-          <Link
-            key={item.href + item.label}
-            href={item.href}
-            onClick={onClose}
-            tabIndex={open ? 0 : -1}
-            className="hover:text-champagne font-serif text-[clamp(2rem,9vw,3rem)] leading-[1.3] font-medium transition-colors"
-          >
-            {item.kicker && (
-              <small className="text-jade-text mb-0.5 block font-sans text-[8.5px] leading-none font-medium tracking-[0.4em] uppercase">
-                {item.kicker}
-              </small>
-            )}
-            {item.label}
-          </Link>
-        ))}
+        {items.map((item) => {
+          const className =
+            "hover:text-champagne font-serif text-[clamp(2rem,9vw,3rem)] leading-[1.3] font-medium transition-colors";
+          if (item.external) {
+            return (
+              <a
+                key={item.href + item.label}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onClose}
+                tabIndex={open ? 0 : -1}
+                className={className}
+              >
+                {item.label}
+              </a>
+            );
+          }
+          return (
+            <Link
+              key={item.href + item.label}
+              href={item.href}
+              onClick={onClose}
+              tabIndex={open ? 0 : -1}
+              className={className}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Utility area: the CTA (switching to the tenant action on /dining,
-          docs §3.4, §8.2) plus the session-unaware Account link mirroring the
-          desktop header (booking.md §10.5, §10.7). A text link here, not the
-          header's icon: the menu has room and a lone glyph is harder to find. */}
+      {/* Utility area: the Book a Bay CTA plus the session-unaware Account
+          link mirroring the desktop header (booking.md §10.5, §10.7). A text
+          link here, not the header's icon: the menu has room and a lone glyph
+          is harder to find. */}
       <div className="flex flex-wrap items-center gap-7">
-        <Button
-          href={isDining ? BOOK_A_TABLE_HREF : BOOK_A_BAY_HREF}
-          onClick={onClose}
-          tabIndex={open ? 0 : -1}
-        >
-          {isDining ? "Book a Table" : "Book a Bay"}
+        <Button href={BOOK_A_BAY_HREF} onClick={onClose} tabIndex={open ? 0 : -1}>
+          Book a Bay
         </Button>
         <Link
           href="/account/sign-in"

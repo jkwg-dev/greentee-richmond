@@ -1,7 +1,6 @@
-import { dishes as sampleDishes } from "@/lib/mock/dishes";
 import { sampleNewsEntries } from "@/lib/mock/news";
 import { zones as sampleZones } from "@/lib/mock/zones";
-import { BOOK_A_TABLE_HREF } from "@/lib/site";
+import { BOOK_A_TABLE_HREF, CRYSTAL_JADE_URL } from "@/lib/site";
 import type { NewsEntry, PhotoTint, Room, Zone, ZoneCta } from "@/types";
 
 /**
@@ -31,22 +30,6 @@ export function newsFrameFor(
       kicker: "Photo",
       name: title,
     }
-  );
-}
-
-/* ---------------------------------------------------------------- dishes -- */
-
-const DISH_TINT_BY_ID = new Map<string, PhotoTint>(
-  sampleDishes.map((dish) => [dish.id, dish.frame.tint]),
-);
-
-/** The dining three-up rotation (§8.3) as the fallback for new dishes. */
-const DISH_FALLBACK_TINTS: PhotoTint[] = ["jade", "champagne", "emerald"];
-
-export function dishTintFor(key: string, index: number): PhotoTint {
-  return (
-    DISH_TINT_BY_ID.get(key) ??
-    DISH_FALLBACK_TINTS[index % DISH_FALLBACK_TINTS.length]
   );
 }
 
@@ -105,10 +88,11 @@ export function roomUiFor(zoneSlug: string, roomName: string): RoomUi {
 }
 
 /**
- * The dining panel's two CTAs are fixed routes, deliberately outside the
- * §11.4 schema (`diningPanel {eyebrow, title, copy}`).
+ * The dining panel's two CTAs are fixed targets, deliberately outside the
+ * §11.4 schema (`diningPanel {eyebrow, title, copy}`). Both link out to the
+ * standalone Crystal Jade site.
  */
 export const DINING_PANEL_CTAS: { primary: ZoneCta; secondary: ZoneCta } = {
-  primary: { label: "Crystal Jade Palace", href: "/dining", variant: "solid" },
+  primary: { label: "Crystal Jade Palace", href: CRYSTAL_JADE_URL, variant: "solid" },
   secondary: { label: "Book a Table", href: BOOK_A_TABLE_HREF, variant: "ghost" },
 };

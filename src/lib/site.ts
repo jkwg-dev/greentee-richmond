@@ -12,28 +12,20 @@ export type NavLink = {
 
 /** Book a Bay routes to the B1 booking browse page; this constant is the single source for the CTA target (booking.md §5.1). */
 export const BOOK_A_BAY_HREF = "/book";
-/** Book a Table routes to the reservation page everywhere (docs §3.4). */
-export const BOOK_A_TABLE_HREF = "/dining/reserve";
+/**
+ * The Crystal Jade standalone site; placeholder host until the domain is
+ * final (design.md §15 item 11). Links always render this fallback so no
+ * href is ever undefined.
+ */
+export const CRYSTAL_JADE_URL =
+  process.env.NEXT_PUBLIC_CRYSTAL_JADE_URL ?? "https://crystal-jade-palace.example";
+/** Every Book a Table CTA links out to the standalone site's reserve page, new tab (docs §3.4). */
+export const BOOK_A_TABLE_HREF = `${CRYSTAL_JADE_URL}/reserve`;
 
 export const primaryNav: NavLink[] = [
   { label: "The Spaces", href: "/spaces" },
   { label: "News & Offers", href: "/news" },
-  { label: "Dining", href: "/dining" },
-];
-
-/** On `/dining` the Dining item expands into these two (docs §3.4). */
-export const diningSubNav: NavLink[] = [
-  { label: "Crystal Jade Palace", href: "/dining" },
-  { label: "Menu & Reserve", href: "/dining/menu" },
-];
-
-/** The five Crystal Jade Palace pages on the dining rail and chips (docs §8.2). */
-export const diningPages: NavLink[] = [
-  { label: "Our Story", href: "/dining/story" },
-  { label: "The Chef", href: "/dining/chef" },
-  { label: "Menu", href: "/dining/menu" },
-  { label: "Banquet", href: "/dining/banquet" },
-  { label: "Reserve", href: "/dining/reserve" },
+  { label: "Dining", href: CRYSTAL_JADE_URL, external: true },
 ];
 
 export const networkLinks: NavLink[] = [
