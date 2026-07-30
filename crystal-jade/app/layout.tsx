@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { DiningInfoStrip } from "@/components/sections/DiningInfoStrip";
-import { BOOK_A_TABLE_HREF, getRestaurant, sitePages } from "@/lib/content";
+import { getRestaurant, sitePages } from "@/lib/content";
 import { cormorant, inter } from "@/lib/fonts";
+import { getReservationProvider } from "@/lib/reservations";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,10 @@ export const metadata: Metadata = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const restaurant = await getRestaurant();
+  const [restaurant, bookTarget] = await Promise.all([
+    getRestaurant(),
+    getReservationProvider().book(),
+  ]);
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable}`}>
       <body>
@@ -38,7 +42,7 @@ export default async function RootLayout({
           Skip to content
         </a>
         <div id="top" className="dine-bg pb-16">
-          <SiteHeader pages={sitePages} bookHref={BOOK_A_TABLE_HREF} />
+          <SiteHeader pages={sitePages} bookTarget={bookTarget} />
           <div className="dine-shell">
             <main id="content" tabIndex={-1} className="dine-main outline-none">
               {children}

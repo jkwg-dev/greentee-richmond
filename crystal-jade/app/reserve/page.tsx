@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ReserveBlock } from "@/components/sections/ReserveBlock";
 import { getRestaurant } from "@/lib/content";
+import { getReservationProvider } from "@/lib/reservations";
 
 export const metadata: Metadata = {
   title: "Reserve",
@@ -13,6 +14,9 @@ export const metadata: Metadata = {
  * banquet crosslink, and the OpenTable embed placeholder.
  */
 export default async function ReservePage() {
-  const restaurant = await getRestaurant();
-  return <ReserveBlock reserve={restaurant.reserve} />;
+  const [restaurant, bookTarget] = await Promise.all([
+    getRestaurant(),
+    getReservationProvider().reserve(),
+  ]);
+  return <ReserveBlock reserve={restaurant.reserve} bookTarget={bookTarget} />;
 }

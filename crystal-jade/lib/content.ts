@@ -29,8 +29,9 @@ export const sitePages: NavLink[] = [
 ];
 
 /**
- * Book a Table target: the reserve page. Phase 3 centralizes every
- * reservation action behind `ReservationCta`; this constant feeds it then.
+ * Book a Table target: the reserve page. Consumed only by the link provider
+ * in `lib/reservations.ts`; components never read it directly, they render
+ * `ReservationCta` with a provider-resolved target.
  */
 export const BOOK_A_TABLE_HREF = "/reserve";
 

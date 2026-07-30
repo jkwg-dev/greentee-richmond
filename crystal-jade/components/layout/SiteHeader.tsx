@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
 import { CrystalJadeMark } from "@/components/sections/CrystalJadeMark";
-import { Button } from "@/components/ui/Button";
+import { ReservationCta } from "@/components/ui/ReservationCta";
+import type { ReservationTarget } from "@/lib/reservations";
 import { cn } from "@/lib/utils";
 import type { NavLink } from "@/types";
 import { MobileMenu } from "./MobileMenu";
@@ -18,10 +19,10 @@ import { MobileMenu } from "./MobileMenu";
  */
 export function SiteHeader({
   pages,
-  bookHref,
+  bookTarget,
 }: {
   pages: NavLink[];
-  bookHref: string;
+  bookTarget: ReservationTarget;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -67,9 +68,11 @@ export function SiteHeader({
           <span className="font-zh">中文</span>
         </p>
 
-        <Button href={bookHref} size="sm" className="max-[1024px]:hidden">
-          Book a Table
-        </Button>
+        <ReservationCta
+          target={bookTarget}
+          size="sm"
+          className="max-[1024px]:hidden"
+        />
 
         <button
           ref={toggleRef}
@@ -89,7 +92,7 @@ export function SiteHeader({
         id="cj-mobile-menu"
         open={open}
         pages={pages}
-        bookHref={bookHref}
+        bookTarget={bookTarget}
         onClose={() => setOpen(false)}
         toggleRef={toggleRef}
       />

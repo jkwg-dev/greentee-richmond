@@ -4,7 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, type RefObject } from "react";
 import { CrystalJadeMark } from "@/components/sections/CrystalJadeMark";
-import { Button } from "@/components/ui/Button";
+import { ReservationCta } from "@/components/ui/ReservationCta";
+import type { ReservationTarget } from "@/lib/reservations";
 import { cn } from "@/lib/utils";
 import type { NavLink } from "@/types";
 
@@ -22,14 +23,14 @@ export function MobileMenu({
   id,
   open,
   pages,
-  bookHref,
+  bookTarget,
   onClose,
   toggleRef,
 }: {
   id: string;
   open: boolean;
   pages: NavLink[];
-  bookHref: string;
+  bookTarget: ReservationTarget;
   onClose: () => void;
   toggleRef: RefObject<HTMLButtonElement | null>;
 }) {
@@ -130,9 +131,7 @@ export function MobileMenu({
         className="cjd-foot mt-auto flex flex-wrap items-center justify-between gap-6 pb-2"
         style={{ transitionDelay: open ? "520ms" : "0ms" }}
       >
-        <Button href={bookHref} onClick={onClose}>
-          Book a Table
-        </Button>
+        <ReservationCta target={bookTarget} onClick={onClose} />
         <p className="text-mist/50 flex cursor-default gap-3 text-[9.5px] leading-none font-medium tracking-[0.16em]">
           <span className="text-champagne">EN</span>
           <span className="font-zh">中文</span>

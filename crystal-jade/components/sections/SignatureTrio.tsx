@@ -1,7 +1,8 @@
 import { Reveal } from "@/components/motion/Reveal";
 import { Button } from "@/components/ui/Button";
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
-import { BOOK_A_TABLE_HREF } from "@/lib/content";
+import { ReservationCta } from "@/components/ui/ReservationCta";
+import type { ReservationTarget } from "@/lib/reservations";
 import { DINING_SLOT_TINTS } from "@/lib/tints";
 import type { Dish } from "@/types";
 import { DiningHead } from "./DiningHead";
@@ -10,7 +11,13 @@ import { DiningHead } from "./DiningHead";
  * Signature Dishes trio on the landing page (mockup `.trio`): three name-only
  * dish frames and the Book a Table / View the Full Menu CTAs.
  */
-export function SignatureTrio({ dishes }: { dishes: Dish[] }) {
+export function SignatureTrio({
+  dishes,
+  bookTarget,
+}: {
+  dishes: Dish[];
+  bookTarget: ReservationTarget;
+}) {
   return (
     <section className="dine-sec">
       <DiningHead
@@ -35,7 +42,7 @@ export function SignatureTrio({ dishes }: { dishes: Dish[] }) {
       </div>
 
       <Reveal as="div" className="mt-14 flex flex-wrap justify-center gap-3.5">
-        <Button href={BOOK_A_TABLE_HREF}>Book a Table</Button>
+        <ReservationCta target={bookTarget} />
         <Button href="/menu" variant="ghost">
           View the Full Menu
         </Button>

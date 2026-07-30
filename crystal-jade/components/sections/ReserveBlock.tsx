@@ -1,17 +1,24 @@
 import Link from "next/link";
 import { Reveal } from "@/components/motion/Reveal";
-import { Button } from "@/components/ui/Button";
 import { FactRows } from "@/components/ui/FactRows";
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
+import { ReservationCta } from "@/components/ui/ReservationCta";
+import type { ReservationTarget } from "@/lib/reservations";
 import type { RestaurantReserve } from "@/types";
 import { DiningHead } from "./DiningHead";
 
 /**
  * Reserve page body (mockup `.res-grid`): contact rows (all placeholders as
- * configured), the Book a Table CTA anchoring to the OpenTable embed
- * placeholder, and the banquet crosslink.
+ * configured), the Book a Table CTA (target resolved by the reservation
+ * provider, the embed-placeholder anchor today), and the banquet crosslink.
  */
-export function ReserveBlock({ reserve }: { reserve: RestaurantReserve }) {
+export function ReserveBlock({
+  reserve,
+  bookTarget,
+}: {
+  reserve: RestaurantReserve;
+  bookTarget: ReservationTarget;
+}) {
   const rows = [
     { label: "Telephone", value: reserve.phone, detail: "Placeholder" },
     { label: "WeChat", value: reserve.wechat, detail: "Placeholder" },
@@ -41,9 +48,7 @@ export function ReserveBlock({ reserve }: { reserve: RestaurantReserve }) {
             />
           </Reveal>
           <Reveal as="div" delay={400} className="mt-2">
-            <Button href={reserve.openTableUrl ?? "#reservations"}>
-              Book a Table
-            </Button>
+            <ReservationCta target={bookTarget} />
           </Reveal>
           <Reveal as="div" delay={460}>
             <Link

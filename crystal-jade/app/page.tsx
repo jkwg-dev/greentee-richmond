@@ -4,6 +4,7 @@ import { DiningHero } from "@/components/sections/DiningHero";
 import { PrivatePreview } from "@/components/sections/PrivatePreview";
 import { SignatureTrio } from "@/components/sections/SignatureTrio";
 import { getRestaurant, getSignatureDishes } from "@/lib/content";
+import { getReservationProvider } from "@/lib/reservations";
 
 export const metadata: Metadata = {
   description:
@@ -15,9 +16,10 @@ export const metadata: Metadata = {
  * Signature Dishes trio, and the Private Dining preview.
  */
 export default async function HomePage() {
-  const [restaurant, trio] = await Promise.all([
+  const [restaurant, trio, bookTarget] = await Promise.all([
     getRestaurant(),
     getSignatureDishes(),
+    getReservationProvider().book(),
   ]);
   return (
     <>
@@ -45,7 +47,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <SignatureTrio dishes={trio} />
+      <SignatureTrio dishes={trio} bookTarget={bookTarget} />
       <PrivatePreview privateDining={restaurant.privateDining} />
     </>
   );
