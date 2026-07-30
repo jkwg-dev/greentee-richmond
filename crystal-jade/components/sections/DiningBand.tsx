@@ -3,7 +3,6 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
 import { RichHeading } from "@/components/ui/RichHeading";
 import type { PhotoTint } from "@/types";
-import { CrystalJadeMark } from "./CrystalJadeMark";
 
 export type DiningBandProps = {
   eyebrow: string;
@@ -16,8 +15,8 @@ export type DiningBandProps = {
 
 /**
  * Band hero on the story, menu, and banquet pages (mockup `.hero-band`): a
- * 46svh pending frame with the gold inset frame, eyebrow, and serif H1.
- * Below 1025px the Crystal Jade mark pins top-left.
+ * 46svh pending frame with the gold inset frame, eyebrow, and serif H1. The
+ * brand mark lives in the site header at every width.
  */
 export function DiningBand({ eyebrow, title, line, frame }: DiningBandProps) {
   return (
@@ -32,11 +31,6 @@ export function DiningBand({ eyebrow, title, line, frame }: DiningBandProps) {
       <div
         className="border-champagne/[0.28] pointer-events-none absolute inset-4 z-[4] border"
         aria-hidden="true"
-      />
-
-      <CrystalJadeMark
-        rule={false}
-        className="absolute top-10 left-11 z-[5] max-[900px]:left-6 min-[1025px]:hidden"
       />
 
       <div className="absolute inset-x-11 bottom-11 z-[5] max-w-[720px] max-[900px]:inset-x-6 max-[900px]:bottom-8">

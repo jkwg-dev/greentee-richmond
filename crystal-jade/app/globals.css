@@ -13,7 +13,7 @@
   --color-mist: #8f8b82; /* secondary text, captions */
   --color-champagne: #c9a66b; /* CTA, hairlines, index */
   --color-jade: #1f6b4f; /* jade surfaces and rail hairline */
-  --color-jade-text: #57ad85; /* jade text accent, active rail states */
+  --color-jade-text: #57ad85; /* jade text accent, active nav states */
   --color-jade-mist: #93a89c; /* muted jade for inactive chips */
 
   /* Ink and hover values mandated by the button + chip specs. Kept as tokens
@@ -251,6 +251,202 @@
 }
 
 /* ==========================================================================
+   Top navigation: skip link, sticky header, full-screen mobile menu.
+   Header register mirrors the retired rail and chips (mockup `.dr-link` /
+   `.dc-link`): tracked uppercase sans, jade-text active, champagne accents.
+   ========================================================================== */
+@layer components {
+  /* First focusable element on every page; visible only while focused. */
+  .skip-link {
+    position: fixed;
+    top: 12px;
+    left: 5vw;
+    z-index: 300;
+    padding: 13px 20px;
+    background: var(--color-noir-soft);
+    border: 1px solid var(--color-champagne);
+    color: var(--color-champagne);
+    font: 500 9.5px/1 var(--font-sans);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    transform: translateY(calc(-100% - 16px));
+  }
+  .skip-link:focus-visible {
+    transform: none;
+  }
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    min-height: 66px;
+    padding: 0 5vw;
+    background: rgba(9, 15, 12, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid rgba(201, 166, 107, 0.18);
+  }
+
+  /* Desktop menu link: 44px target; the inner span carries the underline. */
+  .sh-link {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 12px;
+    font: 500 9.5px/1 var(--font-sans);
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--color-mist);
+    transition: color 0.3s;
+  }
+  .sh-link span {
+    padding: 4px 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .sh-link.active {
+    color: var(--color-jade-text);
+  }
+  .sh-link.active span {
+    border-color: var(--color-champagne);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .sh-link:hover {
+      color: var(--color-ivory);
+    }
+  }
+
+  /* Hamburger and drawer close: 44px targets built from two hairlines. */
+  .sh-burger,
+  .cjd-close {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+  }
+  .sh-burger span,
+  .cjd-close span {
+    grid-area: 1 / 1;
+    width: 22px;
+    height: 1px;
+    background: var(--color-ivory);
+  }
+  .sh-burger span:first-child {
+    transform: translateY(-4px);
+  }
+  .sh-burger span:last-child {
+    transform: translateY(4px);
+    background: var(--color-champagne);
+  }
+  .cjd-close span:first-child {
+    transform: rotate(45deg);
+  }
+  .cjd-close span:last-child {
+    transform: rotate(-45deg);
+    background: var(--color-champagne);
+  }
+
+  /* Full-screen menu (<=1024px): jade-washed noir, serif page links with a
+     staggered rise (delays set inline), the Book a Table CTA, and the EN /
+     中文 indicator. Unhurried and precise; reduced motion settles instantly. */
+  .cj-drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    padding: 0 6vw 34px;
+    background:
+      radial-gradient(
+        60% 42% at 85% 0%,
+        rgba(31, 107, 79, 0.22),
+        transparent 62%
+      ),
+      radial-gradient(
+        45% 32% at 0% 72%,
+        rgba(31, 107, 79, 0.12),
+        transparent 60%
+      ),
+      var(--color-noir);
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.55s ease,
+      visibility 0s 0.55s;
+  }
+  .cj-drawer.open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.55s ease;
+  }
+
+  .cjd-link {
+    display: flex;
+    align-items: center;
+    padding: 11px 0;
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: clamp(1.9rem, 7vw, 2.5rem);
+    line-height: 1.15;
+    color: var(--color-ivory);
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.6s ease,
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+      color 0.3s;
+  }
+  .cj-drawer.open .cjd-link {
+    opacity: 1;
+    transform: none;
+  }
+  .cjd-link::before {
+    content: "";
+    width: 0;
+    height: 1px;
+    background: var(--color-champagne);
+    transition:
+      width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      margin 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .cjd-link.active {
+    color: var(--color-jade-text);
+  }
+  .cjd-link.active::before {
+    width: 26px;
+    margin-right: 16px;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .cjd-link:hover {
+      color: var(--color-jade-text);
+    }
+  }
+
+  .cjd-foot {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 0.6s ease,
+      transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .cj-drawer.open .cjd-foot {
+    opacity: 1;
+    transform: none;
+  }
+
+  html.rm .cj-drawer,
+  html.rm .cjd-link,
+  html.rm .cjd-foot {
+    transition: none;
+    transform: none;
+  }
+}
+
+/* ==========================================================================
    Crystal Jade Palace recipes. Mockups: greentee-dining*.html (v6).
    ========================================================================== */
 @layer components {
@@ -276,118 +472,19 @@
       var(--color-noir);
   }
 
-  /* ---- Shell: sticky rail + content (>=1025px) ------------------------- */
+  /* ---- Shell: one centered content column under the top nav -------------- */
   .dine-shell {
-    display: grid;
-    grid-template-columns: 220px 1fr;
-    gap: 5vw;
-    padding: 130px 5vw 0;
-    align-items: start;
+    padding: 48px 5vw 0;
   }
-  .dinerail {
-    position: sticky;
-    top: 120px;
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-    padding: 0 0 40px 24px;
-    border-left: 1px solid rgba(31, 107, 79, 0.45);
-  }
-  .dr-link {
-    position: relative;
-    display: flex;
-    align-items: center;
-    padding: 11px 0;
-    font: 500 10px/1 var(--font-sans);
-    letter-spacing: 0.28em;
-    text-transform: uppercase;
-    color: var(--color-mist);
-    transition:
-      color 0.35s,
-      padding 0.35s;
-  }
-  .dr-link::before {
-    content: "";
-    width: 0;
-    height: 1px;
-    background: var(--color-champagne);
-    margin-right: 0;
-    transition:
-      width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-      margin 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  .dr-link.active {
-    color: var(--color-jade-text);
-  }
-  .dr-link.active::before {
-    width: 22px;
-    margin-right: 12px;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .dr-link:hover {
-      color: var(--color-ivory);
-    }
-  }
-
-  /* ---- Chip bar (<=1024px) ---------------------------------------------
-     Sticks to the viewport top: this site has no fixed header above it
-     (the parent site's bar sat beneath a 60px header). */
-  .dinechips {
-    position: sticky;
-    top: 0;
-    z-index: 90;
-    display: flex;
-    gap: 26px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 0 5vw;
-    background: rgba(9, 15, 12, 0.9);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid rgba(201, 166, 107, 0.18);
-    scrollbar-width: none;
-  }
-  .dinechips::-webkit-scrollbar {
-    display: none;
-  }
-  @media (min-width: 1025px) {
-    .dinechips {
-      display: none;
-    }
-  }
-  /* 44px touch target on a mockup bar that padded 14px around a 4px link:
-     the link fills the bar height; the inner label keeps the underline. */
-  .dc-link {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    min-height: 46px;
-    font: 500 9.5px/1 var(--font-sans);
-    letter-spacing: 0.26em;
-    text-transform: uppercase;
-    color: var(--color-mist);
-    transition: color 0.3s;
-  }
-  .dc-link span {
-    padding: 4px 0;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.3s;
-  }
-  .dc-link.active {
-    color: var(--color-jade-text);
-  }
-  .dc-link.active span {
-    border-color: var(--color-champagne);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .dc-link:hover {
-      color: var(--color-ivory);
-    }
+  .dine-main {
+    max-width: 1100px;
+    margin-inline: auto;
   }
 
   /* ---- Section rhythm (mockup `.sec`) ----------------------------------- */
   .dine-sec {
     padding: 110px 0;
+    scroll-margin-top: 80px; /* anchor targets clear the sticky header */
   }
   .dine-sec + .dine-sec {
     padding-top: 0;
@@ -475,17 +572,10 @@
     top: 30%;
   }
 
-  /* ---- Responsive shell (mockup 1024 breakpoint) ------------------------ */
+  /* ---- Responsive rhythm (mockup 1024 breakpoint) ------------------------ */
   @media (max-width: 1024px) {
     .dine-shell {
-      display: block;
-      padding: 86px 0 0;
-    }
-    .dinerail {
-      display: none;
-    }
-    .dine-main {
-      padding: 0 5vw;
+      padding: 30px 5vw 0;
     }
     .dine-sec {
       padding: 88px 0;

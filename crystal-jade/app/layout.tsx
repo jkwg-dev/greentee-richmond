@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { DiningChips } from "@/components/sections/DiningChips";
+import { SiteHeader } from "@/components/layout/SiteHeader";
 import { DiningInfoStrip } from "@/components/sections/DiningInfoStrip";
-import { DiningRail } from "@/components/sections/DiningRail";
 import { BOOK_A_TABLE_HREF, getRestaurant, sitePages } from "@/lib/content";
 import { cormorant, inter } from "@/lib/fonts";
 import "./globals.css";
@@ -16,11 +15,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Site shell: every route renders inside the jade page wash with the sticky
- * rail (1025px and up) or the top chip bar (below), closed by the restaurant
- * details strip. There is no site header in this phase; the rail and chips
- * are the navigation, and the Crystal Jade mark carries the brand. Phase 2
- * replaces this pattern with a top nav.
+ * Site shell: skip link, the sticky top header (hamburger menu at 1024px and
+ * below), the jade page wash around a single centered content column, and
+ * the restaurant details strip closing the page.
  */
 export default async function RootLayout({
   children,
@@ -37,11 +34,15 @@ export default async function RootLayout({
               "try{if(matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('rm')}catch(e){}",
           }}
         />
+        <a href="#content" className="skip-link">
+          Skip to content
+        </a>
         <div id="top" className="dine-bg pb-16">
-          <DiningChips pages={sitePages} />
+          <SiteHeader pages={sitePages} bookHref={BOOK_A_TABLE_HREF} />
           <div className="dine-shell">
-            <DiningRail pages={sitePages} bookHref={BOOK_A_TABLE_HREF} />
-            <main className="dine-main">{children}</main>
+            <main id="content" tabIndex={-1} className="dine-main outline-none">
+              {children}
+            </main>
           </div>
           <DiningInfoStrip restaurant={restaurant} />
         </div>

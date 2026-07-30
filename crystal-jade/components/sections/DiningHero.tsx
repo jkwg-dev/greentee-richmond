@@ -3,15 +3,14 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PhotoFrame } from "@/components/ui/PhotoFrame";
 import { SiteImage } from "@/components/ui/SiteImage";
 import type { InterimImage } from "@/types";
-import { CrystalJadeMark } from "./CrystalJadeMark";
 
 const EYEBROW = "Cantonese Fine Dining · GreenTee Richmond Center";
 
 /**
  * Full-screen landing hero (mockup `.hero-full`). The visual slot stays a
  * pending frame until the photo or video loop arrives; a gold frame insets
- * the band and a scroll cue leads to the intro. Below 1025px the Crystal
- * Jade mark joins the hero.
+ * the band and a scroll cue leads to the intro. The brand mark lives in the
+ * site header at every width.
  */
 export function DiningHero({
   title,
@@ -60,11 +59,6 @@ export function DiningHero({
       <div
         className="border-champagne/[0.32] pointer-events-none absolute inset-4 z-[4] border"
         aria-hidden="true"
-      />
-
-      <CrystalJadeMark
-        rule={false}
-        className="absolute top-10 left-11 z-[5] max-[900px]:left-6 min-[1025px]:hidden"
       />
 
       <div className="absolute inset-x-11 bottom-12 z-[5] max-w-[680px] max-[900px]:inset-x-6 max-[900px]:bottom-8">

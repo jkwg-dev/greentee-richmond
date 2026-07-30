@@ -2,20 +2,23 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export type CrystalJadeMarkProps = {
-  /** Link target when interactive (the rail links home); omit for a static lockup. */
+  /** Link target when interactive (the header links home); omit for a static lockup. */
   href?: string;
-  /** The rail mark closes with a short champagne rule (mockup `.dr-mark::after`). */
+  /** Close the lockup with a short champagne rule (mockup `.dr-mark::after`). */
   rule?: boolean;
+  /** `sm` is the header-scale lockup; `default` serves hero-scale placements. */
+  size?: "default" | "sm";
   className?: string;
 };
 
 /**
- * "Crystal Jade" over "Palace" (mockup `.dr-mark`). Heads the rail on desktop
- * and moves into each page hero below 1025px.
+ * "Crystal Jade" over "Palace" (mockup `.dr-mark`). Carries the brand in the
+ * site header and the mobile menu.
  */
 export function CrystalJadeMark({
   href,
   rule = true,
+  size = "default",
   className,
 }: CrystalJadeMarkProps) {
   const classes = cn(
@@ -26,10 +29,22 @@ export function CrystalJadeMark({
   );
   const lockup = (
     <>
-      <span className="font-serif text-2xl font-semibold tracking-[0.02em]">
+      <span
+        className={cn(
+          "font-serif font-semibold tracking-[0.02em]",
+          size === "sm" ? "text-[19px]" : "text-2xl",
+        )}
+      >
         Crystal Jade
       </span>
-      <span className="text-jade-text mt-2 text-[8px] font-medium tracking-[0.5em] uppercase">
+      <span
+        className={cn(
+          "text-jade-text font-medium uppercase",
+          size === "sm"
+            ? "mt-1.5 text-[7px] tracking-[0.44em]"
+            : "mt-2 text-[8px] tracking-[0.5em]",
+        )}
+      >
         Palace
       </span>
     </>

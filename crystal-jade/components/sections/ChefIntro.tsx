@@ -18,7 +18,7 @@ export function ChefIntro({ chef }: { chef: RestaurantChef }) {
   return (
     <section className="dine-sec">
       <div className="grid grid-cols-[1fr_1.15fr] items-start gap-[5vw] max-[900px]:grid-cols-1 max-[900px]:gap-11">
-        <Reveal as="div" className="sticky top-[150px] max-[1024px]:static">
+        <Reveal as="div" className="sticky top-[96px] max-[900px]:static">
           <PhotoFrame
             tint="champagne"
             showMark={!chef.portrait}
