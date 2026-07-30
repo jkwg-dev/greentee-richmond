@@ -36,6 +36,14 @@ or menu data inline, and never see a CMS type.
   `NEXT_PUBLIC_SANITY_DATASET` are documented in `.env.example` and unused
   until then. When Sanity lands, only `lib/content.ts` changes; getter
   signatures hold, and no Sanity client or CMS type appears outside it.
+- **One image serves both ratios.** Photo slots render breakpoint-aware
+  aspect ratios (shorter at mobile widths), and there is no mandatory
+  separate mobile image per slot: the Sanity project will rely on hotspot
+  and crop so a single upload serves the desktop and mobile ratios, cropped
+  around the editor's focal point. `InterimImage.mobileImage` is the
+  optional art-directed override seam for the slots where hotspot cropping
+  will not be enough (composed heroes, anything with in-image text); it is
+  unused today and stays optional forever.
 - Client components never import from `lib/content.ts` directly; content and
   nav reach client leaves as props from a Server Component, so a future
   server-only CMS client inside the accessor can never break the client
