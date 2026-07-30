@@ -1,12 +1,12 @@
-import { CheckoutLoading } from "@/components/sections/checkout/CheckoutLoading";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
 /**
- * Route-level loader for /book (booking.md §5.1): a full page quiet loader
- * during the live server fetch, so the Book a Bay navigation shows a loader
- * rather than a frozen previous page. The checkout subtree overrides this with
- * its own copy (checkout/loading.tsx, checkout/callback/loading.tsx), so this
- * "Loading times." line stays scoped to the availability page.
+ * Route-level loader for /book (booking.md §5.1 spinner ruling): a centered
+ * champagne spinner during the live availability fetch, so the Book a Bay
+ * navigation shows a page-level loader rather than a frozen previous page. The
+ * checkout subtree keeps its own copy-bearing loaders (checkout/loading.tsx,
+ * checkout/callback/loading.tsx); only this availability route uses the spinner.
  */
 export default function BookLoading() {
-  return <CheckoutLoading heading="Loading times." />;
+  return <LoadingScreen />;
 }
