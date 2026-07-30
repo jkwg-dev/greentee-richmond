@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/*
+ * Scaffold token set: the core palette shared with the GreenTee family.
+ * The full dining token sheet (jade scale, hairlines, dine-* utilities)
+ * lands with the Phase 1 migration.
+ */
+@theme {
+  --color-noir: #0a0a0b; /* base background */
+  --color-noir-soft: #131315; /* surfaces */
+  --color-ivory: #f2ede2; /* primary text */
+  --color-mist: #8f8b82; /* secondary text, captions */
+  --color-champagne: #c9a66b; /* CTA, hairlines */
+  --color-jade: #1f6b4f; /* Crystal Jade surfaces */
+  --color-jade-text: #57ad85; /* Crystal Jade text accent */
+}
+
+body {
+  background: var(--color-noir);
+  color: var(--color-ivory);
+}
