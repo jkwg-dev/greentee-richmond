@@ -52,9 +52,12 @@ or menu data inline, and never see a CMS type.
 
 ## Design rules
 
-The GreenTee dining mockups v6 (`greentee-dining*.html`, in the parent repo's
-`docs/mockups/` while nested) define the look, motion, and copy tone. Port,
-never paste; mockup base64 images are mockup-only.
+The GreenTee dining mockups v6 (`docs/mockups/greentee-dining*.html`) define
+the look, motion, and copy tone. They are read-only reference: port, never
+paste, never edit them as a form of implementation. Mockup base64 images are
+mockup-only. Cross-links between mockup files stand in for this site's routes
+(`greentee-dining-story.html` means `/story`); links to other GreenTee pages
+stand in for the main site's domain.
 
 - Background `--color-noir`, primary text `--color-ivory`. Jade and jade-text
   are first-class accents here (the whole site is Crystal Jade content);
