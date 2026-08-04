@@ -51,7 +51,6 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
         <p>
           {settings.address} · {settings.hours} · {settings.phone}
         </p>
-        <p>Interior & exterior design concept: JKWG</p>
         <p>© 2026 GreenTee Richmond Center.</p>
       </div>
 
